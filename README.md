@@ -5,7 +5,7 @@ conduttrice che legge le 10 notizie del giorno (8 di attualità e 2 di calcio),
 seguite da 10 podcast consigliati e da una radio musicale casuale.
 
 È una web app installabile (PWA) ospitata gratis su GitHub Pages:
-**https://UTENTE.github.io/tg-di-famiglia/**
+**https://andreapollastrelli95.github.io/tg-di-famiglia/**
 
 Ognuno usa la **propria chiave gratuita della Gemini API**, che resta salvata solo
 sul suo telefono.
@@ -55,7 +55,7 @@ qualcuno la copiasse non potrebbe usarla altrove.
    e scegli il progetto della chiave in alto.
 2. Clicca sul nome della chiave.
 3. **Restrizioni dell'applicazione** → *Siti web* → **Aggiungi** →
-   `https://UTENTE.github.io/*`
+   `https://andreapollastrelli95.github.io/*`
 4. **Restrizioni delle API** → *Limita chiave* → seleziona solo
    **Generative Language API**.
 5. **Salva**. Le modifiche possono impiegare qualche minuto ad attivarsi.
@@ -93,7 +93,7 @@ dalla barra degli indirizzi. Per creare il QR personale e il cartoncino:
 
 ```bash
 pip install qrcode pillow reportlab
-python tools/genera_qr_cartoncino.py --url https://UTENTE.github.io/tg-di-famiglia/ --chiave AIza... --nome papa
+python tools/genera_qr_cartoncino.py --url https://andreapollastrelli95.github.io/tg-di-famiglia/ --chiave AIza... --nome papa
 ```
 
 I file finiscono in `stampa/privato/`, una cartella esclusa da git. **Non pubblicare
@@ -134,7 +134,7 @@ ogni mese e riattiva il workflow di raccolta.
 pip install numpy lameenc pillow qrcode reportlab
 python tools/genera_sigla.py          # assets/sigla.mp3 (fanfara originale sintetizzata)
 python tools/genera_icone.py          # icons/*.png
-python tools/genera_qr_cartoncino.py --url https://UTENTE.github.io/tg-di-famiglia/
+python tools/genera_qr_cartoncino.py --url https://andreapollastrelli95.github.io/tg-di-famiglia/
 ```
 
 Per provare la raccolta in locale: `pip install feedparser` e poi
