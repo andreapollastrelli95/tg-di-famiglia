@@ -1,0 +1,12 @@
+{
+  "_nota": "Scheda VARIE. squadre: 'id' deve coincidere con la categoria dei feed in fonti.json e con 'gruppo' dei podcast in podcast.json. meteo: coordinate della località (Open-Meteo, gratuito). tv: pagina della guida da cui leggere la prima serata.",
+  "squadre": [
+    {"id": "juve", "nome": "Juventus", "emoji": "⚪⚫",
+     "radio": {"nome": "Radio Bianconera", "url": "https://stream.tmwradio.com/bianconera.aac"}}
+  ],
+  "meteo": {"localita": "Viterbo", "lat": 42.4207, "lon": 12.1077},
+  "tv": {
+    "url": ["https://www.staseraintv.com/", "https://www.staseraintv.com/index2.html"],
+    "canali": ["LA7", "La 7", "NOVE", "Rai 1", "Rai 2", "Rai 3", "Rete 4", "Canale 5", "Italia 1", "La7", "TV8", "Nove", "20", "Iris", "Rai Movie", "Rai 4", "La5", "Cielo", "Real Time"]
+  }
+}

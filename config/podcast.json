@@ -1,5 +1,5 @@
 {
-  "_nota": "Podcast italiani di attualità e calcio. 'nome' e 'autore' servono a trovare il feed con la iTunes Search API (country=it): il titolo deve contenere 'nome' e l'autore deve contenere 'autore'. 'feedUrl' (facoltativo) salta la ricerca. calcio=true per quelli sul calcio.",
+  "_nota": "Podcast italiani di attualità e calcio. 'nome' e 'autore' servono a trovare il feed con la iTunes Search API (country=it): il titolo deve contenere 'nome' e l'autore deve contenere 'autore'. 'feedUrl' (facoltativo) salta la ricerca. calcio=true per quelli sul calcio. 'gruppo' (es. juve) li assegna a una squadra della scheda VARIE invece che all'elenco generale; 'giorni_massimi' si può indicare anche per un singolo podcast.",
   "giorni_massimi": 3,
   "podcast": [
     {"nome": "Stories", "autore": "Chora", "calcio": false},
@@ -22,6 +22,11 @@
     {"nome": "Rasoiate", "autore": "Cronache di spogliatoio", "calcio": true},
     {"nome": "La Tripletta", "autore": "Gazzetta", "calcio": true},
     {"nome": "In The Box", "autore": "Gazzetta", "calcio": true},
-    {"nome": "Sky Calcio Unplugged", "autore": "Sky Sport", "calcio": true}
+    {"nome": "Sky Calcio Unplugged", "autore": "Sky Sport", "calcio": true},
+    {"nome": "La Juve è una cosa seria", "autore": "2TALKS", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
+    {"nome": "LiveBianconera - Editoriale", "autore": "LiveBianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
+    {"nome": "LiveBianconera - Il Caffè", "autore": "LiveBianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
+    {"nome": "J-TACTICS", "autore": "J-TACTICS", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
+    {"nome": "Colpo Gobbo", "autore": "Radio Bianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 14}
   ]
 }

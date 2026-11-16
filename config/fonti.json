@@ -1,5 +1,5 @@
 {
-  "_nota": "Feed RSS delle notizie. categoria: generale | calcio. Se un feed non risponde viene saltato.",
+  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve (o l'id di un'altra squadra definita in config/varie.json). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
   "ore_massime": 30,
   "max_per_feed": 25,
   "feed": [
@@ -21,9 +21,25 @@
     {"fonte": "Il Sole 24 Ore", "categoria": "generale", "url": "https://www.ilsole24ore.com/rss/italia.xml"},
     {"fonte": "Il Sole 24 Ore", "categoria": "generale", "url": "https://www.ilsole24ore.com/rss/economia.xml"},
     {"fonte": "Il Sole 24 Ore", "categoria": "generale", "url": "https://www.ilsole24ore.com/rss/mondo.xml"},
-    {"fonte": "ANSA Calcio", "categoria": "calcio", "url": "https://www.ansa.it/sito/notizie/sport/calcio/calcio_rss.xml"},
-    {"fonte": "La Gazzetta dello Sport", "categoria": "calcio", "url": "https://www.gazzetta.it/dynamic-feed/rss/section/Calcio.xml"},
-    {"fonte": "Corriere dello Sport", "categoria": "calcio", "url": "https://www.corrieredellosport.it/rss/calcio/serie-a"},
-    {"fonte": "Corriere dello Sport", "categoria": "calcio", "url": "https://www.corrieredellosport.it/rss/calcio/champions-league"}
+
+    {"fonte": "Viterbo News 24", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.viterbonews24.it/rss"},
+    {"fonte": "Il Messaggero Viterbo", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.ilmessaggero.it/rss/viterbo.xml"},
+    {"fonte": "ViterboToday", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.viterbotoday.it/rss"},
+    {"fonte": "Corriere di Viterbo", "categoria": "tuscia", "ore_massime": 36, "url": "https://corrierediviterbo.it/rss"},
+    {"fonte": "OnTuscia", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.ontuscia.it/feed"},
+    {"fonte": "TusciaUp", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.tusciaup.com/feed"},
+    {"fonte": "Tuscia Times", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.tusciatimes.eu/feed/"},
+    {"fonte": "NewTuscia", "categoria": "tuscia", "ore_massime": 36, "url": "https://www.newtuscia.it/feed/"},
+
+    {"fonte": "ANSA Sport", "categoria": "sport", "url": "https://www.ansa.it/sito/notizie/sport/sport_rss.xml"},
+    {"fonte": "ANSA Calcio", "categoria": "sport", "url": "https://www.ansa.it/sito/notizie/sport/calcio/calcio_rss.xml"},
+    {"fonte": "La Gazzetta dello Sport", "categoria": "sport", "url": "https://www.gazzetta.it/dynamic-feed/rss/section/Calcio.xml"},
+    {"fonte": "Corriere dello Sport", "categoria": "sport", "url": "https://www.corrieredellosport.it/rss/calcio/serie-a"},
+    {"fonte": "Corriere dello Sport", "categoria": "sport", "url": "https://www.corrieredellosport.it/rss/calcio/champions-league"},
+
+    {"fonte": "Tuttosport", "categoria": "juve", "ore_massime": 48, "url": "https://www.tuttosport.com/rss/calcio/serie-a/juventus"},
+    {"fonte": "Corriere dello Sport", "categoria": "juve", "ore_massime": 72, "url": "https://www.corrieredellosport.it/rss/calcio/serie-a/juve"},
+    {"fonte": "TuttoJuve", "categoria": "juve", "ore_massime": 48, "max": 15, "url": "https://www.tuttojuve.com/rss"},
+    {"fonte": "Juventus News 24", "categoria": "juve", "ore_massime": 48, "max": 15, "url": "https://www.juventusnews24.com/feed/"}
   ]
 }

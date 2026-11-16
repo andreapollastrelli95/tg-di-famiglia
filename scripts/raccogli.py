@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """TG di Famiglia - raccolta dati del mattino.
 
-Legge i feed RSS delle testate e i feed dei podcast elencati in config/
-e scrive data/grezzo.json. Non usa chiavi API: l'intelligenza (scelta e
-riscrittura delle notizie, voce) gira poi sul telefono con la chiave Gemini
-di ciascun utente.
+Legge i feed RSS delle testate, i feed dei podcast, il meteo e la guida TV
+indicati in config/ e scrive data/grezzo.json. Non usa chiavi API:
+l'intelligenza (scelta e riscrittura delle notizie, voce) gira poi sul telefono
+con la chiave Gemini di ciascun utente.
 
 Uso:  python scripts/raccogli.py [cartella_output]
 """
@@ -27,6 +27,7 @@ import feedparser
 RADICE = Path(__file__).resolve().parent.parent
 CONFIG = RADICE / "config"
 UA = "Mozilla/5.0 (compatible; TGdiFamiglia/1.0; lettore RSS personale)"
+UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
 ROMA = ZoneInfo("Europe/Rome")
 ORA = datetime.now(timezone.utc)
 
@@ -35,11 +36,15 @@ def log(*a):
     print(*a, flush=True)
 
 
-def scarica(url: str, timeout: int = 20) -> bytes:
+def leggi_config(nome: str) -> dict:
+    return json.loads((CONFIG / nome).read_text(encoding="utf-8"))
+
+
+def scarica(url: str, timeout: int = 20, ua: str = UA) -> bytes:
     ultimo = None
-    for tentativo in range(2):
+    for _ in range(2):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
+            req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "*/*"})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read()
         except Exception as e:  # noqa: BLE001 - qualsiasi errore: riprovo e poi salto
@@ -51,7 +56,8 @@ def scarica(url: str, timeout: int = 20) -> bytes:
 def pulisci(testo: str | None, massimo: int) -> str:
     if not testo:
         return ""
-    t = re.sub(r"<[^>]+>", " ", testo)
+    t = html.unescape(testo)
+    t = re.sub(r"<[^>]+>", " ", t)
     t = html.unescape(t)
     t = re.sub(r"\s+", " ", t).strip()
     if len(t) > massimo:
@@ -59,23 +65,30 @@ def pulisci(testo: str | None, massimo: int) -> str:
     return t
 
 
-MESI_IT = {"gen": 1, "feb": 2, "mar": 3, "apr": 4, "mag": 5, "giu": 6,
-           "lug": 7, "ago": 8, "set": 9, "ott": 10, "nov": 11, "dic": 12}
+MESI = {"gen": 1, "feb": 2, "mar": 3, "apr": 4, "mag": 5, "giu": 6, "lug": 7, "ago": 8, "set": 9, "ott": 10,
+        "nov": 11, "dic": 12, "jan": 1, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "dec": 12}
 
 
-def data_italiana(testo: str):
-    """Alcuni feed (es. Sky TG24) scrivono 'lun, 16 nov 2026 13:03:00 GMT'."""
-    m = re.search(r"(\d{1,2})\s+([a-zA-Z]{3})[a-z]*\.?\s+(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?", testo or "")
-    if not m or m.group(2).lower() not in MESI_IT:
+def data_irregolare(testo: str):
+    """Date che feedparser non capisce: 'lun, 16 nov 2026 13:03:00 GMT' (Sky TG24, Il Messaggero)
+    oppure 'Mon, 16 Nov 2026 16:50:49 TIME_ZONE' (Viterbo News 24)."""
+    m = re.search(r"(\d{1,2})\s+([a-zA-Z]{3})[a-z]*\.?\s+(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(.*)", testo or "")
+    if not m or m.group(2).lower() not in MESI:
         return None
-    g, mese, a, hh, mm, ss = m.groups()
-    d = datetime(int(a), MESI_IT[mese.lower()], int(g), int(hh), int(mm), int(ss or 0), tzinfo=timezone.utc)
-    if not re.search(r"GMT|UTC|Z|\+0000", testo):
-        d = d.replace(tzinfo=ROMA).astimezone(timezone.utc)
-    return d.utctimetuple()
+    g, mese, a, hh, mm, ss, coda = m.groups()
+    d = datetime(int(a), MESI[mese.lower()], int(g), int(hh), int(mm), int(ss or 0))
+    fuso = re.match(r"([+-])(\d{2}):?(\d{2})", coda.strip())
+    if fuso:
+        delta = timedelta(hours=int(fuso.group(2)), minutes=int(fuso.group(3))) * (1 if fuso.group(1) == "+" else -1)
+        d = d.replace(tzinfo=timezone(delta))
+    elif re.match(r"(GMT|UTC|Z)\b", coda.strip()):
+        d = d.replace(tzinfo=timezone.utc)
+    else:
+        d = d.replace(tzinfo=ROMA)  # nessun fuso indicato: ora italiana
+    return d.astimezone(timezone.utc).utctimetuple()
 
 
-feedparser.registerDateHandler(data_italiana)
+feedparser.registerDateHandler(data_irregolare)
 
 
 def data_voce(e) -> datetime | None:
@@ -88,11 +101,11 @@ def data_voce(e) -> datetime | None:
 
 # ---------------------------------------------------------------- notizie
 def raccogli_notizie() -> list[dict]:
-    cfg = json.loads((CONFIG / "fonti.json").read_text(encoding="utf-8"))
-    limite = ORA - timedelta(hours=cfg.get("ore_massime", 30))
-    per_feed = cfg.get("max_per_feed", 25)
+    cfg = leggi_config("fonti.json")
     notizie, visti = [], set()
     for f in cfg["feed"]:
+        limite = ORA - timedelta(hours=f.get("ore_massime", cfg.get("ore_massime", 30)))
+        per_feed = f.get("max", cfg.get("max_per_feed", 25))
         try:
             feed = feedparser.parse(scarica(f["url"]))
         except Exception as e:  # noqa: BLE001
@@ -105,12 +118,12 @@ def raccogli_notizie() -> list[dict]:
             titolo = pulisci(e.get("title"), 200)
             link = e.get("link", "")
             quando = data_voce(e)
-            if not titolo or not link or (quando and quando < limite) or quando is None:
+            if not titolo or not link or quando is None or quando < limite or quando > ORA + timedelta(hours=3):
                 continue
-            chiave = re.sub(r"\W+", "", titolo.lower())[:80]
-            if link in visti or chiave in visti:
+            chiave = f["categoria"] + re.sub(r"\W+", "", titolo.lower())[:80]
+            if (f["categoria"], link) in visti or chiave in visti:
                 continue
-            visti.update({link, chiave})
+            visti.update({(f["categoria"], link), chiave})
             notizie.append({
                 "titolo": titolo,
                 "sommario": pulisci(e.get("summary") or e.get("description"), 320),
@@ -120,7 +133,7 @@ def raccogli_notizie() -> list[dict]:
                 "categoria": f["categoria"],
             })
             presi += 1
-        log(f"  {f['fonte']:<24} {presi:>3} notizie  ({f['url']})")
+        log(f"  {f['categoria']:<9} {f['fonte']:<24} {presi:>3} notizie  ({f['url']})")
     notizie.sort(key=lambda n: n["data"], reverse=True)
     for i, n in enumerate(notizie, 1):
         n["id"] = f"n{i}"
@@ -175,10 +188,11 @@ def audio_https(url: str) -> str | None:
 
 
 def raccogli_podcast() -> list[dict]:
-    cfg = json.loads((CONFIG / "podcast.json").read_text(encoding="utf-8"))
-    limite = ORA - timedelta(days=cfg.get("giorni_massimi", 3))
+    cfg = leggi_config("podcast.json")
     risultato = []
     for p in cfg["podcast"]:
+        giorni = p.get("giorni_massimi", cfg.get("giorni_massimi", 3))
+        limite = ORA - timedelta(days=giorni)
         try:
             feed_url, immagine = cerca_feed(p)
             if not feed_url:
@@ -196,7 +210,7 @@ def raccogli_podcast() -> list[dict]:
                     if scelto is None or quando > scelto[0]:
                         scelto = (quando, e, audio)
             if not scelto:
-                log(f"  - {p['nome']}: nessun episodio pubblico negli ultimi {cfg.get('giorni_massimi', 3)} giorni")
+                log(f"  - {p['nome']}: nessun episodio pubblico negli ultimi {giorni} giorni")
                 continue
             quando, e, audio = scelto
             audio = audio_https(audio)
@@ -210,6 +224,7 @@ def raccogli_podcast() -> list[dict]:
                 "audio": audio,
                 "link": e.get("link") or feed.feed.get("link") or audio,
                 "calcio": bool(p.get("calcio")),
+                "gruppo": p.get("gruppo"),
                 "data": quando.isoformat(timespec="minutes"),
                 "immagine": immagine or (feed.feed.get("image") or {}).get("href"),
             })
@@ -221,27 +236,104 @@ def raccogli_podcast() -> list[dict]:
     return risultato
 
 
+# ---------------------------------------------------------------- meteo
+def raccogli_meteo(cfg: dict) -> dict | None:
+    """Previsioni giornaliere da Open-Meteo (gratuito, senza chiave)."""
+    try:
+        q = urllib.parse.urlencode({
+            "latitude": cfg["lat"], "longitude": cfg["lon"], "timezone": "Europe/Rome", "forecast_days": 8,
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
+        })
+        d = json.loads(scarica(f"https://api.open-meteo.com/v1/forecast?{q}"))["daily"]
+        giorni = [{
+            "data": d["time"][i], "codice": d["weather_code"][i],
+            "tmax": round(d["temperature_2m_max"][i]), "tmin": round(d["temperature_2m_min"][i]),
+            "pioggia_prob": d["precipitation_probability_max"][i], "pioggia_mm": d["precipitation_sum"][i],
+            "vento": round(d["wind_speed_10m_max"][i]),
+        } for i in range(len(d["time"]))]
+        log(f"  meteo {cfg['localita']}: {len(giorni)} giorni")
+        return {"localita": cfg["localita"], "giorni": giorni}
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! meteo: {e}")
+        return None
+
+
+# ---------------------------------------------------------------- stasera in TV
+SPORT_TV = re.compile(r"calcio|serie a|serie b|champions|europa league|conference|nations league|coppa italia|"
+                      r"qualificazion|amichevole|tennis|atp|formula 1|motogp|basket|volley|rugby|ciclismo|sci ", re.I)
+
+
+def raccogli_tv(cfg: dict) -> dict | None:
+    """Prima serata e sport della sera, letti dalla pagina della guida TV."""
+    try:
+        pagina = ""
+        for url in cfg["url"] if isinstance(cfg["url"], list) else [cfg["url"]]:
+            try:
+                pagina += scarica(url, ua=UA_BROWSER).decode("utf-8", "replace")
+            except Exception as e:  # noqa: BLE001
+                log(f"  ! tv {url}: {e}")
+        t = re.sub(r"<script.*?</script>|<style.*?</style>", "", pagina, flags=re.S | re.I)
+        righe = [r.strip() for r in html.unescape(re.sub(r"<[^>]+>", "\n", t)).split("\n")]
+        righe = [r for r in righe if r]
+        canali = cfg["canali"]
+        serata, sport, visti = [], [], set()
+        canale_corrente = None
+        for i, r in enumerate(righe):
+            if r in canali:
+                canale_corrente = r
+                # blocco "prima serata": nome canale, orario, [Prima TV], [numero], titolo, descrizione
+                if i + 1 < len(righe) and re.fullmatch(r"\d{1,2}[:.]\d{2}", righe[i + 1]) and r not in visti:
+                    j = i + 2
+                    while j < len(righe) and (righe[j] == "Prima TV" or righe[j].isdigit()):
+                        j += 1
+                    if j < len(righe):
+                        descr = righe[j + 1] if j + 1 < len(righe) and righe[j + 1] != "[continua]" else ""
+                        visti.add(r)
+                        serata.append({"canale": r, "ora": righe[i + 1].replace(".", ":"), "titolo": pulisci(righe[j], 120),
+                                       "descrizione": pulisci(descr, 200), "prima_tv": "Prima TV" in righe[i + 2:j]})
+                continue
+            m = re.fullmatch(r"(\d{2}):(\d{2}) - (.+)", r)
+            if m and canale_corrente and 17 <= int(m.group(1)) <= 23 and SPORT_TV.search(m.group(3)):
+                voce = {"canale": canale_corrente, "ora": f"{m.group(1)}:{m.group(2)}", "titolo": pulisci(m.group(3), 140)}
+                if voce not in sport:
+                    sport.append(voce)
+        log(f"  tv: {len(serata)} prime serate, {len(sport)} eventi sportivi")
+        return {"serata": serata, "sport": sport} if serata else None
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! tv: {e}")
+        return None
+
+
 def main():
     uscita = Path(sys.argv[1]) if len(sys.argv) > 1 else RADICE / "data"
     uscita.mkdir(parents=True, exist_ok=True)
+    varie = leggi_config("varie.json")
     log("Notizie:")
     notizie = raccogli_notizie()
     log("Podcast:")
     podcast = raccogli_podcast()
+    log("Varie:")
     dati = {
-        "versione": 1,
+        "versione": 2,
         "generato": ORA.isoformat(timespec="seconds"),
         "giorno": ORA.astimezone(ROMA).date().isoformat(),
         "notizie": notizie,
         "podcast": podcast,
+        "squadre": varie.get("squadre", []),
+        "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
+        "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }
     (uscita / "grezzo.json").write_text(json.dumps(dati, ensure_ascii=False, indent=1), encoding="utf-8")
-    g = sum(n["categoria"] == "generale" for n in notizie)
-    c = len(notizie) - g
-    log(f"\nScritto {uscita / 'grezzo.json'}: {g} notizie generali, {c} di calcio, {len(podcast)} podcast")
-    if g < 8 or c < 2:
-        log("ERRORE: troppe poche notizie, controlla i feed")
+    conta = {}
+    for n in notizie:
+        conta[n["categoria"]] = conta.get(n["categoria"], 0) + 1
+    log(f"\nScritto {uscita / 'grezzo.json'}: notizie {conta}, {len(podcast)} podcast "
+        f"({sum(1 for p in podcast if p['gruppo'])} di squadra)")
+    if conta.get("generale", 0) < 5 or conta.get("sport", 0) < 2:
+        log("ERRORE: troppe poche notizie nazionali o sportive, controlla i feed")
         sys.exit(1)
+    if conta.get("tuscia", 0) < 3:
+        log("ATTENZIONE: meno di 3 notizie dalla Tuscia")
 
 
 if __name__ == "__main__":

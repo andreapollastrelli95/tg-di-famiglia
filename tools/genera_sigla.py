@@ -3,6 +3,8 @@
 
   assets/sigla.mp3    sigla di ~6,5 s in stile telegiornale: rullo di timpani,
                       archi pulsanti, segnale "telegrafo", fanfara di ottoni
+  assets/stacco.mp3   stacco di 3 s tra una notizia e l'altra
+  assets/stacco-lungo.mp3  stacco leggero di 5 s per l'inizio di una sezione (Tuscia, sport)
   assets/tappeto.wav  sottofondo di ~7,6 s che si ripete senza stacchi (suona
                       mentre la voce si prepara, come sotto i titoli di un TG)
 
@@ -104,6 +106,13 @@ class Brano:
         t = np.arange(n) / SR
         env = np.minimum(t / 0.004, 1) * np.minimum((0.05 - t) / 0.012, 1)
         self.mixa(np.sin(2 * np.pi * f * t) * env * vol, t0, pan)
+
+    def campana(self, f, t0, vol=0.12, pan=0.0, dur=1.6):
+        """Nota cristallina tipo glockenspiel/arpa: per gli stacchi leggeri."""
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        out = np.sin(2 * np.pi * f * t) + 0.35 * np.sin(2 * np.pi * f * 2.76 * t) * np.exp(-t * 9) + 0.2 * np.sin(4 * np.pi * f * t) * np.exp(-t * 5)
+        self.mixa(out * np.exp(-t * 3.2) * np.minimum(t / 0.003, 1) * vol, t0, pan)
 
     def basso(self, f, t0, dur, vol=0.16):
         n = int((dur + 0.1) * SR)
@@ -220,9 +229,46 @@ def tappeto():
     return b.master(picco=0.5, riverbero=0.45)  # più basso della sigla: è un sottofondo
 
 
+def stacco():
+    """Stacco di 3 secondi tra una notizia e l'altra: colpo, archi pulsanti, due note di tromba."""
+    b = Brano(3.0)
+    b.timpano(nota("Bb2"), 0.02, vol=0.5)
+    b.piatto(0.02, dur=1.2, vol=0.10)
+    for k, n in enumerate(("Bb2", "F3", "Bb3", "D4")):
+        b.archi(nota(n) * 2, 1.5, vol=0.04, pan=-0.5 + k * 0.3, t0=0.02, attacco=0.05)
+    for i in range(6):
+        b.staccato(nota("Bb2") * (4 if i % 2 == 0 else 8), 0.02 + i * OTTAVO, vol=0.10, pan=-0.2)
+        b.staccato(nota("F3") * 4, 0.02 + i * OTTAVO + OTTAVO / 2, vol=0.05, pan=0.3)
+    for s in range(12):
+        if SCHEMA_BIP[s % 8]:
+            b.bip(0.02 + s * OTTAVO / 2, vol=0.04)
+    for t0, d, n in ((0.02, 1.7, "F5"), (2 * OTTAVO, 1.7, "Bb5"), (4 * OTTAVO, 3.2, "D6")):
+        b.ottone(nota(n) / 2, d * OTTAVO, vol=0.17, pan=0.15, t0=t0 if t0 > 0.02 else 0.02)
+    b.timpano(nota("Bb2"), 6 * OTTAVO, vol=0.55)
+    for n, pan in (("Bb3", -0.2), ("D4", 0.0), ("F4", 0.2), ("Bb4", 0.3)):
+        b.ottone(nota(n), 0.9, vol=0.09, pan=pan, t0=6 * OTTAVO)
+    return b.master(picco=0.8, sfuma=0.7)
+
+
+def stacco_lungo():
+    """Stacco leggero di 5 secondi per l'inizio di una sezione: arpeggio cristallino su archi morbidi."""
+    b = Brano(5.0)
+    for acc, t0, d in ((("Eb3", "Bb3", "Eb4", "G4"), 0.0, 2.3), (("Bb2", "F3", "Bb3", "D4"), 2.3, 2.6)):
+        for k, n in enumerate(acc):
+            b.archi(nota(n) * 2, d - 0.3, vol=0.04, pan=-0.5 + k * 0.3, t0=t0, attacco=0.5, rilascio=0.8)
+    arpeggio = ["Eb5", "G5", "Bb5", "Eb6", "D6", "Bb5", "G5", "Bb5", "D5", "F5", "Bb5", "D6", "F6"]
+    for i, n in enumerate(arpeggio):
+        b.campana(nota(n), 0.15 + i * OTTAVO * 1.25, vol=0.11, pan=-0.3 + 0.6 * (i % 3) / 2)
+    b.campana(nota("Bb6"), 0.15 + 13 * OTTAVO * 1.25, vol=0.10, dur=1.3)
+    b.campana(nota("Bb4"), 0.15 + 13 * OTTAVO * 1.25, vol=0.10, dur=1.3)
+    return b.master(picco=0.55, riverbero=0.8, sfuma=1.0)
+
+
 if __name__ == "__main__":
     assets = Path(__file__).resolve().parent.parent / "assets"
     salva_mp3(sigla(), assets / "sigla.mp3")
+    salva_mp3(stacco(), assets / "stacco.mp3", kbps=128)
+    salva_mp3(stacco_lungo(), assets / "stacco-lungo.mp3", kbps=128)
     # il sottofondo è in WAV mono: l'MP3 lascerebbe un piccolo vuoto a ogni ripetizione
     import wave
     mono = tappeto().astype(np.int32).sum(axis=1) // 2

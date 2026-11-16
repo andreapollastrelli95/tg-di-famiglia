@@ -12,6 +12,19 @@ sul suo telefono.
 
 ---
 
+## Cosa c'è dentro
+
+**Scheda TG** (tasto ▶️ grande):
+
+1. sigla, poi il saluto *"Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
+2. **5 notizie nazionali**, separate da uno stacco sonoro di 3 secondi;
+3. stacco leggero di 5 secondi, la voce dice *"Notizie dalla Tuscia"* e legge **3 notizie da Viterbo e provincia**;
+4. stacco di 5 secondi, *"Notizie sportive"* e **2 notizie di sport**;
+5. **Accadde oggi**: una curiosità storica di circa 20 secondi, poi la chiusura;
+6. sotto: 10 podcast consigliati e le radio.
+
+**Scheda VARIE**: per la **Juventus** le 3 notizie più importanti, 2 podcast e Radio Bianconera; il **meteo di Viterbo** (domani e settimana, molto riassuntivo); **Stasera in TV** (prima serata e sport della sera in 30 secondi). Ogni parte ha il suo tasto ▶️ per farsela leggere.
+
 ## Come funziona
 
 ```
@@ -67,7 +80,7 @@ qualcuno la copiasse non potrebbe usarla altrove.
 ### Quote gratuite
 
 Il piano gratuito ha limiti al minuto e al giorno, in particolare per la voce (TTS).
-Un notiziario usa circa 1 chiamata di testo e 5 o 6 chiamate di voce al giorno.
+Un notiziario usa circa 1 chiamata di testo e 11 chiamate di voce al giorno (una per notizia più "Accadde oggi"); ogni ascolto nella scheda VARIE ne usa un'altra.
 Grazie alla cache, riascoltarlo è gratis. Se la quota della voce finisce, l'app usa
 la voce del telefono e lo segnala.
 
@@ -107,6 +120,8 @@ quel QR**: contiene la chiave. Il QR e il cartoncino generici (senza chiave) son
 | Cosa | Dove |
 |---|---|
 | **Feed delle notizie** | `config/fonti.json`: aggiungi o togli voci `{"fonte", "categoria": "generale" o "calcio", "url"}`. Se un feed non risponde viene saltato. `ore_massime` indica quanto possono essere vecchie le notizie. |
+| **Scaletta del TG** | `index.html`, `CONFIG.sezioni`: categorie, quante notizie per sezione e frase d'annuncio (es. "Notizie dalla Tuscia."). Le categorie devono esistere in `config/fonti.json` (`generale`, `tuscia`, `sport`). |
+| **Scheda VARIE** | `config/varie.json`: `squadre` (per aggiungerne una: nuovo `id`, feed con quella `categoria` in `fonti.json`, podcast con quel `gruppo` in `podcast.json`, stream della radio), `meteo` (località e coordinate) e `tv` (pagine della guida e canali). |
 | **Podcast** | `config/podcast.json`: `nome` (parte del titolo su Apple Podcasts), `autore` (parte del nome dell'editore) e `calcio`. Se la ricerca non lo trova, aggiungi `"feedUrl": "https://…"`. Vengono presi solo episodi con audio pubblico usciti negli ultimi `giorni_massimi` giorni. |
 | **Voce** | `index.html`, oggetto `CONFIG` in cima allo script: `voce` (es. `Kore`, `Aoede`, `Leda`, `Callirrhoe`, `Zephyr`) . Alla voce viene inviato solo il testo da leggere, senza istruzioni di tono, perché i modelli vocali a volte le leggono ad alta voce. Dopo una modifica conviene alzare `VERSIONE_CACHE` (es. `'v4'`) per rigenerare gli audio salvati. |
 | **Modelli Gemini** | `CONFIG.modelliTesto` e `CONFIG.modelliVoce`: vengono provati in ordine finché uno funziona; se un modello è sovraccarico o non risponde entro `CONFIG.attesaTesto` si passa al successivo, e l'app ricorda quello che ha funzionato. (Novembre 2026: `gemini-2.5-flash` non è più disponibile per le chiavi nuove e `gemini-flash-latest` è spesso sovraccarico, per questo ci sono `gemini-3.5-flash` e `gemini-3-flash-preview` come riserve.) |
@@ -132,7 +147,7 @@ ogni mese e riattiva il workflow di raccolta.
 
 ```bash
 pip install numpy lameenc pillow qrcode reportlab
-python tools/genera_sigla.py          # assets/sigla.mp3 e assets/tappeto.wav (musica originale sintetizzata)
+python tools/genera_sigla.py          # sigla, stacchi e sottofondo in assets/ (musica originale sintetizzata)
 python tools/genera_icone.py          # icons/*.png
 python tools/genera_qr_cartoncino.py --url https://andreapollastrelli95.github.io/tg-di-famiglia/
 ```
