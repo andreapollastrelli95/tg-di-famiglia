@@ -27,6 +27,8 @@
     {"nome": "LiveBianconera - Editoriale", "autore": "LiveBianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
     {"nome": "LiveBianconera - Il Caffè", "autore": "LiveBianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
     {"nome": "J-TACTICS", "autore": "J-TACTICS", "calcio": true, "gruppo": "juve", "giorni_massimi": 10},
-    {"nome": "Colpo Gobbo", "autore": "Radio Bianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 14}
+    {"nome": "Colpo Gobbo", "autore": "Radio Bianconera", "calcio": true, "gruppo": "juve", "giorni_massimi": 14},
+    {"nome": "Passione Inter", "autore": "Passione Inter", "calcio": true, "gruppo": "inter", "giorni_massimi": 14},
+    {"nome": "Inter Podcast", "autore": "Inter", "calcio": true, "gruppo": "inter", "giorni_massimi": 14}
   ]
 }

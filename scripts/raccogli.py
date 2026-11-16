@@ -304,6 +304,40 @@ def raccogli_tv(cfg: dict) -> dict | None:
         return None
 
 
+# ---------------------------------------------------------------- archivio della settimana
+def aggiorna_settimana(cfg: dict, notizie: list[dict], giorno: str, uscita: Path) -> None:
+    """Rassegna della domenica: conserva i titoli degli ultimi giorni in data/settimana.json.
+    Il repository non contiene dati, quindi si riparte dal file già pubblicato sul sito:
+    lo si scarica, si aggiunge la giornata di oggi e si ripubblica."""
+    archivio = {"giorni": {}}
+    sito = cfg.get("url_sito") or pagina_del_sito()
+    if sito:
+        try:
+            archivio = json.loads(scarica(sito.rstrip("/") + "/data/settimana.json", timeout=20))
+        except Exception as e:  # noqa: BLE001 - prima esecuzione o sito non raggiungibile
+            log(f"  - settimana: archivio precedente non disponibile ({e}), riparto da oggi")
+    giorni = archivio.get("giorni", {})
+    oggi = {}
+    for cat, quante in cfg.get("per_giorno", {}).items():
+        oggi[cat] = [{"t": n["titolo"], "s": n["sommario"][:140], "f": n["fonte"]}
+                     for n in notizie if n["categoria"] == cat][:quante]
+    giorni[giorno] = oggi
+    tenuti = sorted(giorni)[-cfg.get("giorni", 7):]
+    archivio = {"aggiornato": ORA.isoformat(timespec="seconds"), "giorni": {g: giorni[g] for g in tenuti}}
+    (uscita / "settimana.json").write_text(json.dumps(archivio, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"  settimana: {len(tenuti)} giorni in archivio ({', '.join(tenuti)})")
+
+
+def pagina_del_sito() -> str | None:
+    """Indirizzo di GitHub Pages ricavato dalle variabili di GitHub Actions (utente/repo)."""
+    import os
+    repo = os.environ.get("GITHUB_REPOSITORY")  # es. andreapollastrelli95/tg-di-famiglia
+    if not repo or "/" not in repo:
+        return None
+    utente, nome = repo.split("/", 1)
+    return f"https://{utente.lower()}.github.io/{nome}"
+
+
 def main():
     uscita = Path(sys.argv[1]) if len(sys.argv) > 1 else RADICE / "data"
     uscita.mkdir(parents=True, exist_ok=True)
@@ -314,16 +348,19 @@ def main():
     podcast = raccogli_podcast()
     log("Varie:")
     dati = {
-        "versione": 2,
+        "versione": 3,
         "generato": ORA.isoformat(timespec="seconds"),
         "giorno": ORA.astimezone(ROMA).date().isoformat(),
         "notizie": notizie,
         "podcast": podcast,
         "squadre": varie.get("squadre", []),
+        "radio_preferite": varie.get("radio_preferite", []),
         "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }
     (uscita / "grezzo.json").write_text(json.dumps(dati, ensure_ascii=False, indent=1), encoding="utf-8")
+    if varie.get("settimana"):
+        aggiorna_settimana(varie["settimana"], notizie, dati["giorno"], uscita)
     conta = {}
     for n in notizie:
         conta[n["categoria"]] = conta.get(n["categoria"], 0) + 1

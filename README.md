@@ -14,16 +14,29 @@ sul suo telefono.
 
 ## Cosa c'è dentro
 
-**Scheda TG** (tasto ▶️ grande):
+L'app **parte da sola all'apertura**: cerca notizie e podcast e fa partire l'audio. Se il telefono non
+lascia partire l'audio senza un tocco (succede su iPhone e nel browser normale), parte al primo tocco
+sullo schermo.
+
+**Scheda TG**
 
 1. sigla, poi il saluto *"Buongiorno famiglia, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
-2. **5 notizie nazionali**, separate da uno stacco sonoro di 3 secondi;
-3. stacco leggero di 5 secondi, la voce dice *"Notizie dalla Tuscia"* e legge **3 notizie da Viterbo e provincia**;
-4. stacco di 5 secondi, *"Notizie sportive"* e **2 notizie di sport**;
-5. **Accadde oggi**: una curiosità storica di circa 20 secondi, poi la chiusura;
-6. sotto: 10 podcast consigliati e le radio.
+2. suono di 5 secondi, la voce dice *"Titoli del TG di Famiglia"* e legge **i titoli** delle 10 notizie, con un suono di 3 secondi tra un titolo e l'altro;
+3. **5 notizie nazionali**, separate da uno stacco di 3 secondi;
+4. stacco leggero di 5 secondi, *"Notizie dalla Tuscia"* e **3 notizie da Viterbo e provincia**;
+5. stacco di 5 secondi, *"Notizie sportive"* e **2 notizie di sport**;
+6. **Accadde oggi** (curiosità storica di circa 20 secondi) e chiusura;
+7. finito il TG **parte da solo il primo podcast** consigliato. Sotto: i 10 podcast e le radio.
 
-**Scheda VARIE**: per la **Juventus** le 3 notizie più importanti, 2 podcast e Radio Bianconera; il **meteo di Viterbo** (domani e settimana, molto riassuntivo); **Stasera in TV** (prima serata e sport della sera in 30 secondi). Ogni parte ha il suo tasto ▶️ per farsela leggere.
+**Scheda CALCIO**: **Juventus** (3 notizie, 2 podcast, Radio Bianconera), **Inter** (3 notizie e podcast),
+**Serie A, Champions e calciomercato** (5 notizie, 2 podcast, Radio Sportiva) e **Chiedi all'AI sul calcio**:
+si scrive una domanda e Gemini risponde usando le notizie di calcio raccolte in giornata (la risposta si
+può anche ascoltare).
+
+**Scheda VARIE**: **meteo di Viterbo** (domani e settimana), **Stasera in TV** (prima serata e sport in
+30 secondi), **Radio preferite** (5 radio nazionali già pronte, più la ricerca per aggiungerne altre: restano
+salvate sul telefono) e **Rassegna stampa della domenica**: a scelta le notizie della settimana in 5 minuti,
+la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive principali.
 
 ## Come funziona
 
@@ -46,6 +59,8 @@ sul suo telefono.
   dell'utente. Le notizie compaiono man mano che Gemini le scrive; la voce viene
   generata a blocchi di 2 notizie e il primo blocco parte appena è pronto, mentre la
   sigla suona e gli altri si preparano.
+* **Rassegna della domenica**: il repository non conserva dati, quindi ogni mattina la raccolta scarica
+  `data/settimana.json` già pubblicato sul sito, aggiunge i titoli del giorno e lo ripubblica (ultimi 7 giorni).
 * **Cache del giorno**: testo e audio restano nel telefono (IndexedDB). Riascoltare lo
   stesso giorno è immediato e non consuma quota. Il giorno dopo si rigenera tutto.
 * **Riserve**: se la voce di Gemini non è disponibile (quota esaurita) l'app legge con
@@ -80,7 +95,7 @@ qualcuno la copiasse non potrebbe usarla altrove.
 ### Quote gratuite
 
 Il piano gratuito ha limiti al minuto e al giorno, in particolare per la voce (TTS).
-Un notiziario usa circa 1 chiamata di testo e 11 chiamate di voce al giorno (una per notizia più "Accadde oggi"); ogni ascolto nella scheda VARIE ne usa un'altra.
+Un notiziario usa circa 1 chiamata di testo e 12 chiamate di voce al giorno (una per notizia, una per "Accadde oggi" e una sola per tutti i titoli di testa, che l'app poi divide sulle pause). Ogni ascolto nelle schede CALCIO e VARIE ne usa altre: una per il meteo o la TV, 3-6 per una rassegna. La ricerca su Google non è inclusa nella quota gratuita, quindi "Chiedi all'AI" risponde con le notizie del giorno e le conoscenze del modello.
 Grazie alla cache, riascoltarlo è gratis. Se la quota della voce finisce, l'app usa
 la voce del telefono e lo segnala.
 
@@ -121,7 +136,8 @@ quel QR**: contiene la chiave. Il QR e il cartoncino generici (senza chiave) son
 |---|---|
 | **Feed delle notizie** | `config/fonti.json`: aggiungi o togli voci `{"fonte", "categoria": "generale" o "calcio", "url"}`. Se un feed non risponde viene saltato. `ore_massime` indica quanto possono essere vecchie le notizie. |
 | **Scaletta del TG** | `index.html`, `CONFIG.sezioni`: categorie, quante notizie per sezione e frase d'annuncio (es. "Notizie dalla Tuscia."). Le categorie devono esistere in `config/fonti.json` (`generale`, `tuscia`, `sport`). |
-| **Scheda VARIE** | `config/varie.json`: `squadre` (per aggiungerne una: nuovo `id`, feed con quella `categoria` in `fonti.json`, podcast con quel `gruppo` in `podcast.json`, stream della radio), `meteo` (località e coordinate) e `tv` (pagine della guida e canali). |
+| **Schede CALCIO e VARIE** | `config/varie.json`: `squadre` = sezioni della scheda CALCIO (per aggiungerne una: nuovo `id`, feed con quella `categoria` in `fonti.json`, podcast con quel `gruppo` in `podcast.json`, eventuale stream della radio), `meteo` (località e coordinate), `tv` (pagine della guida e canali), `radio_preferite` (quelle proposte la prima volta) e `settimana` (quanti titoli al giorno conservare per la rassegna). |
+| **Avvio automatico e podcast a fine TG** | `index.html`, `CONFIG.avvioAutomatico` e `CONFIG.podcastAFineTG` (`true`/`false`). |
 | **Podcast** | `config/podcast.json`: `nome` (parte del titolo su Apple Podcasts), `autore` (parte del nome dell'editore) e `calcio`. Se la ricerca non lo trova, aggiungi `"feedUrl": "https://…"`. Vengono presi solo episodi con audio pubblico usciti negli ultimi `giorni_massimi` giorni. |
 | **Voce** | `index.html`, oggetto `CONFIG` in cima allo script: `voce` (es. `Kore`, `Aoede`, `Leda`, `Callirrhoe`, `Zephyr`) . Alla voce viene inviato solo il testo da leggere, senza istruzioni di tono, perché i modelli vocali a volte le leggono ad alta voce. Dopo una modifica conviene alzare `VERSIONE_CACHE` (es. `'v4'`) per rigenerare gli audio salvati. |
 | **Modelli Gemini** | `CONFIG.modelliTesto` e `CONFIG.modelliVoce`: vengono provati in ordine finché uno funziona; se un modello è sovraccarico o non risponde entro `CONFIG.attesaTesto` si passa al successivo, e l'app ricorda quello che ha funzionato. (Novembre 2026: `gemini-2.5-flash` non è più disponibile per le chiavi nuove e `gemini-flash-latest` è spesso sovraccarico, per questo ci sono `gemini-3.5-flash` e `gemini-3-flash-preview` come riserve.) |
