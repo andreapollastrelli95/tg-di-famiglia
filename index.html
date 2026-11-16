@@ -171,6 +171,10 @@ dialog h2{margin-top:0}
     <div class="scheda" style="text-align:center">
       <div class="radio-scelte">
         <button class="btn rosso" id="radioCasuale" type="button">🎵 Musica casuale</button>
+        <button class="btn rosso" id="radioClassica" type="button">🎻 Radio musica classica</button>
+        <button class="btn rosso" id="radioJazz" type="button">🎷 Radio musica jazz</button>
+        <button class="btn rosso" id="radioCountry" type="button">🤠 Radio musica country</button>
+        <button class="btn rosso" id="radioViaggio" type="button">🚗 Musica da viaggio</button>
         <button class="btn rosso" id="radioSport" type="button">⚽ Radio sportive casuali</button>
         <button class="btn rosso" id="radioAttualita" type="button">🗞️ Radio attualità casuali</button>
         <button class="btn" id="radioCambia" type="button" disabled>🔀 Cambia</button>
@@ -229,7 +233,7 @@ const CONFIG = {
   notizieCalcio: 2,
   notiziePerBlocco: 2,
   podcast: 10,
-  versione: '1.3.0',
+  versione: '1.4.0',
 };
 const VERSIONE_CACHE = 'v3'; // cambiarla invalida la cache audio/testo
 
@@ -1072,7 +1076,7 @@ async function caricaStazioni() {
   }
   throw new Error('nessuna radio');
 }
-/* Radio sportive e di attualità: emittenti scelte, stream HTTPS verificati.
+/* Radio per genere, sportive e di attualità: emittenti scelte, stream HTTPS verificati.
    hls = solo dove il browser lo legge da sé (iPhone, Android); ogg = non su iPhone. */
 const RADIO_SCELTE = {
   sport: [
@@ -1082,6 +1086,38 @@ const RADIO_SCELTE = {
     { nome: 'Radio Manà Manà Sport', url: 'https://stream10.xdevel.com/audio2s975363-2142/stream/icecast.audio' },
     { nome: 'Radio Marte', url: 'https://stream1.xdevel.com/audio0s975753-313/stream/icecast.audio' },
     { nome: 'Retesport', url: 'https://icecast.ithost.it/retesport.ogg', tipo: 'ogg' },
+  ],
+  classica: [
+    { nome: 'Rai Radio 5 Classica', url: 'https://icestreaming.rai.it/5.mp3' },
+    { nome: 'Radio Classica', url: 'https://stream10.xdevel.com/audio0s978096-2470/stream/icecast.audio' },
+    { nome: 'Radio Swiss Classic', url: 'https://stream.srg-ssr.ch/m/rsc_it/mp3_128' },
+    { nome: 'Venice Classic Radio', url: 'https://uk2.streamingpulse.com/ssl/vcr1' },
+    { nome: 'Easy Network Classic', url: 'https://sphera.fluidstream.eu/easy_classica.mp3' },
+    { nome: 'Klassik Radio', url: 'https://live.streams.klassikradio.de/klassikradio-deutschland/stream/mp3' },
+    { nome: '181.FM Classical Guitar', url: 'https://listen.181fm.com/181-classicalguitar_128k.mp3' },
+  ],
+  jazz: [
+    { nome: 'Radio Swiss Jazz', url: 'https://stream.srg-ssr.ch/m/rsj/mp3_128' },
+    { nome: 'Musica Jazz Radio', url: 'https://ice16.fluidstream.net/mjr.mp3' },
+    { nome: 'Easy Network Jazz & Soul', url: 'https://sphera.fluidstream.eu/easy_jazz.mp3' },
+    { nome: 'Jazz Radio – Jazz & Classique', url: 'https://jazz-wr17.ice.infomaniak.ch/jazz-wr17-128.mp3' },
+    { nome: 'SmoothJazz.com', url: 'https://smoothjazz.cdnstream1.com/2585_128.mp3' },
+    { nome: 'Skyline Jazz', url: 'https://rblive.it:8030/radio.mp3' },
+  ],
+  country: [
+    { nome: 'Radio Country Live', url: 'https://streaming.radiostreamlive.com/radiocountrylive_devices' },
+    { nome: '181.FM Real Country', url: 'https://listen.181fm.com/181-realcountry_128k.mp3' },
+    { nome: "America's Country", url: 'https://ais-sa2.cdnstream1.com/1976_128.mp3' },
+    { nome: '0N Country', url: 'https://0n-country.radionetz.de/0n-country.mp3' },
+  ],
+  viaggio: [
+    { nome: 'Rai Isoradio', url: 'https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S3822289/9T4F68Q3TT4m/icecast' },
+    { nome: 'Radio 105', url: 'https://icecast.unitedradio.it/Radio105.mp3' },
+    { nome: 'Radio Monte Carlo', url: 'https://icy.unitedradio.it/rmcweb005' },
+    { nome: 'Radio Subasio', url: 'https://icy.unitedradio.it/Subasio.mp3' },
+    { nome: 'Virgin Radio', url: 'https://icy.unitedradio.it/Virgin.mp3' },
+    { nome: 'Radio Kiss Kiss Disco Party', url: 'https://kk.fluidstream.eu/kk_discoparty.mp3' },
+    { nome: 'Radio Italia Sanremo', url: 'https://stream4.xdevel.com/audio2s976608-1381/stream/icecast.audio' },
   ],
   attualita: [
     { nome: 'Rai Radio 1', url: 'https://icestreaming.rai.it/1.mp3' },
@@ -1093,7 +1129,7 @@ const RADIO_SCELTE = {
     { nome: 'RTL 102.5 News', url: 'https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S38122967/aJMOUBAFc2Bc/playlist_audio.m3u8', tipo: 'hls' },
   ],
 };
-const ETICHETTE_RADIO = { musica: 'Radio musicale', sport: 'Radio sportiva', attualita: 'Radio di attualità' };
+const ETICHETTE_RADIO = { musica: 'Radio musicale', classica: 'Musica classica', jazz: 'Musica jazz', country: 'Musica country', viaggio: 'Musica da viaggio', sport: 'Radio sportiva', attualita: 'Radio di attualità' };
 const radioGuaste = new Set(); // stream che non partono in questa sessione: non riproporli
 function leggibile(s) {
   if (s.tipo === 'hls') return !!audio.canPlayType('application/vnd.apple.mpegurl');
@@ -1265,6 +1301,10 @@ $('tastoPlay').onclick = () => { if (P.modo === 'tg') pausaOContinua(); else avv
 $('avanti').onclick = () => { if (P.modo === 'tg') vaiATraccia(P.traccia + 1); };
 $('indietro').onclick = () => { if (P.modo === 'tg') vaiATraccia(Math.max(1, P.traccia - 1)); };
 $('radioCasuale').onclick = () => radioCasuale(false, 'musica');
+$('radioClassica').onclick = () => radioCasuale(false, 'classica');
+$('radioJazz').onclick = () => radioCasuale(false, 'jazz');
+$('radioCountry').onclick = () => radioCasuale(false, 'country');
+$('radioViaggio').onclick = () => radioCasuale(false, 'viaggio');
 $('radioSport').onclick = () => radioCasuale(false, 'sport');
 $('radioAttualita').onclick = () => radioCasuale(false, 'attualita');
 $('radioCambia').onclick = () => radioCasuale(true);
