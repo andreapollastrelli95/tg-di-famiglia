@@ -73,8 +73,11 @@ h2{font-size:24px;margin:28px 0 12px;color:var(--blu)}
 .badge.calcio{background:#d9f2e3;color:#0f6b3a}
 .badge.tuscia{background:#fde9c8;color:#6b3f00}
 .schede{display:flex;gap:10px;margin:0 0 16px}
-.schede{gap:8px}
-.schede button{flex:1;min-height:62px;border-radius:14px;border:2px solid var(--blu);background:var(--carta);color:var(--blu);font-weight:800;font-size:19px;padding:4px 2px}
+.schede{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.menu-sezioni{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.menu-sezioni .btn{width:100%;min-height:66px;font-size:21px;justify-content:flex-start;text-align:left}
+.menu-sezioni .btn.attiva{background:var(--blu);color:var(--carta)}
+.schede button{flex:1;min-height:62px;border-radius:14px;border:2px solid var(--blu);background:var(--carta);color:var(--blu);font-weight:800;font-size:16px;padding:4px 2px;white-space:nowrap}
 .riga-radio{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
 .riga-radio .btn{flex:1;justify-content:flex-start;text-align:left;min-width:0}
 .riga-radio .btn.stretto{flex:none;width:60px;justify-content:center;padding:0}
@@ -170,9 +173,13 @@ dialog h2{margin-top:0}
     <div id="avvisi"></div>
     <div class="schede">
       <button id="schedaTG" class="attiva" type="button">📺 TG</button>
+      <button id="schedaPodcast" type="button">🎧 PODCAST</button>
+      <button id="schedaRadio" type="button">📻 RADIO</button>
       <button id="schedaCalcio" type="button">⚽ CALCIO</button>
       <button id="schedaVarie" type="button">🧩 VARIE</button>
     </div>
+
+    <!-- Scheda TG: solo il notiziario -->
     <div id="paginaTG">
     <div class="scheda player">
       <button class="tasto-play" id="tastoPlay" aria-label="Ascolta il notiziario">
@@ -188,44 +195,31 @@ dialog h2{margin-top:0}
 
     <h2>📰 Le notizie di oggi</h2>
     <div id="listaNotizie"><p class="segnaposto scheda">Le notizie compariranno qui appena pronte.</p></div>
-    <div id="accaddeOggi"></div>
-
-    <h2>🎧 Podcast consigliati</h2>
-    <div id="listaPodcast"><p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p></div>
-
-    <h2>🎵 Radio</h2>
-    <div class="scheda" style="text-align:center">
-      <div class="radio-scelte">
-        <button class="btn rosso" id="radioCasuale" type="button">🎵 Musica casuale</button>
-        <button class="btn rosso" id="radioClassica" type="button">🎻 Radio musica classica</button>
-        <button class="btn rosso" id="radioJazz" type="button">🎷 Radio musica jazz</button>
-        <button class="btn rosso" id="radioCountry" type="button">🤠 Radio musica country</button>
-        <button class="btn rosso" id="radioViaggio" type="button">🚗 Musica da viaggio</button>
-        <button class="btn rosso" id="radioSport" type="button">⚽ Radio sportive casuali</button>
-        <button class="btn rosso" id="radioAttualita" type="button">🗞️ Radio attualità casuali</button>
-        <button class="btn" id="radioCambia" type="button" disabled>🔀 Cambia</button>
-      </div>
-      <p class="radio-nome" id="radioNome"></p>
-    </div>
     </div><!-- /paginaTG -->
 
-    <!-- Scheda CALCIO: Juventus, Inter, calcio generale, domande all'AI -->
-    <div id="paginaCalcio" class="nascosto">
-      <div id="contenutoCalcio"><p class="segnaposto scheda">Le notizie di calcio compariranno qui appena pronte.</p></div>
-      <h2>🤖 Chiedi all'AI sul calcio</h2>
-      <div class="scheda">
-        <label for="domandaCalcio"><b>Scrivi la tua domanda</b></label>
-        <textarea id="domandaCalcio" class="campo" rows="3" placeholder="Es. Chi sono gli infortunati della Juve? Quando gioca l'Inter?"></textarea>
-        <div class="riga-btn"><button class="btn pieno" id="chiediCalcio" type="button">Chiedi</button></div>
-        <p id="rispostaCalcio" class="risposta" role="status" aria-live="polite"></p>
-        <button class="btn rosso nascosto" id="ascoltaRisposta" type="button">▶️ Ascolta la risposta</button>
-      </div>
+    <!-- Scheda PODCAST -->
+    <div id="paginaPodcast" class="nascosto">
+      <h2>🎧 Podcast consigliati</h2>
+      <div id="listaPodcast"><p class="segnaposto scheda">Sto cercando i podcast di oggi…</p></div>
     </div>
 
-    <!-- Scheda VARIE: meteo, stasera in TV, radio preferite, rassegna della domenica -->
-    <div id="paginaVarie" class="nascosto">
-      <div id="contenutoVarie"><p class="segnaposto scheda">Meteo e programmi TV compariranno qui appena pronti.</p></div>
-      <h2>📻 Radio preferite</h2>
+    <!-- Scheda RADIO: radio per genere e radio preferite -->
+    <div id="paginaRadio" class="nascosto">
+      <h2>🎵 Radio</h2>
+      <div class="scheda" style="text-align:center">
+        <div class="radio-scelte">
+          <button class="btn rosso" id="radioCasuale" type="button">🎵 Musica casuale</button>
+          <button class="btn rosso" id="radioClassica" type="button">🎻 Radio musica classica</button>
+          <button class="btn rosso" id="radioJazz" type="button">🎷 Radio musica jazz</button>
+          <button class="btn rosso" id="radioCountry" type="button">🤠 Radio musica country</button>
+          <button class="btn rosso" id="radioViaggio" type="button">🚗 Musica da viaggio</button>
+          <button class="btn rosso" id="radioSport" type="button">⚽ Radio sportive casuali</button>
+          <button class="btn rosso" id="radioAttualita" type="button">🗞️ Radio attualità casuali</button>
+          <button class="btn" id="radioCambia" type="button" disabled>🔀 Cambia</button>
+        </div>
+        <p class="radio-nome" id="radioNome"></p>
+      </div>
+      <h2>⭐ Radio preferite</h2>
       <div class="scheda">
         <div id="radioPreferite"></div>
         <label for="cercaRadio"><b>Cerca una radio da aggiungere</b></label>
@@ -234,20 +228,48 @@ dialog h2{margin-top:0}
         <p class="piccolo" id="statoRadio"></p>
         <div id="risultatiRadio"></div>
       </div>
-      <h2>🗞️ Rassegna stampa della domenica</h2>
-      <div class="scheda">
-        <p style="margin-top:0">Il riassunto della settimana, da ascoltare. Scegli cosa vuoi sentire:</p>
-        <div class="radio-scelte">
-          <button class="btn rosso" data-rassegna="generale" type="button">🗞️ Notizie della settimana (5 minuti)</button>
-          <button class="btn rosso" data-rassegna="tuscia" type="button">🏛️ La settimana nella Tuscia (5 minuti)</button>
-          <button class="btn rosso" data-rassegna="sport" type="button">⚽ Le 5 notizie sportive della settimana</button>
+    </div>
+
+    <!-- Scheda CALCIO: quattro tasti che aprono Juve, Inter, calcio generale e le domande all'AI -->
+    <div id="paginaCalcio" class="nascosto">
+      <div class="menu-sezioni" id="menuCalcio"></div>
+      <div id="contenutoCalcio"></div>
+      <section data-sezione="ai" class="nascosto">
+        <h2>🤖 Chiedi all'AI sul calcio</h2>
+        <div class="scheda">
+          <label for="domandaCalcio"><b>Scrivi la tua domanda</b></label>
+          <textarea id="domandaCalcio" class="campo" rows="3" placeholder="Es. Chi sono gli infortunati della Juve? Quando gioca l'Inter?"></textarea>
+          <div class="riga-btn"><button class="btn pieno" id="chiediCalcio" type="button">Chiedi</button></div>
+          <p id="rispostaCalcio" class="risposta" role="status" aria-live="polite"></p>
+          <button class="btn rosso nascosto" id="ascoltaRisposta" type="button">▶️ Ascolta la risposta</button>
         </div>
-        <p class="piccolo" id="rassegnaInfo" role="status" aria-live="polite"></p>
-        <div id="rassegnaTesto"></div>
+      </section>
+    </div>
+
+    <!-- Scheda VARIE: tasti che aprono meteo, stasera in TV, accadde oggi e rassegna della domenica -->
+    <div id="paginaVarie" class="nascosto">
+      <div class="menu-sezioni" id="menuVarie">
+        <button class="btn" data-apri="meteo" type="button">🌦️ Meteo a Viterbo</button>
+        <button class="btn" data-apri="tv" type="button">📺 Stasera in TV</button>
+        <button class="btn" data-apri="accadde" type="button">📜 Accadde oggi</button>
+        <button class="btn" data-apri="rassegna" type="button">🗞️ Rassegna stampa della domenica</button>
       </div>
+      <div id="contenutoVarie"></div>
+      <section data-sezione="rassegna" class="nascosto">
+        <h2>🗞️ Rassegna stampa della domenica</h2>
+        <div class="scheda">
+          <p style="margin-top:0">Il riassunto della settimana, da ascoltare. Scegli cosa vuoi sentire:</p>
+          <div class="radio-scelte">
+            <button class="btn rosso" data-rassegna="generale" type="button">🗞️ Notizie della settimana (5 minuti)</button>
+            <button class="btn rosso" data-rassegna="tuscia" type="button">🏛️ La settimana nella Tuscia (5 minuti)</button>
+            <button class="btn rosso" data-rassegna="sport" type="button">⚽ Le 5 notizie sportive della settimana</button>
+          </div>
+          <p class="piccolo" id="rassegnaInfo" role="status" aria-live="polite"></p>
+          <div id="rassegnaTesto"></div>
+        </div>
+      </section>
     </div>
   </section>
-</main>  </section>
 </main>
 
 <!-- Mini player per podcast e radio -->
@@ -311,7 +333,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '1.7.0',
+  versione: '1.8.0',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -872,6 +894,7 @@ function prepara(forza = false) {
     }
     Ed.grezzo = g;
     renderRadioPreferite();
+    Ed.podcast = scegliPodcast([]); renderPodcast(); // subito l'elenco; le spiegazioni di Gemini arrivano dopo
     mostraAvvisoData(g);
     Ed.saluto = salutoAudio();
     const salvata = forza ? null : await db.get(chiaveEdizione(g));
@@ -1277,7 +1300,6 @@ async function vaiA(p) {
   }
   if (p.t === 'titolo') evidenzia(p.k > 0 && Ed.notizie[p.k - 1] ? [p.k - 1] : null);
   else evidenzia(t.notizie?.length ? t.notizie : null);
-  if (t.finale) $('accaddeOggi').scrollIntoView({ behavior: 'smooth', block: 'center' });
   metadati('TG di Famiglia', etichetta);
   if (t.blob) {
     stato(`🔊 ${etichetta}`);
@@ -1344,12 +1366,11 @@ function fineTG(daSolo = false) {
   evidenzia(null);
   $('comandiTG').classList.add('nascosto');
   aggiornaTastoPlay();
-  mostraScheda('tg', false);
-  $('listaPodcast').scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (daSolo && CONFIG.podcastAFineTG && Ed.podcast?.length) {
     suonaPodcast(Ed.podcast[0]); // finito il TG parte da solo il primo podcast
     stato('Fine del notiziario. Ora il primo podcast consigliato.');
-  } else stato('Fine del notiziario. Qui sotto trovi i podcast e la radio.');
+    mostraScheda('podcast');
+  } else stato('Fine del notiziario. Nelle altre schede trovi podcast, radio, calcio e varie.');
 }
 
 audio.addEventListener('ended', () => {
@@ -1819,8 +1840,6 @@ function renderNotizie() {
       <div class="fonte">Fonte: ${esc(n.fonte)}</div>
       ${n.link ? `<a class="btn" href="${esc(linkSicuro(n.link))}" target="_blank" rel="noopener">Approfondisci ↗</a>` : ''}
     </article>`).join('') + (Ed.finito ? '' : '<p class="segnaposto">Altre notizie in arrivo…</p>');
-  $('accaddeOggi').innerHTML = Ed.finito && Ed.accadde
-    ? `<article class="scheda accadde"><h3>📜 Accadde oggi</h3><p style="margin:0">${esc(Ed.accadde)}</p></article>` : '';
   if (evidenziate) evidenzia(evidenziate, false);
 }
 function badge(categoria) {
@@ -1848,42 +1867,65 @@ function schedaPodcast(p, attributo) {
       </div>
     </article>`;
 }
+/* Schede CALCIO e VARIE: in alto i tasti-intestazione, sotto si apre solo la sezione scelta. */
+const sezioneAperta = { calcio: null, varie: null };
+function apriSezione(scheda, id, scorri = true) {
+  sezioneAperta[scheda] = id;
+  const pagina = $(scheda === 'calcio' ? 'paginaCalcio' : 'paginaVarie');
+  let scelta = null;
+  pagina.querySelectorAll('[data-sezione]').forEach((el) => {
+    const questa = el.dataset.sezione === id;
+    el.classList.toggle('nascosto', !questa);
+    if (questa) scelta = el;
+  });
+  pagina.querySelectorAll('[data-apri]').forEach((b) => b.classList.toggle('attiva', b.dataset.apri === id));
+  if (scelta && scorri) scelta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function renderVarie() {
   const v = Ed.varie, g = Ed.grezzo;
   renderRadioPreferite();
+  const tastoAI = '<button class="btn" data-apri="ai" type="button">🤖 Chiedi all\'AI sul calcio</button>';
+  const attesa = (testo) => `<p class="segnaposto scheda">${testo}</p>`;
   if (!v || !g) {
-    $('contenutoCalcio').innerHTML = '<p class="segnaposto scheda">Le notizie di calcio compariranno qui appena pronte.</p>';
-    $('contenutoVarie').innerHTML = '<p class="segnaposto scheda">Meteo e programmi TV compariranno qui appena pronti.</p>';
+    $('menuCalcio').innerHTML = tastoAI;
+    $('contenutoCalcio').innerHTML = attesa('Le notizie di calcio compariranno qui appena pronte.');
+    $('contenutoVarie').innerHTML = ['meteo', 'tv', 'accadde'].map((id) => `<section data-sezione="${id}" class="nascosto">${attesa('Arriva tra poco, appena le notizie sono pronte.')}</section>`).join('');
+    apriSezione('calcio', sezioneAperta.calcio, false); apriSezione('varie', sezioneAperta.varie, false);
     return;
   }
-  // ---- scheda CALCIO: una sezione per squadra più il calcio in generale
-  let h = '';
-  v.squadre.forEach((q, i) => {
-    h += `<h2>${esc(q.emoji || '⚽')} ${esc(q.nome)}</h2>`;
+  // ---- scheda CALCIO: un tasto e una sezione per squadra, più il calcio in generale e le domande all'AI
+  $('menuCalcio').innerHTML = v.squadre.map((q) => `<button class="btn" data-apri="${esc(q.id)}" type="button">${esc(q.emoji || '⚽')} ${esc(q.tasto || q.nome)}</button>`).join('') + tastoAI;
+  $('contenutoCalcio').innerHTML = v.squadre.map((q, i) => {
+    let h = `<section data-sezione="${esc(q.id)}" class="nascosto"><h2>${esc(q.emoji || '⚽')} ${esc(q.nome)}</h2>`;
     if (q.notizie.length) {
       h += `<p><button class="btn rosso" data-ascolta="squadra-${i}" type="button">▶️ Ascolta le notizie</button></p>` + q.notizie.map(schedaNotizia).join('');
     } else h += '<p class="scheda">Oggi non ci sono notizie nuove.</p>';
     h += q.podcast.map((p, j) => schedaPodcast(p, `data-podcast-squadra="${i}:${j}"`)).join('');
     if (q.radio?.url) h += `<div class="scheda" style="text-align:center"><button class="btn rosso" data-radio-squadra="${i}" type="button">📻 Ascolta ${esc(q.radio.nome)}</button></div>`;
-  });
-  $('contenutoCalcio').innerHTML = h || '<p class="scheda">Oggi non ci sono notizie di calcio.</p>';
-  // ---- scheda VARIE: meteo e stasera in TV
+    return h + '</section>';
+  }).join('');
+  // ---- scheda VARIE: meteo, stasera in TV, accadde oggi (la rassegna è fissa nella pagina)
   const giorni = meteoDaDomani(g.meteo).slice(0, 7);
-  h = `<h2>🌦️ Meteo a ${esc(g.meteo?.localita || 'Viterbo')}</h2>`;
+  let h = `<section data-sezione="meteo" class="nascosto"><h2>🌦️ Meteo a ${esc(g.meteo?.localita || 'Viterbo')}</h2>`;
   h += v.meteo ? `<div class="scheda"><p>${esc(v.meteo)}</p>
       <button class="btn rosso" data-ascolta="meteo" type="button">▶️ Ascolta il meteo</button>
       <table class="meteo-giorni"><tbody>${giorni.map((d) => `<tr><td>${esc(giornoNome(d.data))}</td><td>${meteoCodice(d.codice).emoji} ${esc(meteoCodice(d.codice).testo)}</td><td style="white-space:nowrap">${d.tmin}° / ${d.tmax}°</td><td style="white-space:nowrap">💧 ${d.pioggia_prob ?? '–'}%</td></tr>`).join('')}</tbody></table>
     </div>` : '<p class="scheda">Le previsioni non sono disponibili oggi.</p>';
-  h += '<h2>📺 Stasera in TV</h2>';
+  h += '</section><section data-sezione="tv" class="nascosto"><h2>📺 Stasera in TV</h2>';
   h += v.tv ? `<div class="scheda"><p>${esc(v.tv)}</p>
       <button class="btn rosso" data-ascolta="tv" type="button">▶️ Ascolta</button>
       <ul class="tv-lista">${(g.tv?.serata || []).map((t) => `<li><b>${esc(t.canale)}</b> · ${esc(t.ora)} · ${esc(t.titolo)}</li>`).join('')}${(g.tv?.sport || []).map((t) => `<li>⚽ <b>${esc(t.canale)}</b> · ${esc(t.ora)} · ${esc(t.titolo)}</li>`).join('')}</ul>
     </div>` : '<p class="scheda">La guida TV non è disponibile oggi.</p>';
-  $('contenutoVarie').innerHTML = h;
+  h += '</section><section data-sezione="accadde" class="nascosto"><h2>📜 Accadde oggi</h2>';
+  h += Ed.accadde ? `<article class="scheda accadde"><p style="margin-top:0">${esc(Ed.accadde)}</p>
+      <button class="btn rosso" data-ascolta="accadde" type="button">▶️ Ascolta</button></article>` : '<p class="scheda">Oggi la curiosità storica non è disponibile.</p>';
+  $('contenutoVarie').innerHTML = h + '</section>';
+  apriSezione('calcio', sezioneAperta.calcio, false); apriSezione('varie', sezioneAperta.varie, false);
 }
 function toccoSchede(e) {
   const v = Ed.varie;
   let b;
+  if ((b = e.target.closest('[data-apri]'))) return apriSezione(b.closest('#paginaCalcio') ? 'calcio' : 'varie', b.dataset.apri);
   if ((b = e.target.closest('[data-rassegna]'))) return rassegna(b.dataset.rassegna);
   if ((b = e.target.closest('[data-preferita]'))) return suonaRadioScelta(radioPreferite()[+b.dataset.preferita]);
   if ((b = e.target.closest('[data-togli]'))) { const l = radioPreferite(); l.splice(+b.dataset.togli, 1); return salvaRadioPreferite(l); }
@@ -1899,6 +1941,7 @@ function toccoSchede(e) {
     const id = b.dataset.ascolta;
     if (id === 'meteo') ascoltaVaria('meteo', 'Meteo a ' + (Ed.grezzo.meteo?.localita || 'Viterbo'), v.meteo);
     else if (id === 'tv') ascoltaVaria('tv', 'Stasera in TV', 'Stasera in TV.\n\n' + v.tv);
+    else if (id === 'accadde') ascoltaVaria('accadde', 'Accadde oggi', 'Accadde oggi.\n\n' + Ed.accadde);
     else {
       const q = v.squadre[+id.split('-')[1]];
       ascoltaVaria('squadra-' + q.id, 'Notizie ' + q.nome, `Le notizie: ${q.nome}.\n\n` + q.notizie.map((n) => `${n.titolo}.\n\n${n.testo}`).join('\n\n'));
@@ -1913,20 +1956,19 @@ function toccoSchede(e) {
 }
 $('paginaCalcio').addEventListener('click', toccoSchede);
 $('paginaVarie').addEventListener('click', toccoSchede);
+$('paginaRadio').addEventListener('click', toccoSchede);
 $('chiediCalcio').onclick = chiediCalcio;
 $('ascoltaRisposta').onclick = () => ascoltaVaria('ai-' + codice(ultimaRisposta), 'Risposta sul calcio', ultimaRisposta);
 $('cercaRadioBtn').onclick = cercaRadio;
 $('cercaRadio').addEventListener('keydown', (e) => { if (e.key === 'Enter') cercaRadio(); });
 function mostraScheda(quale, inCima = true) {
-  for (const [id, pagina, tasto] of [['tg', 'paginaTG', 'schedaTG'], ['calcio', 'paginaCalcio', 'schedaCalcio'], ['varie', 'paginaVarie', 'schedaVarie']]) {
-    $(pagina).classList.toggle('nascosto', quale !== id);
-    $(tasto).classList.toggle('attiva', quale === id);
+  for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie']) {
+    $('pagina' + id).classList.toggle('nascosto', quale !== id.toLowerCase());
+    $('scheda' + id).classList.toggle('attiva', quale === id.toLowerCase());
   }
   if (inCima) window.scrollTo({ top: 0 });
 }
-$('schedaTG').onclick = () => mostraScheda('tg');
-$('schedaCalcio').onclick = () => mostraScheda('calcio');
-$('schedaVarie').onclick = () => mostraScheda('varie');
+for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie']) $('scheda' + id).onclick = () => mostraScheda(id.toLowerCase());
 function renderPodcast() {
   const el = $('listaPodcast');
   if (!Ed.podcast) { el.innerHTML = '<p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p>'; return; }

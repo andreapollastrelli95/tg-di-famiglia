@@ -18,7 +18,7 @@ L'app **parte da sola all'apertura**: cerca notizie e podcast e fa partire l'aud
 lascia partire l'audio senza un tocco (succede su iPhone e nel browser normale), parte al primo tocco
 sullo schermo.
 
-**Scheda TG**
+**Scheda TG** (solo il notiziario)
 
 1. sigla, poi il saluto *"Buongiorno famiglia, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
 2. suono di 5 secondi, la voce dice *"Titoli del TG di Famiglia"* e legge **i titoli** delle 10 notizie, con un suono di 3 secondi tra un titolo e l'altro;
@@ -26,17 +26,22 @@ sullo schermo.
 4. stacco leggero di 5 secondi, *"Notizie dalla Tuscia"* e **3 notizie da Viterbo e provincia**;
 5. stacco di 5 secondi, *"Notizie sportive"* e **2 notizie di sport**;
 6. **Accadde oggi** (curiosità storica di circa 20 secondi) e chiusura;
-7. finito il TG **parte da solo il primo podcast** consigliato. Sotto: i 10 podcast e le radio.
+7. finito il TG **parte da solo il primo podcast** e si apre la scheda PODCAST.
 
-**Scheda CALCIO**: **Juventus** (3 notizie, 2 podcast, Radio Bianconera), **Inter** (3 notizie e podcast),
-**Serie A, Champions e calciomercato** (5 notizie, 2 podcast, Radio Sportiva) e **Chiedi all'AI sul calcio**:
-si scrive una domanda e Gemini risponde usando le notizie di calcio raccolte in giornata (la risposta si
-può anche ascoltare).
+**Scheda PODCAST**: i 10 podcast consigliati del giorno, caricati da soli all'apertura dell'app.
 
-**Scheda VARIE**: **meteo di Viterbo** (domani e settimana), **Stasera in TV** (prima serata e sport in
-30 secondi), **Radio preferite** (5 radio nazionali già pronte, più la ricerca per aggiungerne altre: restano
-salvate sul telefono) e **Rassegna stampa della domenica**: a scelta le notizie della settimana in 5 minuti,
-la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive principali.
+**Scheda RADIO**: radio casuali per genere (musica, classica, jazz, country, da viaggio, sportive, attualità)
+e **Radio preferite** (5 radio nazionali già pronte, più la ricerca per aggiungerne altre: restano salvate
+sul telefono).
+
+**Scheda CALCIO**: quattro tasti che aprono ciascuno la sua sezione: **Juve** (3 notizie, 2 podcast, Radio
+Bianconera), **Inter** (3 notizie e podcast), **Serie A, Champions e calciomercato** (5 notizie, 2 podcast,
+Radio Sportiva) e **Chiedi all'AI sul calcio** (si scrive una domanda e Gemini risponde usando le notizie
+di calcio raccolte in giornata; la risposta si può anche ascoltare).
+
+**Scheda VARIE**: quattro tasti che aprono **Meteo a Viterbo** (domani e settimana), **Stasera in TV**
+(prima serata e sport in 30 secondi), **Accadde oggi** e **Rassegna stampa della domenica** (a scelta le
+notizie della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive).
 
 ## Come funziona
 

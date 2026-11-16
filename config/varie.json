@@ -4,6 +4,7 @@
     {
       "id": "juve",
       "nome": "Juventus",
+      "tasto": "Juve",
       "emoji": "⚪⚫",
       "notizie": 3,
       "radio": {
