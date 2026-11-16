@@ -291,11 +291,15 @@ const CONFIG = {
   modelliTesto: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash'],
   modelliVoce: ['gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'],
   voce: 'Kore',
-  attesaTesto: 12000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
+  attesaTesto: 10000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
   attesaVoce: 60000,    // ms massimi per un blocco di voce
   saluto: 'Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto.',
   chiusura: '…e ora i podcast consigliati di oggi. Buona giornata!',
   titoli: 'Titoli del TG di Famiglia',  // annunciati dopo il saluto, poi i titoli delle notizie uno per uno
+  attesaMassimaTitoli: 12000,   // ms di musica d'attesa oltre i quali un titolo lo legge la voce del telefono
+  attesaMassimaNotizia: 20000,  // lo stesso per una notizia
+  // righe di materiale inviate a Gemini per categoria (le più recenti): meno righe = risposta più rapida
+  righeMassime: { generale: 150, tuscia: 60, sport: 50, calcio: 50, altre: 35 },
   avvioAutomatico: true,                // all'apertura parte da solo (se il telefono lo permette, altrimenti al primo tocco)
   podcastAFineTG: true,                 // finito il TG parte da solo il primo podcast
   // Scaletta del TG: sezioni in ordine. 'annuncio' è la frase detta dalla voce all'inizio della sezione.
@@ -307,9 +311,9 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '1.6.0',
+  versione: '1.7.0',
 };
-const VERSIONE_CACHE = 'v6'; // cambiarla invalida la cache audio/testo
+const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
 const TOTALE_NOTIZIE = CONFIG.sezioni.reduce((t, x) => t + x.quante, 0);
 
@@ -370,35 +374,52 @@ function base64ABytes(b64) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
-/** Divide una lettura unica in 'quanti' pezzi tagliando sulle pause più lunghe (i titoli di testa).
- *  Restituisce i WAV dei pezzi, oppure null se le pause non sono abbastanza nette. */
-function dividiAudio(bytes, rate, quanti) {
+/** Divide una lettura unica in un pezzo per testo (i titoli di testa), tagliando sulle pause.
+ *  Per ogni confine sceglie la pausa più lunga vicino al punto previsto in base alla lunghezza dei testi:
+ *  così le pause dentro un titolo (dopo i due punti o una virgola) non vengono scambiate per un confine.
+ *  Restituisce i WAV dei pezzi, oppure null se non trova confini convincenti. */
+function dividiAudio(bytes, rate, testi) {
+  const quanti = testi.length;
   const x = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1);
   const F = Math.round(rate / 100), n = Math.floor(x.length / F); // finestre da 10 ms
   if (n < quanti * 20) return null;
   const rms = new Float32Array(n);
   for (let i = 0; i < n; i++) { let q = 0; for (let j = 0; j < F; j++) { const v = x[i * F + j]; q += v * v; } rms[i] = Math.sqrt(q / F); }
-  const soglia = Array.from(rms).sort((a, b) => a - b)[Math.floor(n * 0.95)] * 0.04;
-  const pause = [];
-  for (let i = 0; i < n;) {
+  const soglia = Array.from(rms).sort((u, v) => u - v)[Math.floor(n * 0.95)] * 0.04;
+  const pause = []; // silenzi interni di almeno 0,25 s, in ordine di tempo
+  let primaVoce = 0; while (primaVoce < n && rms[primaVoce] < soglia) primaVoce++;
+  let ultimaVoce = n; while (ultimaVoce > 0 && rms[ultimaVoce - 1] < soglia) ultimaVoce--;
+  for (let i = primaVoce; i < ultimaVoce;) {
     if (rms[i] >= soglia) { i++; continue; }
-    let j = i; while (j < n && rms[j] < soglia) j++;
-    if (i > 0 && j < n) pause.push({ da: i, a: j, lunga: j - i });
+    let j = i; while (j < ultimaVoce && rms[j] < soglia) j++;
+    if (j - i >= 25) pause.push({ da: i, a: j, lunga: j - i });
     i = j;
   }
-  if (pause.length < quanti - 1) return null;
-  pause.sort((a, b) => b.lunga - a.lunga);
-  const scelte = pause.slice(0, quanti - 1), prossima = pause[quanti - 1];
-  const minima = scelte.length ? scelte[scelte.length - 1].lunga : 0;
-  if (quanti > 1 && (minima < 45 || (prossima && minima < prossima.lunga * 1.6))) return null; // pause < 0,45 s o non distinguibili
-  scelte.sort((a, b) => a.da - b.da);
+  // punto previsto di ogni confine: proporzionale ai caratteri letti (più un po' di pausa per ogni testo)
+  const pesi = testi.map((t) => t.length + 8), somma = pesi.reduce((u, v) => u + v, 0);
+  const scelte = [];
+  let cumulo = 0, dopo = -1;
+  for (let k = 0; k < quanti - 1; k++) {
+    cumulo += pesi[k];
+    const previsto = primaVoce + (ultimaVoce - primaVoce) * cumulo / somma;
+    let migliore = null, voto = -Infinity;
+    for (const c of pause) {
+      if (c.da <= dopo) continue;
+      const scarto = Math.abs((c.da + c.a) / 2 - previsto);
+      if (scarto > 300) continue;               // più di 3 secondi dal punto previsto: non è questo confine
+      const v = c.lunga - 0.25 * scarto;
+      if (v > voto) { voto = v; migliore = c; }
+    }
+    if (!migliore || migliore.lunga < 35) return null; // nessuna pausa di almeno 0,35 s: meglio non dividere
+    scelte.push(migliore); dopo = migliore.a;
+  }
   const pezzi = [];
   let inizio = 0;
-  for (const p of [...scelte, { da: n, a: n }]) {
-    const fine = Math.min(p.da + 12, n);
-    if (fine - inizio < 30) return null;
+  for (const c of [...scelte, { da: n, a: n }]) {
+    const fine = Math.min(c.da + 12, n);
+    if (fine - inizio < 40) return null;
     pezzi.push(pcmAWav(bytes.slice(inizio * F * 2, fine * F * 2), rate));
-    inizio = Math.max(p.a - 8, 0);
+    inizio = Math.max(c.a - 8, 0);
   }
   return pezzi;
 }
@@ -545,8 +566,8 @@ const quanteNotizie = (q) => (typeof q.notizie === 'number' ? q.notizie : CONFIG
 function promptRedazione(grezzo) {
   const giorno = new Date(grezzo.generato).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const giornoMese = new Date(grezzo.generato).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
-  const riga = (n) => `${n.id} | ${n.fonte} | ${n.data.slice(5, 16).replace('T', ' ')} | ${n.titolo}${n.sommario ? ' — ' + n.sommario.slice(0, 220) : ''}`;
-  const elenco = (cat) => grezzo.notizie.filter((n) => n.categoria === cat).map(riga).join('\n') || '(nessuna)';
+  const riga = (n) => `${n.id} | ${n.fonte} | ${n.data.slice(5, 16).replace('T', ' ')} | ${n.titolo}${n.sommario ? ' — ' + n.sommario.slice(0, 160) : ''}`;
+  const elenco = (cat) => grezzo.notizie.filter((n) => n.categoria === cat).slice(0, CONFIG.righeMassime[cat] || CONFIG.righeMassime.altre).map(riga).join('\n') || '(nessuna)';
   const squadre = grezzo.squadre || [];
   const pod = grezzo.podcast.filter((p) => !p.gruppo).map((p) => `${p.id} | ${p.calcio ? 'CALCIO' : 'attualità'} | ${p.nome} | episodio: ${p.episodio} | ${(p.descrizione || '').slice(0, 320)}`);
   const meteo = meteoDaDomani(grezzo.meteo).map((d) => `${giornoNome(d.data)} | ${meteoCodice(d.codice).testo} | min ${d.tmin}° max ${d.tmax}° | pioggia ${d.pioggia_prob ?? '?'}% (${d.pioggia_mm} mm) | vento ${d.vento} km/h`);
@@ -556,7 +577,9 @@ function promptRedazione(grezzo) {
   return `Sei il caporedattore di un telegiornale italiano ascoltato ogni mattina da una famiglia di Viterbo. Oggi è ${giorno}.
 Qui sotto trovi il materiale raccolto stamattina: notizie dai feed RSS (formato: id | fonte | data | titolo — sommario), podcast, previsioni meteo e guida TV.
 
-COMPITO 1 – "notizie": le ${TOTALE_NOTIZIE} notizie del telegiornale, esattamente in quest'ordine:
+PRIMA DI TUTTO – "scaletta": l'elenco delle ${TOTALE_NOTIZIE} notizie che hai scelto per il telegiornale secondo le regole del compito 1, nello stesso ordine: per ciascuna solo "id", "categoria" e "titolo". Serve per leggere subito i titoli di testa.
+
+COMPITO 1 – "notizie": le stesse ${TOTALE_NOTIZIE} notizie della scaletta, con gli stessi id e gli stessi titoli, esattamente in quest'ordine:
 - ${naz} di categoria "generale" (dall'elenco NOTIZIE NAZIONALI): le più importanti del giorno in Italia e nel mondo, variando gli argomenti (politica, economia, esteri, cronaca, scienza). Preferisci i fatti riportati da più testate; evita doppioni, gossip e notizie minori.
 - ${tus} di categoria "tuscia" (dall'elenco NOTIZIE DALLA TUSCIA): le più rilevanti per chi vive a Viterbo e provincia (cronaca, amministrazione, sanità, viabilità, lavoro, eventi importanti). Evita comunicati promozionali e doppioni.
 - ${spo} di categoria "sport" (dall'elenco NOTIZIE SPORTIVE): preferibilmente calcio italiano (Serie A, Nazionale, coppe europee); un altro sport solo se la notizia è davvero importante.
@@ -612,6 +635,11 @@ function schemaRedazione(grezzo) {
   return {
     type: 'OBJECT',
     properties: {
+      scaletta: {
+        type: 'ARRAY',
+        items: { type: 'OBJECT', properties: { id: S, categoria: { type: 'STRING', enum: CONFIG.sezioni.map((x) => x.categoria) }, titolo: S },
+          required: ['id', 'categoria', 'titolo'], propertyOrdering: ['id', 'categoria', 'titolo'] },
+      },
       notizie: { type: 'ARRAY', items: notizia(true) },
       accadde_oggi: S,
       podcast: { type: 'ARRAY', items: { type: 'OBJECT', properties: { id: S, spiegazione: S }, required: ['id', 'spiegazione'], propertyOrdering: ['id', 'spiegazione'] } },
@@ -626,14 +654,14 @@ function schemaRedazione(grezzo) {
       meteo: S,
       tv: S,
     },
-    required: ['notizie', 'accadde_oggi', 'podcast', 'squadre', 'meteo', 'tv'],
-    propertyOrdering: ['notizie', 'accadde_oggi', 'podcast', 'squadre', 'meteo', 'tv'],
+    required: ['scaletta', 'notizie', 'accadde_oggi', 'podcast', 'squadre', 'meteo', 'tv'],
+    propertyOrdering: ['scaletta', 'notizie', 'accadde_oggi', 'podcast', 'squadre', 'meteo', 'tv'],
   };
 }
 
 /** Estrae gli oggetti già completi dell'array "notizie" da un JSON parziale. */
-function notizieComplete(buf) {
-  const k = buf.indexOf('"notizie"');
+function notizieComplete(buf, chiave = 'notizie') {
+  const k = buf.indexOf(`"${chiave}"`);
   if (k < 0) return [];
   const a = buf.indexOf('[', k);
   if (a < 0) return [];
@@ -679,7 +707,7 @@ async function leggiSSE(res, onTesto) {
   return tutto;
 }
 
-async function redigi(grezzo, onNotizia, onAttesa) {
+async function redigi(grezzo, onNotizia, onAttesa, onTitolo) {
   const usati = new Set();
   const consegna = (n) => {
     const chiaveN = n.id + '|' + n.titolo;
@@ -694,13 +722,16 @@ async function redigi(grezzo, onNotizia, onAttesa) {
   return conModelli(CONFIG.modelliTesto, async (modello, giro) => {
     const prova = async (corpo) => {
       const res = await chiamaGemini(modello, corpo, true, CONFIG.attesaTesto * giro);
-      let viste = 0;
+      let viste = 0, visteScaletta = 0;
       const testo = await leggiSSE(res, (buf) => {
+        const sc = notizieComplete(buf, 'scaletta'); // arriva per prima: i titoli di testa possono partire subito
+        for (; visteScaletta < sc.length; visteScaletta++) onTitolo?.(sc[visteScaletta], visteScaletta);
         const lista = notizieComplete(buf);
         for (; viste < lista.length; viste++) consegna(lista[viste]);
       });
       const pulito = testo.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
       const j = JSON.parse(pulito);
+      (j.scaletta || []).forEach((x, i) => onTitolo?.(x, i));
       (j.notizie || []).forEach(consegna);
       return j;
     };
@@ -791,7 +822,8 @@ const Ed = {
   grezzo: null, notizie: [], accadde: '', podcast: null, varie: null, finito: false, origine: '',
   blocchi: [],       // uno per notizia + uno finale: { testo, notizie:[indice], stacco, blob, stato:'attesa'|'pronto'|'errore' }
   produzioneFinita: false,
-  titoli: { stato: 'attesa', testi: [], segmenti: null, intero: null }, // titoli di testa: una lettura unica divisa in pezzi
+  scaletta: [],      // titoli scelti da Gemini: arrivano per primi, prima dei testi delle notizie
+  titoli: { testi: [], pezzi: [], completo: false, finito: false }, // titoli di testa: testi[0] = annuncio, poi i titoli; pezzi[k] = audio del titolo k
   saluto: null,      // Promise<Blob|null>
   osservatori: [],
   avvisa() { const o = this.osservatori; this.osservatori = []; o.forEach((f) => f()); },
@@ -821,7 +853,7 @@ function prepara(forza = false) {
   preparazione = (async () => {
     stato('Sto preparando il notiziario…');
     Object.assign(Ed, { grezzo: null, notizie: [], accadde: '', podcast: null, varie: null, finito: false, blocchi: [], produzioneFinita: false,
-      titoli: { stato: 'attesa', testi: [], segmenti: null, intero: null } });
+      scaletta: [], titoli: { testi: [], pezzi: [], completo: false, finito: false } });
     Ed.avvisa();
     renderNotizie(); renderPodcast(); renderVarie();
     let g = await caricaGrezzo();
@@ -833,7 +865,7 @@ function prepara(forza = false) {
       if (salvata) g = salvata.grezzo;
       else {
         stato('Le notizie di oggi non sono ancora pronte. Riprova tra qualche minuto.', true);
-        Ed.titoli.stato = 'errore';
+        Ed.titoli.completo = Ed.titoli.finito = true;
         Ed.finito = true; Ed.produzioneFinita = true; Ed.avvisa();
         return;
       }
@@ -845,7 +877,7 @@ function prepara(forza = false) {
     const salvata = forza ? null : await db.get(chiaveEdizione(g));
     if (!vivo()) return;
     if (salvata && salvata.notizie?.length) {
-      Ed.notizie = salvata.notizie; Ed.accadde = salvata.accadde || ''; Ed.podcast = salvata.podcast;
+      Ed.notizie = salvata.notizie; Ed.scaletta = salvata.scaletta || []; Ed.accadde = salvata.accadde || ''; Ed.podcast = salvata.podcast;
       Ed.varie = salvata.varie || costruisciVarie(null); Ed.finito = true; Ed.origine = salvata.origine;
       renderNotizie(); renderPodcast(); renderVarie();
       const blocchi = costruisciBlocchi(Ed.notizie, Ed.accadde);
@@ -866,7 +898,8 @@ function prepara(forza = false) {
     produciBlocchi(vivo); // parte subito: aspetta le notizie man mano che arrivano
     produciTitoli(vivo);  // i titoli di testa: appena le notizie sono tutte arrivate
     try {
-      const j = await redigi(g, (n) => vivo() && aggiungiNotizia(n), (ms) => vivo() && stato(`Google è molto richiesto: riprovo tra ${Math.ceil(ms / 1000)} secondi…`));
+      const j = await redigi(g, (n) => vivo() && aggiungiNotizia(n), (ms) => vivo() && stato(`Google è molto richiesto: riprovo tra ${Math.ceil(ms / 1000)} secondi…`),
+        (x, i) => { if (vivo() && x?.titolo) { Ed.scaletta[i] = pulisciTitolo(x.titolo); Ed.avvisa(); } });
       if (!vivo()) return;
       Ed.accadde = (j.accadde_oggi || '').trim().replace(/^accadde oggi[.:,]?\s*/i, '');
       Ed.podcast = scegliPodcast(j.podcast || []);
@@ -875,6 +908,7 @@ function prepara(forza = false) {
     } catch (e) {
       if (!vivo()) return;
       console.warn('redazione', e);
+      Ed.scaletta = [];
       if (e.tipo === 'chiave') { erroreChiave(e); }
       else avviso(`${e.messaggioUtente || 'Gemini non ha risposto.'} Ti leggo i titoli principali raccolti stamattina.`);
       notizieDiRiserva(g).forEach(aggiungiNotizia);
@@ -889,6 +923,7 @@ function prepara(forza = false) {
   return preparazione;
 }
 
+const pulisciTitolo = (t) => String(t || '').trim().replace(/[.\s]+$/, '');
 /** Unisce la notizia scritta da Gemini con fonte e link presi dai dati raccolti. */
 function completaNotizia(n, categoria) {
   const g = Ed.grezzo;
@@ -896,7 +931,7 @@ function completaNotizia(n, categoria) {
   const ids = [...new Set([n.id, ...(n.fonti_ids || [])])];
   const fonti = [...new Set(ids.map((id) => g.notizie.find((x) => x.id === id)?.fonte).filter(Boolean))];
   return {
-    titolo: (n.titolo || voce?.titolo || '').trim().replace(/[.\s]+$/, ''),
+    titolo: pulisciTitolo(n.titolo || voce?.titolo),
     testo: (n.testo || voce?.sommario || '').trim(),
     categoria,
     fonte: fonti.join(', ') || voce?.fonte || '',
@@ -1025,31 +1060,57 @@ async function produciBlocchi(vivo) {
 }
 const range = (a, b) => Array.from({ length: b - a }, (_, i) => a + i);
 
-/** Titoli di testa: "Titoli del TG di Famiglia" + i titoli delle notizie in UNA sola lettura, poi divisa sulle pause
- *  (così tra un titolo e l'altro può suonare lo stacco senza consumare una chiamata vocale per titolo). */
+/** Titoli conosciuti finora: quelli della scaletta (che Gemini scrive per prima) oppure quelli delle notizie già arrivate. */
+function titoliNoti() {
+  const sc = [];
+  for (const t of Ed.scaletta) { if (!t) break; sc.push(t); }
+  const daNotizie = Ed.notizie.map((n) => n.titolo);
+  return sc.length && sc.length >= daNotizie.length ? sc : daNotizie;
+}
+const quantiTitoli = () => (Ed.titoli.completo ? Ed.titoli.testi.length - 1 : TOTALE_NOTIZIE);
+
+/** Titoli di testa, il prima possibile e con due sole chiamate vocali:
+ *  1) "Titoli del TG di Famiglia" + i primi 3 titoli, appena si conoscono (lettura corta, pronta in pochi secondi);
+ *  2) gli altri titoli, preparati mentre si ascoltano i primi.
+ *  Ogni lettura viene poi divisa sulle pause, così tra un titolo e l'altro può suonare lo stacco. */
 async function produciTitoli(vivo) {
-  while (!Ed.finito) { await Ed.attendiCambio(); if (!vivo()) return; }
-  const T = Ed.titoli;
-  if (!Ed.notizie.length || !Ed.grezzo) { T.stato = 'errore'; Ed.avvisa(); return; }
-  T.testi = [CONFIG.titoli, ...Ed.notizie.map((n) => n.titolo)];
-  const testo = T.testi.map((t) => t + '.').join('\n\n');
-  const k = `titoli:${VERSIONE_CACHE}:${Ed.grezzo.generato}`;
+  const T = Ed.titoli, PRIMI = 3;
+  const aspetta = async (pronto) => { while (!pronto()) { await Ed.attendiCambio(); if (!vivo()) return false; } return true; };
+  if (!await aspetta(() => titoliNoti().length >= PRIMI || Ed.finito)) return;
+  if (!Ed.grezzo || !titoliNoti().length) { T.completo = T.finito = true; Ed.avvisa(); return; }
+  const primi = titoliNoti().slice(0, PRIMI);
+  T.testi = [CONFIG.titoli, ...primi];
+  Ed.avvisa();
+  const g1 = gruppoTitoli(0, T.testi.length, vivo);
+  if (!await aspetta(() => titoliNoti().length >= TOTALE_NOTIZIE || Ed.finito)) return;
+  T.testi.push(...titoliNoti().slice(primi.length, TOTALE_NOTIZIE));
+  T.completo = true; Ed.avvisa();
+  const g2 = T.testi.length > 1 + primi.length ? gruppoTitoli(1 + primi.length, T.testi.length, vivo) : null;
+  await g1; await g2;
+  if (!vivo()) return;
+  T.finito = true; Ed.avvisa();
+}
+/** Una lettura unica dei titoli da 'da' ad 'a' (esclusa), divisa in un pezzo per titolo. */
+async function gruppoTitoli(da, a, vivo) {
+  const T = Ed.titoli, testi = T.testi.slice(da, a);
+  const testo = testi.map((t) => t + '.').join('\n\n');
+  const k = `titoli:${VERSIONE_CACHE}:${Ed.grezzo.generato}:${da}`;
   try {
-    let a = await db.get(k);
-    if (!(a && a.testo === testo)) {
+    let c = await db.get(k);
+    if (!(c && c.testo === testo)) {
       if (vocePerOggiKO) throw new ErroreGemini('quota', 'voce non disponibile');
       const r = await sintetizza(testo, undefined, true);
-      a = { testo, bytes: r.bytes, rate: r.rate };
-      if (vivo()) db.set(k, a);
+      c = { testo, bytes: r.bytes, rate: r.rate };
+      if (vivo()) db.set(k, c);
     }
     if (!vivo()) return;
-    T.segmenti = dividiAudio(a.bytes, a.rate, T.testi.length);
-    T.intero = pcmAWav(a.bytes, a.rate);
-    T.stato = 'pronto';
+    const pezzi = dividiAudio(c.bytes, c.rate, testi);
+    // se le pause non sono nette la lettura resta intera: si ascolta al posto del primo titolo e gli altri si saltano
+    for (let i = 0; i < testi.length; i++) T.pezzi[da + i] = pezzi ? { blob: pezzi[i] } : (i === 0 ? { blob: pcmAWav(c.bytes, c.rate) } : { salta: true });
   } catch (e) {
     if (!vivo()) return;
     console.warn('titoli', e);
-    T.stato = 'errore'; // li leggerà la voce del telefono, uno per uno
+    for (let i = da; i < a; i++) T.pezzi[i] = { blob: null }; // li legge la voce del telefono
   }
   Ed.avvisa();
 }
@@ -1101,7 +1162,7 @@ async function salutoAudio() {
 function salvaEdizione() {
   if (!Ed.grezzo || !Ed.notizie.length || !Ed.finito) return;
   db.set(chiaveEdizione(Ed.grezzo), {
-    grezzo: Ed.grezzo, notizie: Ed.notizie, accadde: Ed.accadde, podcast: Ed.podcast, varie: Ed.varie, origine: Ed.origine, salvato: Date.now(),
+    grezzo: Ed.grezzo, notizie: Ed.notizie, scaletta: Ed.scaletta, accadde: Ed.accadde, podcast: Ed.podcast, varie: Ed.varie, origine: Ed.origine, salvato: Date.now(),
   });
 }
 async function pulisciCacheVecchia(g) {
@@ -1153,11 +1214,7 @@ function passoVicino(delta, soloVoce) {
   if (delta < 0 && i < 1) i = 1; // indietro: al massimo fino al saluto
   return s[i] || null;
 }
-function prossimoPasso() {
-  // se i titoli non si sono potuti dividere sono stati letti tutti insieme: si passa direttamente alle notizie
-  if (P.passo?.t === 'titolo' && Ed.titoli.stato === 'pronto' && !Ed.titoli.segmenti) return scaletta().find((p) => p.k === 'voce0') || null;
-  return passoVicino(1, false);
-}
+const prossimoPasso = () => passoVicino(1, false);
 
 /** Avvia il TG dalla sigla. Restituisce false se il browser ha bloccato la partenza dell'audio. */
 async function avviaTG() {
@@ -1189,8 +1246,11 @@ async function vaiA(p) {
       P.inAttesa = false;
       if (b === null) { fineTG(true); return true; }
       if (p.blocco > 0) lungo = b.stacco === 'lungo';
-    } else if (p.titolo && Ed.titoli.stato !== 'attesa' && (!Ed.titoli.testi[p.titolo] || (Ed.titoli.stato === 'pronto' && !Ed.titoli.segmenti))) {
-      return vaiA(prossimoPasso()); // quel titolo non c'è: niente suono
+    } else if (p.titolo) {
+      const z = await attendiTitolo(p.titolo, mio);
+      if (mio !== P.token) return true;
+      P.inAttesa = false;
+      if (!z || z.salta) return vaiA(prossimoPasso()); // quel titolo non c'è: niente suono
     }
     evidenzia(null);
     stato('🎵');
@@ -1199,23 +1259,23 @@ async function vaiA(p) {
   let t, etichetta;
   if (p.t === 'saluto') {
     const timer = sottofondoDopo(mio, 'Sto preparando il notiziario…');
-    const blob = await Promise.race([Ed.saluto || Promise.resolve(null), sleep(25000).then(() => null)]);
+    const blob = await Promise.race([Ed.saluto || Promise.resolve(null), sleep(8000).then(() => null)]);
     clearTimeout(timer);
     t = { blob, testo: CONFIG.saluto }; etichetta = 'Saluto';
   } else if (p.t === 'titolo') {
     t = await attendiTitolo(p.k, mio);
-    etichetta = p.k === 0 ? 'I titoli' : `Titolo ${p.k} di ${Ed.titoli.testi.length - 1}`;
+    etichetta = p.k === 0 ? 'I titoli' : `Titolo ${p.k} di ${quantiTitoli()}`;
   } else {
     t = await attendiBlocco(p.k, mio, true);
     if (t) etichetta = t.notizie?.length ? `Notizia ${t.notizie[0] + 1} di ${Ed.notizie.length}` : (t.etichetta || 'Chiusura');
   }
   if (mio !== P.token) return true;
   P.inAttesa = false;
-  if (t === null) {
+  if (t === null || t.salta) {
     if (p.t === 'titolo') return vaiA(prossimoPasso());
     fineTG(true); return true;
   }
-  if (p.t === 'titolo') evidenzia(p.k > 0 && Ed.titoli.segmenti ? [p.k - 1] : null);
+  if (p.t === 'titolo') evidenzia(p.k > 0 && Ed.notizie[p.k - 1] ? [p.k - 1] : null);
   else evidenzia(t.notizie?.length ? t.notizie : null);
   if (t.finale) $('accaddeOggi').scrollIntoView({ behavior: 'smooth', block: 'center' });
   metadati('TG di Famiglia', etichetta);
@@ -1245,30 +1305,36 @@ function sottofondoDopo(mio, messaggio) {
 /** Traccia parlata k: aspetta che esista (pronta = false) o che abbia anche la voce (pronta = true). null = finito. */
 async function attendiBlocco(k, mio, pronta) {
   const timer = sottofondoDopo(mio, k === 0 ? 'Sto preparando il notiziario…' : 'Preparo le prossime notizie…');
+  let daQuando = 0;
   try {
     for (;;) {
       if (mio !== P.token) return null;
       const b = Ed.blocchi[k];
       if (b && (!pronta || b.stato !== 'attesa')) return b;
       if (!b && Ed.produzioneFinita) return null;
-      await Promise.race([Ed.attendiCambio(), sleep(2000)]);
+      if (b && pronta) { // il testo c'è ma la voce tarda: dopo un po' la legge la voce del telefono
+        daQuando = daQuando || Date.now();
+        if (Date.now() - daQuando > CONFIG.attesaMassimaNotizia) return { ...b, blob: null };
+      }
+      await Promise.race([Ed.attendiCambio(), sleep(1000)]);
     }
   } finally { clearTimeout(timer); }
 }
-/** Titolo di testa k (0 = "Titoli del TG di Famiglia"). null = da saltare. */
+/** Titolo di testa k (0 = "Titoli del TG di Famiglia"). null = da saltare.
+ *  Se il testo c'è ma la voce tarda oltre il limite, lo legge la voce del telefono. */
+let titoloScaduto = -1;
 async function attendiTitolo(k, mio) {
+  const T = Ed.titoli, inizio = Date.now();
   const timer = sottofondoDopo(mio, 'Preparo i titoli…');
   try {
-    while (Ed.titoli.stato === 'attesa') {
+    for (;;) {
       if (mio !== P.token) return null;
-      await Promise.race([Ed.attendiCambio(), sleep(2000)]);
+      if (T.pezzi[k]) return { ...T.pezzi[k], testo: T.testi[k] };
+      if ((T.completo && k >= T.testi.length) || T.finito) return null;
+      if (T.testi[k] && (titoloScaduto === k || Date.now() - inizio > CONFIG.attesaMassimaTitoli)) { titoloScaduto = k; return { blob: null, testo: T.testi[k] }; }
+      await Promise.race([Ed.attendiCambio(), sleep(1000)]);
     }
   } finally { clearTimeout(timer); }
-  const T = Ed.titoli;
-  if (!T.testi[k]) return null;
-  if (T.segmenti) return { blob: T.segmenti[k], testo: T.testi[k] };
-  if (T.intero) return k === 0 ? { blob: T.intero, testo: T.testi.join('. ') } : null; // lettura unica, non divisa
-  return { blob: null, testo: T.testi[k] }; // voce del telefono
 }
 
 function fineTG(daSolo = false) {

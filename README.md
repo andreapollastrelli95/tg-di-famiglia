@@ -95,7 +95,7 @@ qualcuno la copiasse non potrebbe usarla altrove.
 ### Quote gratuite
 
 Il piano gratuito ha limiti al minuto e al giorno, in particolare per la voce (TTS).
-Un notiziario usa circa 1 chiamata di testo e 12 chiamate di voce al giorno (una per notizia, una per "Accadde oggi" e una sola per tutti i titoli di testa, che l'app poi divide sulle pause). Ogni ascolto nelle schede CALCIO e VARIE ne usa altre: una per il meteo o la TV, 3-6 per una rassegna. La ricerca su Google non è inclusa nella quota gratuita, quindi "Chiedi all'AI" risponde con le notizie del giorno e le conoscenze del modello.
+Un notiziario usa circa 1 chiamata di testo e 13 chiamate di voce al giorno (una per notizia, una per "Accadde oggi" e due per i titoli di testa: la prima con l'annuncio e i primi 3 titoli, pronta in pochi secondi, la seconda con gli altri; l'app le divide poi sulle pause). Per far partire i titoli il prima possibile Gemini scrive per prima la sola scaletta dei titoli; se la voce tarda più di `CONFIG.attesaMassimaTitoli` (12 secondi) o `CONFIG.attesaMassimaNotizia` (20 secondi), legge la voce del telefono invece di lasciare la musica d'attesa. Ogni ascolto nelle schede CALCIO e VARIE ne usa altre: una per il meteo o la TV, 3-6 per una rassegna. La ricerca su Google non è inclusa nella quota gratuita, quindi "Chiedi all'AI" risponde con le notizie del giorno e le conoscenze del modello.
 Grazie alla cache, riascoltarlo è gratis. Se la quota della voce finisce, l'app usa
 la voce del telefono e lo segnala.
 
