@@ -80,6 +80,8 @@ h2{font-size:24px;margin:28px 0 12px;color:var(--blu)}
 .podcast .episodio{font-weight:700;font-size:20px;line-height:1.3;margin-top:2px}
 .podcast p{margin:10px 0 12px}
 .podcast .azioni{display:flex;gap:10px;flex-wrap:wrap}
+.radio-scelte{display:flex;flex-direction:column;gap:12px;max-width:520px;margin:0 auto}
+.radio-scelte .btn{width:100%}
 .radio-nome{font-size:22px;font-weight:800;margin:12px 0 0;min-height:1.4em}
 .mini{position:fixed;left:0;right:0;bottom:0;background:#0b2a55;color:#fff;padding:10px 0 calc(10px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.25);z-index:5}
 .mini[hidden]{display:none}
@@ -167,8 +169,10 @@ dialog h2{margin-top:0}
 
     <h2>🎵 Radio</h2>
     <div class="scheda" style="text-align:center">
-      <div class="riga-btn">
+      <div class="radio-scelte">
         <button class="btn rosso" id="radioCasuale" type="button">🎵 Musica casuale</button>
+        <button class="btn rosso" id="radioSport" type="button">⚽ Radio sportive casuali</button>
+        <button class="btn rosso" id="radioAttualita" type="button">🗞️ Radio attualità casuali</button>
         <button class="btn" id="radioCambia" type="button" disabled>🔀 Cambia</button>
       </div>
       <p class="radio-nome" id="radioNome"></p>
@@ -225,7 +229,7 @@ const CONFIG = {
   notizieCalcio: 2,
   notiziePerBlocco: 2,
   podcast: 10,
-  versione: '1.2.0',
+  versione: '1.3.0',
 };
 const VERSIONE_CACHE = 'v3'; // cambiarla invalida la cache audio/testo
 
@@ -865,7 +869,7 @@ async function pulisciCacheVecchia(g) {
    PLAYER
    ===================================================================== */
 const audio = $('audio');
-const P = { modo: null, traccia: -1, token: 0, inAttesa: false, parlando: false, urlCorrente: null, titolo: '', sotto: '' };
+const P = { radioErrori: 0, modo: null, traccia: -1, token: 0, inAttesa: false, parlando: false, urlCorrente: null, titolo: '', sotto: '' };
 const audioAttivo = () => P.modo && (!audio.paused || P.parlando || P.inAttesa);
 
 function impostaSorgente(url, loop = false) {
@@ -965,10 +969,16 @@ audio.addEventListener('ended', () => {
 });
 audio.addEventListener('error', () => {
   if (P.urlCorrente === URL_SILENZIO || P.inAttesa) return;
-  if (P.modo === 'radio') { stato(''); radioCasuale(true); }
+  if (P.modo === 'radio') {
+    if (P.radioUrl) radioGuaste.add(P.radioUrl);
+    stato('');
+    if (++P.radioErrori >= 6) { P.radioErrori = 0; $('radioNome').textContent = 'Le radio non rispondono ora. Controlla la connessione e riprova.'; P.modo = null; nascondiMini(); return; }
+    radioCasuale(true);
+  }
   else if (P.modo === 'podcast') $('miniSotto').textContent = 'Questo episodio non si riesce a riprodurre. Usa “Apri episodio”.';
   else if (P.modo === 'tg') vaiATraccia(P.traccia + 1);
 });
+audio.addEventListener('playing', () => { P.radioErrori = 0; });
 ['play', 'pause', 'playing'].forEach((ev) => audio.addEventListener(ev, () => { aggiornaTastoPlay(); aggiornaMini(); }));
 audio.addEventListener('timeupdate', () => {
   if (P.modo === 'podcast' && audio.duration && isFinite(audio.duration)) {
@@ -1045,7 +1055,7 @@ function suonaPodcast(p) {
   stato(''); aggiornaTastoPlay();
 }
 
-let stazioni = null, radioIndice = -1;
+let stazioni = null;
 async function caricaStazioni() {
   if (stazioni) return stazioni;
   const server = ['https://de1.api.radio-browser.info', 'https://nl1.api.radio-browser.info', 'https://at1.api.radio-browser.info', 'https://fi1.api.radio-browser.info'];
@@ -1062,24 +1072,60 @@ async function caricaStazioni() {
   }
   throw new Error('nessuna radio');
 }
-async function radioCasuale(cambia = false) {
+/* Radio sportive e di attualità: emittenti scelte, stream HTTPS verificati.
+   hls = solo dove il browser lo legge da sé (iPhone, Android); ogg = non su iPhone. */
+const RADIO_SCELTE = {
+  sport: [
+    { nome: 'Radio Sportiva', url: 'https://sportiva.inmystream.it/stream/sportiva' },
+    { nome: 'Rai Radio 1 Sport', url: 'https://icestreaming.rai.it/13.mp3' },
+    { nome: 'TMW Radio', url: 'https://stream.tmwradio.com/tmw.aac' },
+    { nome: 'Radio Manà Manà Sport', url: 'https://stream10.xdevel.com/audio2s975363-2142/stream/icecast.audio' },
+    { nome: 'Radio Marte', url: 'https://stream1.xdevel.com/audio0s975753-313/stream/icecast.audio' },
+    { nome: 'Retesport', url: 'https://icecast.ithost.it/retesport.ogg', tipo: 'ogg' },
+  ],
+  attualita: [
+    { nome: 'Rai Radio 1', url: 'https://icestreaming.rai.it/1.mp3' },
+    { nome: 'Rai GR Parlamento', url: 'https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S32576004/GxPKuXIdZBcL/icecast' },
+    { nome: 'Radio Radicale', url: 'https://live.radioradicale.it/live.mp3' },
+    { nome: 'Radio Popolare', url: 'https://livex.radiopopolare.it/radiopop' },
+    { nome: 'Rai Radio 3', url: 'https://icestreaming.rai.it/3.mp3' },
+    { nome: 'Radio 24 – Il Sole 24 Ore', url: 'https://ilsole24ore-radio.akamaized.net/hls/live/2035301/radio24/playlist.m3u8', tipo: 'hls' },
+    { nome: 'RTL 102.5 News', url: 'https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S38122967/aJMOUBAFc2Bc/playlist_audio.m3u8', tipo: 'hls' },
+  ],
+};
+const ETICHETTE_RADIO = { musica: 'Radio musicale', sport: 'Radio sportiva', attualita: 'Radio di attualità' };
+const radioGuaste = new Set(); // stream che non partono in questa sessione: non riproporli
+function leggibile(s) {
+  if (s.tipo === 'hls') return !!audio.canPlayType('application/vnd.apple.mpegurl');
+  if (s.tipo === 'ogg') return !!audio.canPlayType('audio/ogg; codecs="vorbis"');
+  return true;
+}
+async function listaRadio(cat) {
+  if (cat === 'musica') return (await caricaStazioni()).map((x) => ({ nome: x.name.trim(), url: x.url_resolved, favicon: x.favicon }));
+  return RADIO_SCELTE[cat].filter(leggibile);
+}
+
+async function radioCasuale(cambia = false, categoria) {
   ++P.token; window.speechSynthesis?.cancel();
+  const cat = categoria || P.radioCat || 'musica';
+  P.radioCat = cat;
   P.modo = 'radio'; P.inAttesa = false; P.parlando = false;
   $('comandiTG').classList.add('nascosto'); evidenzia(null); aggiornaTastoPlay();
   $('radioNome').textContent = 'Cerco una radio…';
   // sblocca subito l'audio dentro il tocco (iPhone), poi cambia sorgente
   if (!cambia) impostaSorgente(URL_SILENZIO, true);
   try {
-    const l = await caricaStazioni();
-    let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === radioIndice);
-    radioIndice = i;
-    const s = l[i];
-    const nome = s.name.trim();
-    $('radioNome').textContent = '📻 ' + nome;
+    const tutte = await listaRadio(cat);
+    let l = tutte.filter((x) => !radioGuaste.has(x.url));
+    if (!l.length) { radioGuaste.clear(); l = tutte; }
+    if (!l.length) throw new Error('nessuna radio');
+    let s; do { s = l[Math.floor(Math.random() * l.length)]; } while (l.length > 1 && s.url === P.radioUrl);
+    P.radioUrl = s.url;
+    $('radioNome').textContent = '📻 ' + s.nome;
     $('radioCambia').disabled = false;
-    impostaSorgente(s.url_resolved);
-    metadati(nome, 'Radio', s.favicon && /^https:/.test(s.favicon) ? s.favicon : undefined);
-    mostraMini(nome, 'Radio in diretta', false);
+    impostaSorgente(s.url);
+    metadati(s.nome, ETICHETTE_RADIO[cat], s.favicon && /^https:/.test(s.favicon) ? s.favicon : undefined);
+    mostraMini(s.nome, ETICHETTE_RADIO[cat] + ' in diretta', false);
   } catch {
     $('radioNome').textContent = 'Non riesco a trovare una radio ora. Riprova più tardi.';
     P.modo = null; audio.pause();
@@ -1218,7 +1264,9 @@ $('rigenera').onclick = async () => {
 $('tastoPlay').onclick = () => { if (P.modo === 'tg') pausaOContinua(); else avviaTG(); };
 $('avanti').onclick = () => { if (P.modo === 'tg') vaiATraccia(P.traccia + 1); };
 $('indietro').onclick = () => { if (P.modo === 'tg') vaiATraccia(Math.max(1, P.traccia - 1)); };
-$('radioCasuale').onclick = () => radioCasuale(false);
+$('radioCasuale').onclick = () => radioCasuale(false, 'musica');
+$('radioSport').onclick = () => radioCasuale(false, 'sport');
+$('radioAttualita').onclick = () => radioCasuale(false, 'attualita');
 $('radioCambia').onclick = () => radioCasuale(true);
 
 function avviaApp() {
