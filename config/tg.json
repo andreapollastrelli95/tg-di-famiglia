@@ -1,0 +1,20 @@
+{
+  "_nota": "Edizione preparata sul server (scripts/redazione.py): testi scritti da Gemini con la chiave salvata nel segreto GEMINI_API_KEY e letti da una voce neurale gratuita (edge-tts). Devono restare allineati ai valori di CONFIG in index.html, che l'app usa quando l'edizione del server non c'è.",
+  "voci": ["it-IT-ElsaNeural", "it-IT-IsabellaNeural"],
+  "velocita": "+2%",
+  "tono": "+0Hz",
+  "modelli": ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-2.5-flash"],
+  "saluto": "Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto.",
+  "titoli": "Titoli del TG di Famiglia",
+  "chiusura": "E ora i podcast consigliati di oggi. Buona giornata!",
+  "sezioni": [
+    {"categoria": "generale", "quante": 5},
+    {"categoria": "tuscia", "quante": 3, "annuncio": "Notizie dalla Tuscia."},
+    {"categoria": "sport", "quante": 2, "annuncio": "Notizie sportive."}
+  ],
+  "podcast": 10,
+  "notizie_squadra": 3,
+  "podcast_squadra": 2,
+  "righe_massime": {"generale": 150, "tuscia": 60, "sport": 50, "calcio": 50, "altre": 35},
+  "rassegne": true
+}

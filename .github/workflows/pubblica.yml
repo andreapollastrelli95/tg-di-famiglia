@@ -37,6 +37,11 @@ jobs:
         env:
           TZ: Europe/Rome
         run: python scripts/raccogli.py _site/data
+      - name: Edizione del giorno con voce neurale (Gemini + edge-tts)
+        env:
+          TZ: Europe/Rome
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/redazione.py _site/data
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

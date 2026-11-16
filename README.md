@@ -7,8 +7,9 @@ seguite da 10 podcast consigliati e da una radio musicale casuale.
 È una web app installabile (PWA) ospitata gratis su GitHub Pages:
 **https://andreapollastrelli95.github.io/tg-di-famiglia/**
 
-Ognuno usa la **propria chiave gratuita della Gemini API**, che resta salvata solo
-sul suo telefono.
+Il notiziario viene preparato ogni mattina sul server, con una **voce neurale italiana gratuita**: sul
+telefono non serve nessuna chiave. La chiave Gemini personale serve solo per "Chiedi all'AI" e come
+riserva se un giorno l'edizione del server non c'è; resta salvata solo sul telefono.
 
 ---
 
@@ -46,30 +47,48 @@ notizie della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppur
 ## Come funziona
 
 ```
- ogni mattina alle 04:30 UTC                      sul telefono, con la chiave dell'utente
-┌──────────────────────────────┐   grezzo.json   ┌─────────────────────────────────────────┐
-│ GitHub Actions (senza chiavi)│ ──────────────► │ Gemini (testo): sceglie e riscrive le    │
-│ • feed RSS delle testate     │  GitHub Pages   │   10 notizie e spiega i 10 podcast       │
-│ • podcast via iTunes Search  │                 │ Gemini TTS (voce "Kore") a blocchi       │
-└──────────────────────────────┘                 │ cache del giorno in IndexedDB            │
-                                                 └─────────────────────────────────────────┘
+ ogni mattina alle 04:30 UTC, su GitHub Actions
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ 1. raccogli.py   feed RSS, podcast, meteo, guida TV      -> data/grezzo.json   │
+│ 2. redazione.py  Gemini scrive l'edizione (chiave nel    -> data/edizione.json │
+│                  segreto GEMINI_API_KEY) e edge-tts la   -> data/audio/*.mp3   │
+│                  legge con una voce neurale gratuita                           │
+└───────────────────────────────────────────────────────────────────────────────┘
+        │ GitHub Pages (nessun commit dei dati: il repository non cresce)
+        ▼
+ sul telefono: l'app scarica l'edizione e suona subito gli MP3. Nessuna chiave, nessuna attesa.
 ```
 
-* **Raccolta (server)**: `scripts/raccogli.py` legge i feed in `config/fonti.json`
-  e i podcast in `config/podcast.json` e scrive `data/grezzo.json`. Serve un server
-  perché il browser non può leggere direttamente i feed RSS (blocco CORS).
-  I dati vengono pubblicati con `actions/deploy-pages`, senza commit, quindi il
-  repository non cresce.
-* **Intelligenza (telefono)**: l'app chiama direttamente la Gemini API con la chiave
-  dell'utente. Le notizie compaiono man mano che Gemini le scrive; la voce viene
-  generata a blocchi di 2 notizie e il primo blocco parte appena è pronto, mentre la
-  sigla suona e gli altri si preparano.
+* **Raccolta**: `scripts/raccogli.py` legge i feed in `config/fonti.json`, i podcast in
+  `config/podcast.json`, meteo e guida TV (`config/varie.json`) e scrive `data/grezzo.json`.
+* **Edizione con voce neurale**: `scripts/redazione.py` fa scrivere a Gemini scaletta, notizie, Accadde
+  oggi, podcast, sezioni di calcio, meteo, TV e rassegne, poi fa leggere ogni testo a
+  [edge-tts](https://github.com/rany2/edge-tts) con la voce **`it-IT-ElsaNeural`** (riserva
+  `it-IT-IsabellaNeural`, 3 tentativi per voce). Ogni lettura è un MP3 in `data/audio/`: saluto, un file
+  per titolo, uno per notizia, il finale, le sezioni di calcio, meteo, TV, Accadde oggi e le rassegne.
+  Impostazioni in `config/tg.json` (voci, velocità, saluto, scaletta): vanno tenute allineate a `CONFIG`
+  in `index.html`.
+* **Sul telefono**: se c'è l'edizione del giorno l'app la usa così com'è, con lo stesso elemento audio
+  (schermo spento, comandi sulla schermata di blocco e in auto). Gli MP3 hanno un parametro `?v=` che
+  cambia a ogni edizione; il service worker li tiene in cache, così funzionano anche senza connessione.
+* **Riserve, in ordine**: se l'edizione del server non c'è (segreto non impostato, Gemini non risponde,
+  primo avvio prima della raccolta) l'app prepara tutto sul telefono come prima, con la chiave
+  dell'utente: testi con Gemini, voce con Gemini TTS finché c'è quota, e come ultima riserva la migliore
+  voce italiana del dispositivo. Lo stesso vale per i testi nati sul momento ("Chiedi all'AI").
 * **Rassegna della domenica**: il repository non conserva dati, quindi ogni mattina la raccolta scarica
   `data/settimana.json` già pubblicato sul sito, aggiunge i titoli del giorno e lo ripubblica (ultimi 7 giorni).
-* **Cache del giorno**: testo e audio restano nel telefono (IndexedDB). Riascoltare lo
-  stesso giorno è immediato e non consuma quota. Il giorno dopo si rigenera tutto.
-* **Riserve**: se la voce di Gemini non è disponibile (quota esaurita) l'app legge con
-  la voce del telefono; se Gemini non risponde affatto legge i titoli raccolti.
+* **Cache del giorno** (solo per la preparazione sul telefono): testo e audio restano in IndexedDB.
+
+### Attivare l'edizione con voce neurale
+
+Serve una chiave Gemini salvata come **segreto** del repository (non è visibile a nessuno e non finisce
+nel sito): GitHub → repository → **Settings** → **Secrets and variables** → **Actions** →
+**New repository secret**, nome `GEMINI_API_KEY`. Oppure, dal terminale: `gh secret set GEMINI_API_KEY`.
+La chiave del segreto **non deve avere la restrizione "Siti web"** (le chiamate partono dai server di
+GitHub, non dal browser); la restrizione alla sola Generative Language API va bene.
+Il server fa 4 chiamate di testo al giorno (edizione e tre rassegne). La voce edge-tts è gratuita e non
+usa la quota di Gemini; è un servizio non ufficiale di Microsoft, quindi potrebbe cambiare: in quel caso
+l'app ripiega da sola sulla preparazione sul telefono.
 
 ---
 
@@ -184,6 +203,7 @@ manifest.json, sw.js    PWA: installazione e cache offline
 icons/, assets/         icone e sigla
 config/                 feed RSS e podcast
 scripts/raccogli.py     raccolta dati (GitHub Actions)
+scripts/redazione.py    edizione del giorno: testi con Gemini, voce neurale con edge-tts
 tools/                  generatori di sigla, icone, QR e cartoncino
 stampa/                 QR e cartoncino da stampare
 .github/workflows/      pubblicazione giornaliera e keepalive

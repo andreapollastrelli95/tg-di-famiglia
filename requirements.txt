@@ -1,1 +1,2 @@
 feedparser>=6.0,<7
+edge-tts>=7.0,<8

@@ -333,7 +333,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '1.8.0',
+  versione: '2.0.0',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -814,10 +814,24 @@ async function sintetizza(testo, onAttesa, comePCM = false) {
 
 /* ---------- Voce di riserva: Web Speech API ---------- */
 let vociCaricate = null;
+/** Ultima riserva: la migliore voce italiana del dispositivo. Preferisce le voci neurali/"Enhanced"
+ *  (Elsa, Isabella, Federica, Alice, Google italiano…) ed evita quelle sintetiche di base. */
 function voceItaliana() {
-  const voci = speechSynthesis.getVoices().filter((v) => /^it/i.test(v.lang));
-  const femminili = /alice|federica|elsa|paola|silvia|giulia|isabella|emma|bianca|female|donna|google italiano/i;
-  return voci.find((v) => femminili.test(v.name)) || voci[0] || null;
+  const voci = speechSynthesis.getVoices().filter((v) => /^it([-_]|$)/i.test(v.lang));
+  if (!voci.length) return null;
+  const voto = (v) => {
+    const n = v.name.toLowerCase();
+    let p = 0;
+    if (/natural|neural|enhanced|premium|migliorata|online/.test(n)) p += 50;        // voci di alta qualità
+    if (/elsa|isabella/.test(n)) p += 40;
+    else if (/federica|alice|google italiano/.test(n)) p += 30;
+    else if (/paola|silvia|giulia|emma|bianca|female|donna/.test(n)) p += 15;
+    if (/compact|espeak|eloquence|robot|pico/.test(n)) p -= 60;                        // voci robotiche di base
+    if (/^it[-_]it$/i.test(v.lang)) p += 5;
+    if (v.localService === false) p += 5;                                              // di solito le voci in rete sono migliori
+    return p;
+  };
+  return voci.slice().sort((x, y) => voto(y) - voto(x))[0];
 }
 function parla(testo) {
   return new Promise((fine) => {
@@ -868,6 +882,30 @@ async function caricaGrezzo() {
   }
 }
 
+/** Edizione scritta e letta sul server (scripts/redazione.py). null se oggi non c'è: allora si prepara sul telefono. */
+async function caricaEdizioneServer(g) {
+  try {
+    const r = await fetch(`data/edizione.json?v=${encodeURIComponent(g.generato)}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    const e = await r.json();
+    return e.generato === g.generato && e.notizie?.length && e.blocchi?.length ? e : null;
+  } catch { return null; }
+}
+function usaEdizioneServer(e) {
+  // il parametro ?v= cambia a ogni edizione: ogni mattina si scarica l'audio nuovo
+  const u = (percorso) => (percorso ? `${percorso}?v=${encodeURIComponent(e.generato)}` : null);
+  Ed.notizie = e.notizie; Ed.scaletta = e.scaletta || []; Ed.accadde = e.accadde || '';
+  Ed.podcast = e.podcast; Ed.varie = e.varie; Ed.origine = 'server';
+  Ed.blocchi = e.blocchi.map((b) => ({ ...b, url: u(b.audio), blob: null, stato: b.audio ? 'pronto' : 'errore' }));
+  Ed.titoli = { testi: e.titoli.map((t) => t.testo), pezzi: e.titoli.map((t) => ({ url: u(t.audio), blob: null })), completo: true, finito: true };
+  Ed.saluto = Promise.resolve(e.saluto?.audio ? { url: u(e.saluto.audio), testo: e.saluto.testo } : null);
+  Ed.audioServer = Object.fromEntries(Object.entries(e.audio_varie || {}).map(([k, v]) => [k, v.map(u)]));
+  Ed.rassegneServer = Object.fromEntries(Object.entries(e.rassegne || {}).map(([k, v]) => [k, { ...v, audio: v.audio.map(u) }]));
+  Ed.finito = true; Ed.produzioneFinita = true; Ed.avvisa();
+  renderNotizie(); renderPodcast(); renderVarie();
+  if (!audioAttivo()) stato('Il notiziario di oggi è pronto. Tocca ▶️ per ascoltarlo.');
+}
+
 function prepara(forza = false) {
   if (preparazione && !forza) return preparazione;
   const gen = ++Ed.gen;
@@ -875,7 +913,7 @@ function prepara(forza = false) {
   preparazione = (async () => {
     stato('Sto preparando il notiziario…');
     Object.assign(Ed, { grezzo: null, notizie: [], accadde: '', podcast: null, varie: null, finito: false, blocchi: [], produzioneFinita: false,
-      scaletta: [], titoli: { testi: [], pezzi: [], completo: false, finito: false } });
+      scaletta: [], titoli: { testi: [], pezzi: [], completo: false, finito: false }, audioServer: null, rassegneServer: null });
     Ed.avvisa();
     renderNotizie(); renderPodcast(); renderVarie();
     let g = await caricaGrezzo();
@@ -896,6 +934,10 @@ function prepara(forza = false) {
     renderRadioPreferite();
     Ed.podcast = scegliPodcast([]); renderPodcast(); // subito l'elenco; le spiegazioni di Gemini arrivano dopo
     mostraAvvisoData(g);
+    // Prima scelta: l'edizione preparata dal server, con la voce neurale già pronta in MP3 (nessuna quota, nessuna attesa)
+    const server = await caricaEdizioneServer(g);
+    if (!vivo()) return;
+    if (server) { usaEdizioneServer(server); return; }
     Ed.saluto = salutoAudio();
     const salvata = forza ? null : await db.get(chiaveEdizione(g));
     if (!vivo()) return;
@@ -1284,7 +1326,7 @@ async function vaiA(p) {
     const timer = sottofondoDopo(mio, 'Sto preparando il notiziario…');
     const blob = await Promise.race([Ed.saluto || Promise.resolve(null), sleep(8000).then(() => null)]);
     clearTimeout(timer);
-    t = { blob, testo: CONFIG.saluto }; etichetta = 'Saluto';
+    t = blob?.url ? { url: blob.url, testo: blob.testo || CONFIG.saluto } : { blob, testo: CONFIG.saluto }; etichetta = 'Saluto';
   } else if (p.t === 'titolo') {
     t = await attendiTitolo(p.k, mio);
     etichetta = p.k === 0 ? 'I titoli' : `Titolo ${p.k} di ${quantiTitoli()}`;
@@ -1301,9 +1343,9 @@ async function vaiA(p) {
   if (p.t === 'titolo') evidenzia(p.k > 0 && Ed.notizie[p.k - 1] ? [p.k - 1] : null);
   else evidenzia(t.notizie?.length ? t.notizie : null);
   metadati('TG di Famiglia', etichetta);
-  if (t.blob) {
+  if (t.url || t.blob) {
     stato(`🔊 ${etichetta}`);
-    return impostaSorgente(URL.createObjectURL(t.blob));
+    return impostaSorgente(t.url || URL.createObjectURL(t.blob));
   }
   // riserva: voce del telefono
   stato(`🔊 ${etichetta} (voce del telefono)`);
@@ -1505,11 +1547,17 @@ function preparaLettura(titolo, sotto) {
 }
 /** Lettura a richiesta di un testo (voce di Gemini a parti, salvata per il giorno; riserva: voce del telefono).
  *  'mio' è il gettone restituito da preparaLettura se la modalità è già stata avviata. */
-async function ascoltaVaria(id, titolo, testo, mio) {
+async function ascoltaVaria(id, titolo, testo, mio, mp3) {
   if (!testo) return;
   if (mio == null) mio = preparaLettura(titolo);
   else if (mio !== P.token) return;
   const V = P.varia;
+  mp3 = mp3 || Ed.audioServer?.[id]; // MP3 già pronti sul server per questo testo
+  if (mp3?.length) {
+    V.parti = mp3.map(() => testo);
+    V.pronti = mp3.map((url) => ({ url }));
+    return suonaParteVaria(0);
+  }
   V.parti = partiDi(testo);
   const base = `varia:${VERSIONE_CACHE}:${Ed.grezzo?.generato || 'oggi'}:${id}`;
   (async () => { // prepara le parti una dopo l'altra, in sottofondo
@@ -1541,9 +1589,9 @@ async function suonaParteVaria(i) {
   while (!V.pronti[i]) { await Promise.race([Ed.attendiCambio(), sleep(1500)]); if (mio !== P.token) return; }
   P.inAttesa = false;
   const conta = V.parti.length > 1 ? ` · parte ${i + 1} di ${V.parti.length}` : '';
-  if (V.pronti[i].blob) {
+  if (V.pronti[i].url || V.pronti[i].blob) {
     $('miniSotto').textContent = 'In ascolto' + conta;
-    impostaSorgente(URL.createObjectURL(V.pronti[i].blob));
+    impostaSorgente(V.pronti[i].url || URL.createObjectURL(V.pronti[i].blob));
   } else {
     audio.pause(); audio.loop = false;
     P.parlando = true; $('miniSotto').textContent = 'In ascolto (voce del telefono)' + conta;
@@ -1560,6 +1608,7 @@ async function chiediCalcio() {
   const domanda = $('domandaCalcio').value.trim();
   const out = $('rispostaCalcio');
   if (!domanda) { out.textContent = 'Scrivi prima la domanda.'; return; }
+  if (!chiave) { out.textContent = 'Per fare domande all\'AI serve la chiave Gemini: tocca ⚙️ in alto e incollala.'; return; }
   $('ascoltaRisposta').classList.add('nascosto');
   out.textContent = '🤔 Sto cercando la risposta…';
   $('chiediCalcio').disabled = true;
@@ -1641,6 +1690,13 @@ const RASSEGNE = {
 async function rassegna(tipo) {
   const R = RASSEGNE[tipo], info = $('rassegnaInfo');
   const mio = preparaLettura(R.titolo, 'Preparo la rassegna…'); // dentro il tocco: sblocca l'audio
+  const pronta = Ed.rassegneServer?.[tipo]; // già scritta e letta sul server
+  if (pronta) {
+    const gg = pronta.giorni || [];
+    info.textContent = gg.length ? `Settimana dal ${giornoNome(gg[0])} al ${giornoNome(gg[gg.length - 1])}` + (gg.length < 7 ? ` (per ora ${gg.length} ${gg.length === 1 ? 'giorno' : 'giorni'} in archivio: la rassegna si completa giorno dopo giorno).` : '.') : '';
+    $('rassegnaTesto').innerHTML = pronta.testo.split(/\n\s*\n/).map((x) => `<p>${esc(x.trim())}</p>`).join('');
+    return ascoltaVaria(`rassegna-${tipo}`, R.titolo, pronta.testo, mio, pronta.audio);
+  }
   info.textContent = 'Preparo la rassegna: ci vuole circa mezzo minuto…'; $('rassegnaTesto').innerHTML = '';
   try {
     const r = await fetch('data/settimana.json', { cache: 'no-store' });
@@ -2062,7 +2118,12 @@ async function avvioAutomatico() {
 /* ---------- Avvio ---------- */
 $('oggi').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 chiaveDaIndirizzo();
-if (chiave) avviaApp(); else mostra('chiave');
+if (chiave) avviaApp();
+else {
+  mostra('chiave');
+  // Con l'edizione preparata dal server il notiziario non ha bisogno della chiave (serve solo per le domande all'AI)
+  caricaGrezzo().then((g) => g && caricaEdizioneServer(g)).then((e) => { if (e && !chiave) avviaApp(); });
+}
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
 document.addEventListener('visibilitychange', () => {
   // Riaperta il giorno dopo senza ricaricare: controlla se ci sono dati nuovi
