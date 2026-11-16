@@ -218,7 +218,7 @@ const CONFIG = {
   modelliVoce: ['gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'],
   voce: 'Kore',
   // istruzione di tono (in inglese: i modelli TTS la seguono senza leggerla ad alta voce)
-  stile: 'Read aloud, in Italian, only the transcript below, in the voice of a female TV news anchor: clear, calm and composed, natural pace, a short pause between news items. Do not read these instructions.',
+  stile: 'Read aloud, in Italian, only the transcript below, exactly like a female anchor presenting the main evening TV news bulletin (telegiornale): authoritative and crisp, well articulated, brisk but composed pace, each headline announced with emphasis followed by a brief pause, then the story in a clear and calm tone. Do not read these instructions.',
   attesaTesto: 12000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
   attesaVoce: 60000,    // ms massimi per un blocco di voce
   saluto: 'Buongiorno Famiglia Pollastrelli, queste sono le notizie del giorno.',
@@ -227,9 +227,9 @@ const CONFIG = {
   notizieCalcio: 2,
   notiziePerBlocco: 2,
   podcast: 10,
-  versione: '1.0.0',
+  versione: '1.1.0',
 };
-const VERSIONE_CACHE = 'v1'; // cambiarla invalida la cache audio/testo
+const VERSIONE_CACHE = 'v2'; // cambiarla invalida la cache audio/testo
 
 /* =====================================================================
    UTILITÀ
@@ -288,6 +288,7 @@ function base64ABytes(b64) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
+const URL_TAPPETO = 'assets/tappeto.wav'; // sottofondo musicale mentre la voce si prepara
 const URL_SILENZIO = URL.createObjectURL(pcmAWav(new Uint8Array(24000 * 2), 24000)); // 1 s di silenzio
 
 /* =====================================================================
@@ -924,7 +925,7 @@ async function attendiTraccia(i, mio) {
   const inAttesa = () => {
     if (P.inAttesa || mio !== P.token) return;
     P.inAttesa = true;
-    impostaSorgente(URL_SILENZIO, true); // mantiene viva la sessione audio (schermo spento, iPhone)
+    impostaSorgente(URL_TAPPETO, true); // sottofondo da TG: niente silenzi e sessione audio viva (schermo spento, iPhone)
     stato(i <= 2 ? 'Sto preparando il notiziario…' : 'Preparo le prossime notizie…');
   };
   if (i === 1) {
@@ -961,7 +962,7 @@ audio.addEventListener('ended', () => {
   else if (P.modo === 'podcast') { aggiornaMini(); }
 });
 audio.addEventListener('error', () => {
-  if (P.urlCorrente === URL_SILENZIO) return;
+  if (P.urlCorrente === URL_SILENZIO || P.inAttesa) return;
   if (P.modo === 'radio') { stato(''); radioCasuale(true); }
   else if (P.modo === 'podcast') $('miniSotto').textContent = 'Questo episodio non si riesce a riprodurre. Usa “Apri episodio”.';
   else if (P.modo === 'tg') vaiATraccia(P.traccia + 1);
@@ -973,6 +974,23 @@ audio.addEventListener('timeupdate', () => {
     try { navigator.mediaSession?.setPositionState?.({ duration: audio.duration, position: audio.currentTime, playbackRate: 1 }); } catch {}
   }
 });
+
+/* ---------- Controllo: l'audio sta davvero suonando? ---------- */
+let ctrlTempo = -1, ctrlFermo = 0;
+setInterval(() => {
+  if (!P.modo || audio.paused || P.parlando) { ctrlTempo = -1; ctrlFermo = 0; return; }
+  if (audio.currentTime !== ctrlTempo) {
+    if (ctrlFermo >= 6) document.getElementById('av-audio')?.remove();
+    ctrlTempo = audio.currentTime; ctrlFermo = 0; return;
+  }
+  if (++ctrlFermo !== 6) return;
+  if (P.modo !== 'tg' && audio.readyState < 3) { $('miniSotto').textContent = 'Collegamento lento… attendi o cambia.'; return; }
+  if (!document.getElementById('av-audio')) {
+    const d = document.createElement('div'); d.className = 'avviso'; d.id = 'av-audio';
+    d.textContent = '🔇 Questo dispositivo non sta riproducendo l’audio. Controlla il volume e l’uscita audio (casse, cuffie, Bluetooth), poi chiudi e riapri il browser. Se sei al computer, prova dal telefono.';
+    $('avvisi').prepend(d); d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}, 1000);
 
 function pausaOContinua() {
   if (P.parlando) {

@@ -2,8 +2,8 @@
    - interfaccia e sigla: in cache (funzionano anche offline)
    - data/grezzo.json: sempre dalla rete (network-first), copia di riserva in cache
    - richieste ad altri siti (Gemini, podcast, radio): non toccate */
-const CACHE = 'tg-famiglia-v1';
-const GUSCIO = ['./', 'index.html', 'manifest.json', 'assets/sigla.mp3',
+const CACHE = 'tg-famiglia-v2';
+const GUSCIO = ['./', 'index.html', 'manifest.json', 'assets/sigla.mp3', 'assets/tappeto.wav',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

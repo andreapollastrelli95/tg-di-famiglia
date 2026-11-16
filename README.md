@@ -132,7 +132,7 @@ ogni mese e riattiva il workflow di raccolta.
 
 ```bash
 pip install numpy lameenc pillow qrcode reportlab
-python tools/genera_sigla.py          # assets/sigla.mp3 (fanfara originale sintetizzata)
+python tools/genera_sigla.py          # assets/sigla.mp3 e assets/tappeto.wav (musica originale sintetizzata)
 python tools/genera_icone.py          # icons/*.png
 python tools/genera_qr_cartoncino.py --url https://andreapollastrelli95.github.io/tg-di-famiglia/
 ```
