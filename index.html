@@ -217,19 +217,17 @@ const CONFIG = {
   modelliTesto: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash'],
   modelliVoce: ['gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'],
   voce: 'Kore',
-  // istruzione di tono (in inglese: i modelli TTS la seguono senza leggerla ad alta voce)
-  stile: 'Read aloud, in Italian, only the transcript below, exactly like a female anchor presenting the main evening TV news bulletin (telegiornale): authoritative and crisp, well articulated, brisk but composed pace, each headline announced with emphasis followed by a brief pause, then the story in a clear and calm tone. Do not read these instructions.',
   attesaTesto: 12000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
   attesaVoce: 60000,    // ms massimi per un blocco di voce
-  saluto: 'Buongiorno Famiglia Pollastrelli, queste sono le notizie del giorno.',
+  saluto: 'Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto.',
   chiusura: '…e ora i podcast consigliati di oggi. Buona giornata!',
   notizieGenerali: 8,
   notizieCalcio: 2,
   notiziePerBlocco: 2,
   podcast: 10,
-  versione: '1.1.0',
+  versione: '1.2.0',
 };
-const VERSIONE_CACHE = 'v2'; // cambiarla invalida la cache audio/testo
+const VERSIONE_CACHE = 'v3'; // cambiarla invalida la cache audio/testo
 
 /* =====================================================================
    UTILITÀ
@@ -559,7 +557,8 @@ async function redigi(grezzo, onNotizia, onAttesa) {
 async function sintetizza(testo, onAttesa) {
   return conModelli(CONFIG.modelliVoce, async (modello, giro) => {
     const j = await chiamaGemini(modello, {
-      contents: [{ role: 'user', parts: [{ text: `${CONFIG.stile}\n\nTRANSCRIPT:\n${testo}` }] }],
+      // Solo il testo da leggere, senza istruzioni: i modelli TTS a volte leggono ad alta voce anche quelle.
+      contents: [{ role: 'user', parts: [{ text: testo }] }],
       generationConfig: {
         responseModalities: ['AUDIO'],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: CONFIG.voce } } },
@@ -569,6 +568,9 @@ async function sintetizza(testo, onAttesa) {
     if (!parte) throw new ErroreGemini('server', 'Audio vuoto.', { tecnico: 'nessun inlineData: ' + JSON.stringify(j).slice(0, 200) });
     const rate = parseInt((parte.inlineData.mimeType || '').match(/rate=(\d+)/)?.[1] || '24000', 10);
     const bytes = base64ABytes(parte.inlineData.data);
+    // Controllo di sicurezza: se l'audio è molto più lungo del testo, la voce ha letto altro: si riprova.
+    const secondi = bytes.length / (rate * 2), parole = testo.split(/\s+/).length;
+    if (secondi > parole * 0.75 + 6) throw new ErroreGemini('server', 'Audio non valido.', { tecnico: `audio di ${secondi.toFixed(0)} s per ${parole} parole` });
     if (/wav/i.test(parte.inlineData.mimeType || '')) return new Blob([bytes], { type: 'audio/wav' });
     return pcmAWav(bytes, rate);
   }, 'tg_modello_voce', onAttesa);
