@@ -16,7 +16,7 @@ sul suo telefono.
 
 **Scheda TG** (tasto ▶️ grande):
 
-1. sigla, poi il saluto *"Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
+1. sigla, poi il saluto *"Buongiorno famiglia, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
 2. **5 notizie nazionali**, separate da uno stacco sonoro di 3 secondi;
 3. stacco leggero di 5 secondi, la voce dice *"Notizie dalla Tuscia"* e legge **3 notizie da Viterbo e provincia**;
 4. stacco di 5 secondi, *"Notizie sportive"* e **2 notizie di sport**;
