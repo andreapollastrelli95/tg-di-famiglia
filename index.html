@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TG di Famiglia</title>
+<meta name="description" content="Il notiziario quotidiano della Famiglia Pollastrelli">
+<meta name="theme-color" content="#0b2a55">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TG Famiglia">
+<meta name="format-detection" content="telephone=no">
+<style>
+:root{
+  --sfondo:#f6f3ec; --carta:#ffffff; --testo:#111418; --tenue:#3d4450; --bordo:#d5d0c4;
+  --blu:#0b2a55; --blu-chiaro:#e3eaf5; --rosso:#c8102e; --rosso-scuro:#9e0c24; --verde:#0f6b3a;
+  --giallo:#fff4c2; --ombra:0 2px 10px rgba(0,0,0,.08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sfondo:#0d1117; --carta:#171c24; --testo:#f4f6fa; --tenue:#c3c9d4; --bordo:#323a47;
+    --blu:#8fb4ff; --blu-chiaro:#1c2a44; --rosso:#ff4d63; --rosso-scuro:#e0334a; --verde:#4fd08a;
+    --giallo:#3a3210; --ombra:none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --sfondo:#0d1117; --carta:#171c24; --testo:#f4f6fa; --tenue:#c3c9d4; --bordo:#323a47;
+  --blu:#8fb4ff; --blu-chiaro:#1c2a44; --rosso:#ff4d63; --rosso-scuro:#e0334a; --verde:#4fd08a;
+  --giallo:#3a3210; --ombra:none; color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--sfondo);color:var(--testo);font:20px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+a{color:var(--blu)}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.contenitore{max-width:720px;margin:0 auto;padding:0 16px}
+header.testata{background:#0b2a55;color:#fff;padding:calc(14px + env(safe-area-inset-top)) 0 14px}
+header.testata .contenitore{display:flex;align-items:center;gap:12px}
+.logo{width:52px;height:52px;border-radius:12px;background:#c8102e;display:grid;place-items:center;font-weight:900;font-size:26px;letter-spacing:-1px;flex:none}
+.testata h1{margin:0;font-size:26px;line-height:1.1}
+.testata .data{font-size:18px;opacity:.9;text-transform:capitalize}
+.ingranaggio{margin-left:auto;background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:14px;width:56px;height:56px;font-size:28px;flex:none}
+main{padding-top:18px}
+.scheda{background:var(--carta);border:1px solid var(--bordo);border-radius:18px;padding:18px;box-shadow:var(--ombra);margin-bottom:16px}
+h2{font-size:24px;margin:28px 0 12px;color:var(--blu)}
+.player{text-align:center;padding:24px 18px}
+.tasto-play{width:190px;height:190px;border-radius:50%;border:none;background:var(--rosso);color:#fff;font-size:84px;line-height:1;
+  box-shadow:0 8px 24px rgba(200,16,46,.35);display:inline-grid;place-items:center;transition:transform .1s}
+.tasto-play:active{transform:scale(.96)}
+.tasto-play svg{width:92px;height:92px;fill:#fff}
+.etichetta-play{font-size:26px;font-weight:800;margin:14px 0 4px}
+.stato{font-size:20px;color:var(--tenue);min-height:1.5em;margin:6px 0 0}
+.stato.errore{color:var(--rosso-scuro);font-weight:700}
+.comandi{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.btn{min-height:58px;padding:10px 20px;border-radius:14px;border:2px solid var(--blu);background:var(--carta);color:var(--blu);font-weight:700;font-size:20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.pieno{background:var(--blu);color:var(--carta)}
+.btn.rosso{background:var(--rosso);border-color:var(--rosso);color:#fff}
+.btn:disabled{opacity:.45}
+.avviso{background:var(--giallo);border:2px solid #e2c23d;border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:19px}
+.notizia{position:relative;transition:outline-color .2s}
+.notizia.in-onda{outline:4px solid var(--rosso);outline-offset:-2px}
+.notizia .numero{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--blu);color:var(--carta);font-weight:800;margin-right:8px;font-size:19px;flex:none}
+.notizia .riga{display:flex;align-items:flex-start;gap:4px}
+.notizia h3{margin:2px 0 8px;font-size:23px;line-height:1.25}
+.notizia p{margin:0 0 12px}
+.badge{display:inline-block;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 10px;border-radius:999px;background:var(--blu-chiaro);color:var(--blu);margin-bottom:6px}
+.badge.calcio{background:#d9f2e3;color:#0f6b3a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .badge.calcio{background:#12331f;color:#7fe0a8}}
+.fonte{font-size:17px;color:var(--tenue);margin-bottom:12px}
+.segnaposto{color:var(--tenue);font-style:italic}
+.podcast .testa{display:flex;gap:14px;align-items:flex-start}
+.podcast img{width:76px;height:76px;border-radius:12px;object-fit:cover;flex:none;background:var(--blu-chiaro)}
+.podcast .nome{font-weight:800;font-size:19px;color:var(--blu)}
+.podcast .episodio{font-weight:700;font-size:20px;line-height:1.3;margin-top:2px}
+.podcast p{margin:10px 0 12px}
+.podcast .azioni{display:flex;gap:10px;flex-wrap:wrap}
+.radio-nome{font-size:22px;font-weight:800;margin:12px 0 0;min-height:1.4em}
+.mini{position:fixed;left:0;right:0;bottom:0;background:#0b2a55;color:#fff;padding:10px 0 calc(10px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.25);z-index:5}
+.mini[hidden]{display:none}
+.mini .contenitore{display:flex;align-items:center;gap:10px}
+.mini .titolo{flex:1;min-width:0;font-size:18px;line-height:1.25}
+.mini .titolo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .titolo span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85;font-size:16px}
+.mini button{width:56px;height:56px;border-radius:14px;border:2px solid rgba(255,255,255,.6);background:transparent;color:#fff;font-size:22px;flex:none;font-weight:800}
+.mini input[type=range]{width:100%;margin:6px 0 0;accent-color:#ff4d63}
+.mini .barra{flex-basis:100%}
+.setup{padding-top:10px}
+.setup h2{margin-top:10px}
+.setup ol{padding-left:0;list-style:none;counter-reset:passo;margin:0 0 18px}
+.setup li{counter-increment:passo;display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.setup li::before{content:counter(passo);display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:var(--rosso);color:#fff;font-weight:800}
+.campo{width:100%;font:inherit;font-size:20px;padding:14px;border-radius:14px;border:2px solid var(--blu);background:var(--carta);color:var(--testo);margin:6px 0 12px}
+.riga-btn{display:flex;gap:10px;flex-wrap:wrap}
+.riga-btn .btn{flex:1 1 180px}
+dialog{border:none;border-radius:20px;padding:22px;max-width:min(560px,calc(100vw - 32px));width:100%;background:var(--carta);color:var(--testo)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog h2{margin-top:0}
+.piccolo{font-size:16px;color:var(--tenue)}
+.nascosto{display:none !important}
+@media (max-width:420px){
+  .tasto-play{width:170px;height:170px}
+  .testata h1{font-size:23px}
+}
+</style>
+</head>
+<body>
+<header class="testata">
+  <div class="contenitore">
+    <div class="logo" aria-hidden="true">TG</div>
+    <div>
+      <h1>TG di Famiglia</h1>
+      <div class="data" id="oggi"></div>
+    </div>
+    <button class="ingranaggio nascosto" id="apriImpostazioni" aria-label="Impostazioni">⚙️</button>
+  </div>
+</header>
+
+<main class="contenitore">
+  <!-- Primo avvio -->
+  <section id="schermataChiave" class="setup nascosto">
+    <div class="scheda">
+      <h2>Inserisci la tua chiave Google Gemini</h2>
+      <p>Serve una sola volta. È gratuita e resta solo su questo telefono.</p>
+      <ol>
+        <li><span>Apri <b>Google AI Studio</b> e accedi con il tuo account Google.</span></li>
+        <li><span>Tocca <b>“Create API key”</b> (Crea chiave API) e poi <b>copia</b> la chiave.</span></li>
+        <li><span>Torna qui, <b>incolla</b> la chiave nel riquadro e tocca <b>Salva</b>.</span></li>
+      </ol>
+      <p><a class="btn" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">🔑 Apri Google AI Studio</a></p>
+      <label for="campoChiave"><b>La tua chiave</b></label>
+      <input id="campoChiave" class="campo" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…">
+      <div class="riga-btn">
+        <button class="btn" id="incolla" type="button">📋 Incolla</button>
+        <button class="btn pieno" id="salvaChiave" type="button">Salva</button>
+      </div>
+      <p class="stato" id="statoChiave" role="status" aria-live="polite"></p>
+      <p class="piccolo">La chiave viene inviata solo a Google per preparare il notiziario. Non finisce su altri server.</p>
+    </div>
+  </section>
+
+  <!-- Schermata principale -->
+  <section id="schermataTG" class="nascosto">
+    <div id="avvisi"></div>
+    <div class="scheda player">
+      <button class="tasto-play" id="tastoPlay" aria-label="Ascolta il notiziario">
+        <svg id="iconaPlay" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+      </button>
+      <div class="etichetta-play" id="etichettaPlay">Ascolta il notiziario</div>
+      <p class="stato" id="stato" role="status" aria-live="polite"></p>
+      <div class="comandi nascosto" id="comandiTG">
+        <button class="btn" id="indietro" type="button">⏮ Indietro</button>
+        <button class="btn" id="avanti" type="button">Avanti ⏭</button>
+      </div>
+    </div>
+
+    <h2>📰 Le notizie di oggi</h2>
+    <div id="listaNotizie"><p class="segnaposto scheda">Le notizie compariranno qui appena pronte.</p></div>
+
+    <h2>🎧 Podcast consigliati</h2>
+    <div id="listaPodcast"><p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p></div>
+
+    <h2>🎵 Radio</h2>
+    <div class="scheda" style="text-align:center">
+      <div class="riga-btn">
+        <button class="btn rosso" id="radioCasuale" type="button">🎵 Musica casuale</button>
+        <button class="btn" id="radioCambia" type="button" disabled>🔀 Cambia</button>
+      </div>
+      <p class="radio-nome" id="radioNome"></p>
+    </div>
+  </section>
+</main>
+
+<!-- Mini player per podcast e radio -->
+<div class="mini" id="mini" hidden>
+  <div class="contenitore" style="flex-wrap:wrap">
+    <div class="titolo"><b id="miniTitolo"></b><span id="miniSotto"></span></div>
+    <button id="miniIndietro" aria-label="Indietro di 15 secondi">−15</button>
+    <button id="miniPlay" aria-label="Pausa">⏸</button>
+    <button id="miniStop" aria-label="Ferma">✕</button>
+    <div class="barra" id="miniBarra"><input type="range" id="miniPosizione" min="0" max="1000" value="0" aria-label="Posizione"></div>
+  </div>
+</div>
+
+<dialog id="impostazioni">
+  <h2>⚙️ Impostazioni</h2>
+  <p>Chiave Gemini salvata: <b id="chiaveMascherata"></b></p>
+  <label for="nuovaChiave"><b>Cambia chiave</b></label>
+  <input id="nuovaChiave" class="campo" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla la nuova chiave">
+  <div class="riga-btn">
+    <button class="btn pieno" id="salvaNuova" type="button">Salva nuova chiave</button>
+  </div>
+  <p class="stato" id="statoImpostazioni" role="status" aria-live="polite"></p>
+  <div class="riga-btn" style="margin-top:14px">
+    <button class="btn" id="rigenera" type="button">🔄 Rifai il notiziario di oggi</button>
+    <button class="btn rosso" id="cancellaChiave" type="button">🗑 Cancella chiave</button>
+  </div>
+  <p class="piccolo" id="infoVersione"></p>
+  <div class="riga-btn" style="margin-top:10px"><button class="btn" id="chiudiImpostazioni" type="button">Chiudi</button></div>
+</dialog>
+
+<audio id="audio" preload="auto" playsinline webkit-playsinline></audio>
+
+<script>
+'use strict';
+/* =====================================================================
+   CONFIGURAZIONE (modificabile: vedi README)
+   ===================================================================== */
+const CONFIG = {
+  api: 'https://generativelanguage.googleapis.com/v1beta',
+  // provati in ordine; se uno è lento/sovraccarico si passa al successivo
+  modelliTesto: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash'],
+  modelliVoce: ['gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'],
+  voce: 'Kore',
+  // istruzione di tono (in inglese: i modelli TTS la seguono senza leggerla ad alta voce)
+  stile: 'Read aloud, in Italian, only the transcript below, in the voice of a female TV news anchor: clear, calm and composed, natural pace, a short pause between news items. Do not read these instructions.',
+  attesaTesto: 12000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
+  attesaVoce: 60000,    // ms massimi per un blocco di voce
+  saluto: 'Buongiorno Famiglia Pollastrelli, queste sono le notizie del giorno.',
+  chiusura: '…e ora i podcast consigliati di oggi. Buona giornata!',
+  notizieGenerali: 8,
+  notizieCalcio: 2,
+  notiziePerBlocco: 2,
+  podcast: 10,
+  versione: '1.0.0',
+};
+const VERSIONE_CACHE = 'v1'; // cambiarla invalida la cache audio/testo
+
+/* =====================================================================
+   UTILITÀ
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ls = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const linkSicuro = (u) => (/^https?:\/\//i.test(u || '') ? u : '#');
+
+/* ---------- IndexedDB minimale (chiave/valore) ---------- */
+const db = (() => {
+  let p;
+  const apri = () => p || (p = new Promise((ok, ko) => {
+    const r = indexedDB.open('tg-di-famiglia', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => ko(r.error);
+  }));
+  const tx = async (modo, fn) => {
+    const d = await apri();
+    return new Promise((ok, ko) => {
+      const t = d.transaction('kv', modo);
+      const st = t.objectStore('kv');
+      const req = fn(st);
+      t.oncomplete = () => ok(req && req.result);
+      t.onerror = () => ko(t.error);
+      t.onabort = () => ko(t.error);
+    });
+  };
+  return {
+    get: (k) => tx('readonly', (s) => s.get(k)).catch(() => undefined),
+    set: (k, v) => tx('readwrite', (s) => s.put(v, k)).catch((e) => console.warn('IDB', e)),
+    del: (k) => tx('readwrite', (s) => s.delete(k)).catch(() => {}),
+    keys: () => tx('readonly', (s) => s.getAllKeys()).catch(() => []),
+  };
+})();
+
+/* ---------- Audio: PCM 16 bit -> WAV ---------- */
+function pcmAWav(pcm, rate = 24000, canali = 1) {
+  const h = new DataView(new ArrayBuffer(44));
+  const scrivi = (o, s) => { for (let i = 0; i < s.length; i++) h.setUint8(o + i, s.charCodeAt(i)); };
+  scrivi(0, 'RIFF'); h.setUint32(4, 36 + pcm.length, true); scrivi(8, 'WAVE');
+  scrivi(12, 'fmt '); h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, canali, true);
+  h.setUint32(24, rate, true); h.setUint32(28, rate * canali * 2, true); h.setUint16(32, canali * 2, true); h.setUint16(34, 16, true);
+  scrivi(36, 'data'); h.setUint32(40, pcm.length, true);
+  return new Blob([h.buffer, pcm], { type: 'audio/wav' });
+}
+function base64ABytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+const URL_SILENZIO = URL.createObjectURL(pcmAWav(new Uint8Array(24000 * 2), 24000)); // 1 s di silenzio
+
+/* =====================================================================
+   CHIAVE API
+   ===================================================================== */
+let chiave = ls.get('tg_chiave') || '';
+
+function chiaveDaIndirizzo() {
+  // Configurazione dal QR: https://…/#key=AIza…  -> salva e pulisce l'indirizzo
+  const m = location.hash.match(/(?:^#|&)key=([^&]+)/);
+  if (!m) return false;
+  const k = decodeURIComponent(m[1]).trim();
+  history.replaceState(null, '', location.pathname + location.search);
+  if (k) { chiave = k; ls.set('tg_chiave', k); return true; }
+  return false;
+}
+
+async function verificaChiave(k) {
+  let r;
+  try {
+    r = await fetch(`${CONFIG.api}/models?pageSize=1`, { headers: { 'x-goog-api-key': k } });
+  } catch { return { ok: false, msg: 'Non riesco a contattare Google. Controlla la connessione a Internet e riprova.' }; }
+  if (r.ok) return { ok: true };
+  const e = await erroreDa(r);
+  return { ok: false, msg: e.messaggioUtente };
+}
+
+/* =====================================================================
+   GEMINI: chiamate, errori, retry
+   ===================================================================== */
+class ErroreGemini extends Error {
+  constructor(tipo, messaggioUtente, dettagli = {}) {
+    super(dettagli.tecnico || messaggioUtente);
+    Object.assign(this, { tipo, messaggioUtente }, dettagli);
+  }
+}
+async function erroreDa(res) {
+  const testo = await res.text().catch(() => '');
+  let j = {}; try { j = JSON.parse(testo); } catch {}
+  const err = Array.isArray(j) ? j[0]?.error : j.error;
+  const msg = err?.message || testo.slice(0, 300);
+  const s = res.status;
+  const det = { status: s, tecnico: `${s} ${msg}` };
+  if (/API key not valid|API_KEY_INVALID|API key expired/i.test(testo))
+    return new ErroreGemini('chiave', 'La chiave non è valida. Controlla di averla copiata tutta, senza spazi.', det);
+  if (s === 403 && /referer|referrer|blocked|API_KEY_HTTP_REFERRER|not been used|disabled/i.test(testo))
+    return new ErroreGemini('chiave', 'La chiave è bloccata per questo sito o la Gemini API non è attiva. Controlla le restrizioni della chiave (vedi istruzioni).', det);
+  if (s === 401 || s === 403)
+    return new ErroreGemini('chiave', 'Google ha rifiutato la chiave. Prova a crearne una nuova su Google AI Studio.', det);
+  if (s === 429) {
+    let retryMs = 0;
+    for (const d of err?.details || []) {
+      if (String(d['@type']).includes('RetryInfo') && d.retryDelay) retryMs = parseFloat(d.retryDelay) * 1000;
+    }
+    const perGiorno = /PerDay|per day|daily/i.test(testo);
+    return new ErroreGemini('quota', 'Per oggi la quota gratuita di Gemini è esaurita. Riprova più tardi o domani.', { ...det, retryMs, perGiorno });
+  }
+  if (s === 404 || (s === 400 && /model|not found|not supported|modalit|thinking|voice|speech|unknown name|invalid json payload/i.test(msg)))
+    return new ErroreGemini('modello', 'Modello non disponibile.', det);
+  if (s === 503) return new ErroreGemini('lento', 'I server di Google sono molto richiesti in questo momento.', det);
+  if (s >= 500) return new ErroreGemini('server', 'I server di Google sono momentaneamente occupati.', det);
+  return new ErroreGemini('altro', 'Errore imprevisto di Gemini: ' + msg, det);
+}
+/** Chiamata REST. timeoutMs vale fino alla risposta (per generateContent) o ai primi header (per lo streaming). */
+async function chiamaGemini(modello, corpo, stream = false, timeoutMs = 60000) {
+  const url = `${CONFIG.api}/models/${encodeURIComponent(modello)}:${stream ? 'streamGenerateContent?alt=sse' : 'generateContent'}`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(url, { method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chiave }, body: JSON.stringify(corpo) });
+    if (!res.ok) throw await erroreDa(res);
+    if (!stream) { const j = await res.json(); clearTimeout(timer); return j; }
+    clearTimeout(timer);
+    return res;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e instanceof ErroreGemini) throw e;
+    if (e.name === 'AbortError') throw new ErroreGemini('lento', 'Gemini è molto lento in questo momento.', { tecnico: `${modello}: nessuna risposta in ${timeoutMs / 1000} s` });
+    throw new ErroreGemini('rete', 'Connessione a Internet assente o instabile.', { tecnico: String(e) });
+  }
+}
+/** Prova i modelli in ordine; gestisce 429 con attesa (retryDelay o backoff), modelli lenti o
+ *  sovraccarichi (passa al successivo) ed errori temporanei. Se tutti sono lenti fa un secondo giro
+ *  concedendo più tempo. fn(modello, giro) riceve giro = 1 o 3 (moltiplicatore dei timeout). */
+async function conModelli(modelli, fn, chiaveMemo, onAttesa) {
+  const preferito = ls.get(chiaveMemo);
+  const ordine = preferito && modelli.includes(preferito) ? [preferito, ...modelli.filter((m) => m !== preferito)] : modelli;
+  const scartati = new Set();
+  let ultimo;
+  for (const giro of [1, 3]) {
+    for (const modello of ordine) {
+      if (scartati.has(modello)) continue;
+      for (let t = 0; t < 5; t++) {
+        try {
+          const r = await fn(modello, giro);
+          ls.set(chiaveMemo, modello);
+          return r;
+        } catch (e) {
+          if (!(e instanceof ErroreGemini)) e = new ErroreGemini('altro', 'Risposta di Gemini non valida.', { tecnico: String(e) });
+          console.warn(modello, e.tipo, e.message);
+          if (e.tipo === 'chiave') throw e;
+          if (!ultimo || ultimo.tipo !== 'quota' || e.tipo === 'quota') ultimo = e; // il messaggio di quota è il più utile
+          if (e.tipo === 'modello' || e.tipo === 'altro') { scartati.add(modello); break; }
+          if (e.tipo === 'lento') break; // prova subito il modello successivo
+          if (e.tipo === 'quota') {
+            if (e.perGiorno || t >= 3) { scartati.add(modello); break; }
+            const attesa = Math.min(Math.max(e.retryMs || 0, 4000 * 2 ** t), 65000);
+            onAttesa?.(attesa);
+            await sleep(attesa + 500);
+            continue;
+          }
+          // rete / server: riprova con attesa crescente
+          if (t < 2) await sleep(2000 * 2 ** t); else break;
+        }
+      }
+    }
+    if (ordine.every((m) => scartati.has(m))) break;
+  }
+  throw ultimo || new ErroreGemini('altro', 'Nessun modello disponibile.');
+}
+
+/* ---------- Testo: scelta e riscrittura delle notizie (streaming) ---------- */
+function promptRedazione(grezzo) {
+  const giorno = new Date(grezzo.generato).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const righe = grezzo.notizie.map((n) => `${n.id} | ${n.categoria} | ${n.fonte} | ${n.data.slice(5, 16).replace('T', ' ')} | ${n.titolo}${n.sommario ? ' — ' + n.sommario.slice(0, 220) : ''}`);
+  const pod = grezzo.podcast.map((p) => `${p.id} | ${p.calcio ? 'CALCIO' : 'attualità'} | ${p.nome} | episodio: ${p.episodio} | ${(p.descrizione || '').slice(0, 320)}`);
+  return `Sei il caporedattore di un telegiornale italiano ascoltato ogni mattina da una famiglia. Oggi è ${giorno}.
+Qui sotto trovi le notizie raccolte stamattina dai feed RSS delle principali testate italiane (formato: id | categoria | fonte | data | titolo — sommario) e gli episodi recenti di alcuni podcast.
+
+COMPITO 1 – NOTIZIE. Scegli esattamente ${CONFIG.notizieGenerali + CONFIG.notizieCalcio} notizie:
+- ${CONFIG.notizieGenerali} di categoria "generale": le più importanti del giorno, variando gli argomenti (politica, economia, esteri, cronaca, scienza). Preferisci i fatti riportati da più testate; evita doppioni sullo stesso fatto, gossip e notizie minori.
+- ${CONFIG.notizieCalcio} di categoria "calcio": calcio italiano (Serie A, Nazionale, squadre italiane in Champions League o nelle altre coppe europee).
+Ordine: prima le ${CONFIG.notizieGenerali} generali dalla più importante, poi le ${CONFIG.notizieCalcio} di calcio.
+Per ciascuna:
+- "id": l'id della voce più completa su quel fatto; "fonti_ids": tutti gli id che parlano dello stesso fatto (compreso "id").
+- "titolo": massimo 10 parole, chiaro.
+- "testo": tra 60 e 90 parole, riscritto con parole tue, in tono neutrale e fattuale da telegiornale, pensato per essere letto ad alta voce: frasi brevi, niente elenchi, niente emoji, sigle spiegate la prima volta, numeri leggibili. Usa solo le informazioni presenti nei titoli e nei sommari: non inventare dettagli, cifre o dichiarazioni.
+
+COMPITO 2 – PODCAST. Scegli esattamente ${CONFIG.podcast} podcast dall'elenco (tutti, se sono meno di ${CONFIG.podcast}), con almeno 1 di CALCIO se presente, mettendo prima i più interessanti e attuali. Per ciascuno "id" e "spiegazione": 2 frasi brevi (massimo 35 parole in tutto) che spiegano di cosa parla l'episodio.
+
+Rispondi solo con il JSON richiesto.
+
+NOTIZIE:
+${righe.join('\n')}
+
+PODCAST:
+${pod.join('\n') || '(nessuno)'}`;
+}
+const SCHEMA_REDAZIONE = {
+  type: 'OBJECT',
+  properties: {
+    notizie: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          id: { type: 'STRING' },
+          categoria: { type: 'STRING', enum: ['generale', 'calcio'] },
+          titolo: { type: 'STRING' },
+          testo: { type: 'STRING' },
+          fonti_ids: { type: 'ARRAY', items: { type: 'STRING' } },
+        },
+        required: ['id', 'categoria', 'titolo', 'testo', 'fonti_ids'],
+        propertyOrdering: ['id', 'categoria', 'titolo', 'testo', 'fonti_ids'],
+      },
+    },
+    podcast: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: { id: { type: 'STRING' }, spiegazione: { type: 'STRING' } },
+        required: ['id', 'spiegazione'],
+        propertyOrdering: ['id', 'spiegazione'],
+      },
+    },
+  },
+  required: ['notizie', 'podcast'],
+  propertyOrdering: ['notizie', 'podcast'],
+};
+
+/** Estrae gli oggetti già completi dell'array "notizie" da un JSON parziale. */
+function notizieComplete(buf) {
+  const k = buf.indexOf('"notizie"');
+  if (k < 0) return [];
+  const a = buf.indexOf('[', k);
+  if (a < 0) return [];
+  const out = [];
+  let prof = 0, inStr = false, esc = false, inizio = -1;
+  for (let i = a + 1; i < buf.length; i++) {
+    const c = buf[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{') { if (prof++ === 0) inizio = i; }
+    else if (c === '}') { if (--prof === 0 && inizio >= 0) { try { out.push(JSON.parse(buf.slice(inizio, i + 1))); } catch {} inizio = -1; } }
+    else if (c === ']' && prof === 0) break;
+  }
+  return out;
+}
+
+async function leggiSSE(res, onTesto) {
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let resto = '', tutto = '';
+  for (;;) {
+    let timer;
+    const pausa = new Promise((_, ko) => { timer = setTimeout(() => ko(new ErroreGemini('lento', 'Gemini si è fermato a metà.', { tecnico: 'stream fermo' })), 45000); });
+    let pezzo;
+    try { pezzo = await Promise.race([reader.read(), pausa]); }
+    catch (e) { reader.cancel().catch(() => {}); throw e; }
+    finally { clearTimeout(timer); }
+    const { value, done } = pezzo;
+    if (done) break;
+    resto += dec.decode(value, { stream: true });
+    let i;
+    while ((i = resto.search(/\r?\n\r?\n/)) >= 0) {
+      const evento = resto.slice(0, i);
+      resto = resto.slice(i).replace(/^\r?\n\r?\n/, '');
+      const dati = evento.split(/\r?\n/).filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim()).join('');
+      if (!dati) continue;
+      let j; try { j = JSON.parse(dati); } catch { continue; }
+      if (j.error) throw new ErroreGemini('server', 'Errore durante la risposta di Gemini.', { tecnico: j.error.message });
+      const parti = j.candidates?.[0]?.content?.parts || [];
+      for (const p of parti) if (p.text && !p.thought) { tutto += p.text; onTesto(tutto); }
+    }
+  }
+  return tutto;
+}
+
+async function redigi(grezzo, onNotizia, onAttesa) {
+  const usati = new Set();
+  const consegna = (n) => {
+    const chiaveN = n.id + '|' + n.titolo;
+    if (usati.has(n.id) || usati.has(chiaveN)) return;
+    usati.add(n.id); usati.add(chiaveN);
+    onNotizia(n);
+  };
+  const base = {
+    contents: [{ role: 'user', parts: [{ text: promptRedazione(grezzo) }] }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA_REDAZIONE, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
+  };
+  return conModelli(CONFIG.modelliTesto, async (modello, giro) => {
+    const prova = async (corpo) => {
+      const res = await chiamaGemini(modello, corpo, true, CONFIG.attesaTesto * giro);
+      let viste = 0;
+      const testo = await leggiSSE(res, (buf) => {
+        const lista = notizieComplete(buf);
+        for (; viste < lista.length; viste++) consegna(lista[viste]);
+      });
+      const pulito = testo.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+      const j = JSON.parse(pulito);
+      (j.notizie || []).forEach(consegna);
+      return j;
+    };
+    try { return await prova(base); }
+    catch (e) {
+      // alcuni modelli non accettano thinkingBudget = 0 (rispondono 400): riprova senza
+      if (e.status === 400) {
+        const senza = structuredClone(base); delete senza.generationConfig.thinkingConfig;
+        return prova(senza);
+      }
+      throw e;
+    }
+  }, 'tg_modello_testo', onAttesa);
+}
+
+/* ---------- Voce: Gemini TTS ---------- */
+async function sintetizza(testo, onAttesa) {
+  return conModelli(CONFIG.modelliVoce, async (modello, giro) => {
+    const j = await chiamaGemini(modello, {
+      contents: [{ role: 'user', parts: [{ text: `${CONFIG.stile}\n\nTRANSCRIPT:\n${testo}` }] }],
+      generationConfig: {
+        responseModalities: ['AUDIO'],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: CONFIG.voce } } },
+      },
+    }, false, CONFIG.attesaVoce * giro);
+    const parte = (j.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data);
+    if (!parte) throw new ErroreGemini('server', 'Audio vuoto.', { tecnico: 'nessun inlineData: ' + JSON.stringify(j).slice(0, 200) });
+    const rate = parseInt((parte.inlineData.mimeType || '').match(/rate=(\d+)/)?.[1] || '24000', 10);
+    const bytes = base64ABytes(parte.inlineData.data);
+    if (/wav/i.test(parte.inlineData.mimeType || '')) return new Blob([bytes], { type: 'audio/wav' });
+    return pcmAWav(bytes, rate);
+  }, 'tg_modello_voce', onAttesa);
+}
+
+/* ---------- Voce di riserva: Web Speech API ---------- */
+let vociCaricate = null;
+function voceItaliana() {
+  const voci = speechSynthesis.getVoices().filter((v) => /^it/i.test(v.lang));
+  const femminili = /alice|federica|elsa|paola|silvia|giulia|isabella|emma|bianca|female|donna|google italiano/i;
+  return voci.find((v) => femminili.test(v.name)) || voci[0] || null;
+}
+function parla(testo) {
+  return new Promise((fine) => {
+    if (!('speechSynthesis' in window)) return fine();
+    speechSynthesis.cancel();
+    const frasi = testo.match(/[^.!?…]+[.!?…]*\s*/g) || [testo];
+    const voce = voceItaliana();
+    let n = 0;
+    frasi.forEach((f, i) => {
+      const u = new SpeechSynthesisUtterance(f.trim());
+      u.lang = 'it-IT'; u.rate = 0.95; if (voce) u.voice = voce;
+      u.onend = u.onerror = () => { if (++n === frasi.length) fine(); };
+      speechSynthesis.speak(u);
+    });
+  });
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { vociCaricate = true; };
+
+/* =====================================================================
+   EDIZIONE DEL GIORNO: notizie + blocchi audio (con cache IndexedDB)
+   ===================================================================== */
+const Ed = {
+  gen: 0,
+  grezzo: null, notizie: [], podcast: null, finito: false, origine: '',
+  blocchi: [],       // { testo, notizie:[indici], blob, stato:'attesa'|'pronto'|'errore', attese:[] }
+  produzioneFinita: false,
+  saluto: null,      // Promise<Blob|null>
+  osservatori: [],
+  avvisa() { const o = this.osservatori; this.osservatori = []; o.forEach((f) => f()); },
+  attendiCambio() { return new Promise((r) => this.osservatori.push(r)); },
+};
+let preparazione = null;
+
+function chiaveEdizione(g) { return `edizione:${VERSIONE_CACHE}:${g.generato}`; }
+
+async function caricaGrezzo() {
+  try {
+    const r = await fetch('data/grezzo.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    const g = await r.json();
+    ls.set('tg_ultimo_grezzo', g.generato);
+    return g;
+  } catch (e) {
+    console.warn('grezzo.json', e);
+    return null;
+  }
+}
+
+function prepara(forza = false) {
+  if (preparazione && !forza) return preparazione;
+  const gen = ++Ed.gen;
+  const vivo = () => gen === Ed.gen;
+  preparazione = (async () => {
+    stato('Sto preparando il notiziario…');
+    Object.assign(Ed, { grezzo: null, notizie: [], podcast: null, finito: false, blocchi: [], produzioneFinita: false });
+    Ed.avvisa();
+    renderNotizie(); renderPodcast();
+    let g = await caricaGrezzo();
+    if (!vivo()) return;
+    if (!g) {
+      // offline o dati non pubblicati: provo l'ultima edizione in cache
+      const ultimo = ls.get('tg_ultimo_grezzo');
+      const salvata = ultimo && await db.get(`edizione:${VERSIONE_CACHE}:${ultimo}`);
+      if (salvata) g = salvata.grezzo;
+      else {
+        stato('Le notizie di oggi non sono ancora pronte. Riprova tra qualche minuto.', true);
+        Ed.finito = true; Ed.produzioneFinita = true; Ed.avvisa();
+        return;
+      }
+    }
+    Ed.grezzo = g;
+    mostraAvvisoData(g);
+    Ed.saluto = salutoAudio();
+    const salvata = forza ? null : await db.get(chiaveEdizione(g));
+    if (!vivo()) return;
+    if (salvata && salvata.notizie?.length) {
+      Ed.notizie = salvata.notizie; Ed.podcast = salvata.podcast; Ed.finito = true; Ed.origine = salvata.origine;
+      renderNotizie(); renderPodcast();
+      const blocchi = costruisciBlocchi(Ed.notizie);
+      for (let i = 0; i < blocchi.length; i++) {
+        const a = await db.get(`audio:${VERSIONE_CACHE}:${g.generato}:${i}`);
+        const blob = a && a.testo === blocchi[i].testo ? a.blob : null;
+        Object.assign(blocchi[i], { blob, stato: blob ? 'pronto' : 'attesa' });
+      }
+      if (!vivo()) return;
+      Ed.blocchi = blocchi;
+      Ed.avvisa();
+      stato(Ed.blocchi.every((b) => b.blob) ? 'Il notiziario di oggi è pronto. Tocca ▶️ per ascoltarlo.' : 'Notizie pronte. Preparo la voce…');
+      await produciAudio(vivo);
+      return;
+    }
+    pulisciCacheVecchia(g);
+    produciBlocchi(vivo); // parte subito: aspetta le notizie man mano che arrivano
+    try {
+      const j = await redigi(g, (n) => vivo() && aggiungiNotizia(n), (ms) => vivo() && stato(`Google è molto richiesto: riprovo tra ${Math.ceil(ms / 1000)} secondi…`));
+      if (!vivo()) return;
+      Ed.podcast = scegliPodcast(j.podcast || []);
+      Ed.origine = 'gemini';
+    } catch (e) {
+      if (!vivo()) return;
+      console.warn('redazione', e);
+      if (e.tipo === 'chiave') { erroreChiave(e); }
+      else avviso(`${e.messaggioUtente || 'Gemini non ha risposto.'} Ti leggo i titoli principali raccolti stamattina.`);
+      notizieDiRiserva(g).forEach(aggiungiNotizia);
+      Ed.podcast = scegliPodcast([]);
+      Ed.origine = 'riserva';
+    }
+    Ed.finito = true; Ed.avvisa();
+    renderPodcast();
+    salvaEdizione();
+  })();
+  return preparazione;
+}
+
+function aggiungiNotizia(n) {
+  const g = Ed.grezzo;
+  const voce = g.notizie.find((x) => x.id === n.id);
+  const totale = CONFIG.notizieGenerali + CONFIG.notizieCalcio;
+  if (Ed.notizie.length >= totale) return;
+  const ids = [...new Set([n.id, ...(n.fonti_ids || [])])];
+  const fonti = [...new Set(ids.map((id) => g.notizie.find((x) => x.id === id)?.fonte).filter(Boolean))];
+  Ed.notizie.push({
+    titolo: (n.titolo || voce?.titolo || '').trim(),
+    testo: (n.testo || voce?.sommario || '').trim(),
+    categoria: n.categoria === 'calcio' || voce?.categoria === 'calcio' ? 'calcio' : 'generale',
+    fonte: fonti.join(', ') || voce?.fonte || '',
+    link: voce?.link || g.notizie.find((x) => ids.includes(x.id))?.link || '',
+  });
+  renderNotizie();
+  Ed.avvisa();
+  if (Ed.notizie.length === 1) stato('Notizie in arrivo… preparo la voce.');
+}
+
+function notizieDiRiserva(g) {
+  // Se Gemini non risponde: prime notizie di fonti diverse, con il sommario originale.
+  const scegli = (cat, quante) => {
+    const out = [], fonti = new Set();
+    for (const n of g.notizie.filter((x) => x.categoria === cat)) {
+      if (out.length >= quante) break;
+      if (fonti.has(n.fonte) && fonti.size < 4) continue;
+      fonti.add(n.fonte); out.push(n);
+    }
+    return out;
+  };
+  return [...scegli('generale', CONFIG.notizieGenerali), ...scegli('calcio', CONFIG.notizieCalcio)]
+    .map((n) => ({ id: n.id, titolo: n.titolo, testo: n.sommario || n.titolo, categoria: n.categoria, fonti_ids: [n.id] }));
+}
+
+function scegliPodcast(scelti) {
+  const g = Ed.grezzo;
+  const per = new Map(g.podcast.map((p) => [p.id, p]));
+  let lista = [];
+  for (const s of scelti) {
+    const p = per.get(s.id);
+    if (p && !lista.some((x) => x.id === p.id)) lista.push({ ...p, spiegazione: s.spiegazione });
+  }
+  // completa fino a 10 con gli altri episodi disponibili
+  for (const p of g.podcast) {
+    if (lista.length >= CONFIG.podcast) break;
+    if (!lista.some((x) => x.id === p.id)) lista.push({ ...p, spiegazione: riassunto(p.descrizione) });
+  }
+  lista = lista.slice(0, CONFIG.podcast);
+  if (!lista.some((p) => p.calcio)) {
+    const c = g.podcast.find((p) => p.calcio);
+    if (c) { lista = lista.slice(0, CONFIG.podcast - 1); lista.push({ ...c, spiegazione: riassunto(c.descrizione) }); }
+  }
+  return lista;
+}
+function riassunto(t) {
+  t = (t || '').trim();
+  if (t.length <= 200) return t;
+  return t.slice(0, 200).replace(/\s+\S*$/, '') + '…';
+}
+
+function testoBlocco(notizie, da, a, ultimo) {
+  let testo = '';
+  for (let i = da; i < a; i++) {
+    const n = notizie[i];
+    const primaCalcio = n.categoria === 'calcio' && (i === 0 || notizie[i - 1].categoria !== 'calcio');
+    testo += (primaCalcio ? 'Passiamo al calcio. ' : '') + `${n.titolo}. ${n.testo}\n\n`;
+  }
+  if (ultimo) testo += CONFIG.chiusura;
+  return testo.trim();
+}
+/** Divisione in blocchi di un'edizione già completa (dalla cache). */
+function costruisciBlocchi(notizie) {
+  const per = CONFIG.notiziePerBlocco, out = [];
+  for (let da = 0; da < notizie.length; da += per) {
+    const a = Math.min(da + per, notizie.length);
+    out.push({ testo: testoBlocco(notizie, da, a, a >= notizie.length), notizie: range(da, a), chiusura: a >= notizie.length });
+  }
+  if (!out.length) out.push({ testo: CONFIG.chiusura, notizie: [], chiusura: true });
+  return out;
+}
+
+/** Costruisce i blocchi (2 notizie ciascuno) appena le notizie arrivano e li sintetizza in sequenza. */
+async function produciBlocchi(vivo) {
+  const per = CONFIG.notiziePerBlocco;
+  const totale = CONFIG.notizieGenerali + CONFIG.notizieCalcio;
+  for (let k = 0; ; k++) {
+    const serve = (k + 1) * per;
+    while (!(Ed.notizie.length >= serve || Ed.finito)) { await Ed.attendiCambio(); if (!vivo()) return; }
+    const da = k * per, a = Math.min(serve, Ed.notizie.length);
+    if (a <= da) break;
+    const ultimo = a >= totale || (Ed.finito && a >= Ed.notizie.length);
+    Ed.blocchi.push({ testo: testoBlocco(Ed.notizie, da, a, ultimo), notizie: range(da, a), blob: null, stato: 'attesa', chiusura: ultimo });
+    Ed.avvisa();
+    await sintetizzaBlocco(Ed.blocchi.length - 1, vivo);
+    if (!vivo()) return;
+    if (ultimo) break;
+  }
+  if (!Ed.blocchi.length || !Ed.blocchi[Ed.blocchi.length - 1].chiusura) {
+    Ed.blocchi.push({ testo: CONFIG.chiusura, notizie: [], blob: null, stato: 'attesa', chiusura: true });
+    Ed.avvisa();
+    await sintetizzaBlocco(Ed.blocchi.length - 1, vivo);
+    if (!vivo()) return;
+  }
+  Ed.produzioneFinita = true; Ed.avvisa();
+  if (!audioAttivo()) stato(Ed.blocchi.some((b) => b.blob) ? 'Il notiziario di oggi è pronto. Tocca ▶️ per ascoltarlo.' : 'Notizie pronte (voce del telefono). Tocca ▶️ per ascoltarle.');
+}
+const range = (a, b) => Array.from({ length: b - a }, (_, i) => a + i);
+
+async function produciAudio(vivo) {
+  // Edizione dalla cache: sintetizza solo i blocchi rimasti senza audio
+  for (let i = 0; i < Ed.blocchi.length; i++) {
+    if (!Ed.blocchi[i].blob) await sintetizzaBlocco(i, vivo);
+    if (!vivo()) return;
+  }
+  Ed.produzioneFinita = true; Ed.avvisa();
+  if (!audioAttivo()) stato('Il notiziario di oggi è pronto. Tocca ▶️ per ascoltarlo.');
+}
+
+let vocePerOggiKO = false;
+async function sintetizzaBlocco(i, vivo) {
+  const b = Ed.blocchi[i];
+  const generato = Ed.grezzo.generato;
+  if (vocePerOggiKO) { b.stato = 'errore'; Ed.avvisa(); return; }
+  try {
+    b.blob = await sintetizza(b.testo, (ms) => { if (!audioAttivo()) stato(`Preparo la voce: attendo ${Math.ceil(ms / 1000)} secondi per la quota di Google…`); });
+    b.stato = 'pronto';
+    if (vivo()) db.set(`audio:${VERSIONE_CACHE}:${generato}:${i}`, { testo: b.testo, blob: b.blob });
+  } catch (e) {
+    if (!vivo()) return;
+    console.warn('TTS', e);
+    b.stato = 'errore';
+    if (e.tipo === 'chiave') erroreChiave(e);
+    else if (e.tipo === 'quota' || e.tipo === 'modello') {
+      vocePerOggiKO = true;
+      avviso(e.tipo === 'quota' ? 'La voce di Gemini non è disponibile ora (quota gratuita esaurita): uso la voce del telefono.'
+        : 'La voce di Gemini non è disponibile: uso la voce del telefono.');
+    }
+  }
+  Ed.avvisa();
+}
+
+async function salutoAudio() {
+  const k = `saluto:${VERSIONE_CACHE}:${CONFIG.voce}:${CONFIG.saluto}`;
+  const c = await db.get(k);
+  if (c) return c;
+  try {
+    const blob = await sintetizza(CONFIG.saluto);
+    db.set(k, blob);
+    return blob;
+  } catch (e) { console.warn('saluto', e); return null; }
+}
+
+function salvaEdizione() {
+  if (!Ed.grezzo || !Ed.notizie.length || !Ed.finito) return;
+  db.set(chiaveEdizione(Ed.grezzo), {
+    grezzo: Ed.grezzo, notizie: Ed.notizie, podcast: Ed.podcast, origine: Ed.origine, salvato: Date.now(),
+  });
+}
+async function pulisciCacheVecchia(g) {
+  for (const k of await db.keys()) {
+    if (/^(edizione|audio):/.test(k) && !String(k).includes(g.generato)) db.del(k);
+    if (/^saluto:/.test(k) && k !== `saluto:${VERSIONE_CACHE}:${CONFIG.voce}:${CONFIG.saluto}`) db.del(k);
+  }
+}
+
+/* =====================================================================
+   PLAYER
+   ===================================================================== */
+const audio = $('audio');
+const P = { modo: null, traccia: -1, token: 0, inAttesa: false, parlando: false, urlCorrente: null, titolo: '', sotto: '' };
+const audioAttivo = () => P.modo && (!audio.paused || P.parlando || P.inAttesa);
+
+function impostaSorgente(url, loop = false) {
+  if (P.urlCorrente && P.urlCorrente.startsWith('blob:') && P.urlCorrente !== URL_SILENZIO) URL.revokeObjectURL(P.urlCorrente);
+  P.urlCorrente = url;
+  audio.loop = loop;
+  audio.src = url;
+  return audio.play().catch((e) => {
+    console.warn('play', e);
+    if (e.name === 'NotAllowedError') stato('Tocca ▶️ per continuare l\'ascolto.');
+  });
+}
+
+/* Tracce del TG: 0 = sigla, 1 = saluto, 2.. = blocchi */
+async function avviaTG() {
+  window.speechSynthesis?.cancel();
+  P.modo = 'tg'; nascondiMini();
+  $('comandiTG').classList.remove('nascosto');
+  aggiornaTastoPlay();
+  if (!Ed.grezzo && Ed.finito) prepara(true); else prepara();
+  vaiATraccia(0);
+}
+
+async function vaiATraccia(i) {
+  const mio = ++P.token;
+  P.traccia = i; P.parlando = false;
+  window.speechSynthesis?.cancel();
+  evidenzia(null);
+  if (i === 0) {
+    impostaSorgente('assets/sigla.mp3');
+    metadati('TG di Famiglia', 'Sigla');
+    stato('🎺 Sigla…');
+    return;
+  }
+  const t = await attendiTraccia(i, mio);
+  if (mio !== P.token) return;
+  P.inAttesa = false;
+  if (t === null) { fineTG(); return; }
+  if (t.notizie?.length) evidenzia(t.notizie);
+  const etichetta = t.notizie?.length ? `Notizie ${t.notizie[0] + 1}${t.notizie.length > 1 ? '–' + (t.notizie[t.notizie.length - 1] + 1) : ''} di ${Ed.notizie.length}` : (i === 1 ? 'Saluto' : 'Chiusura');
+  metadati('TG di Famiglia', etichetta);
+  if (t.blob) {
+    stato(`🔊 ${etichetta}`);
+    impostaSorgente(URL.createObjectURL(t.blob));
+  } else {
+    // riserva: voce del telefono
+    stato(`🔊 ${etichetta} (voce del telefono)`);
+    audio.pause(); audio.loop = false;
+    P.parlando = true; aggiornaTastoPlay();
+    await parla(t.testo);
+    if (mio !== P.token) return;
+    P.parlando = false;
+    vaiATraccia(i + 1);
+  }
+}
+
+/** Restituisce {blob, testo, notizie} della traccia i, aspettando se non è ancora pronta (null = finito). */
+async function attendiTraccia(i, mio) {
+  const inAttesa = () => {
+    if (P.inAttesa || mio !== P.token) return;
+    P.inAttesa = true;
+    impostaSorgente(URL_SILENZIO, true); // mantiene viva la sessione audio (schermo spento, iPhone)
+    stato(i <= 2 ? 'Sto preparando il notiziario…' : 'Preparo le prossime notizie…');
+  };
+  if (i === 1) {
+    const timer = setTimeout(inAttesa, 300);
+    const blob = await Promise.race([Ed.saluto || Promise.resolve(null), sleep(25000).then(() => null)]);
+    clearTimeout(timer);
+    return { blob, testo: CONFIG.saluto, notizie: [] };
+  }
+  const k = i - 2;
+  let timer = setTimeout(inAttesa, 300);
+  try {
+    for (;;) {
+      if (mio !== P.token) return null;
+      const b = Ed.blocchi[k];
+      if (b && b.stato !== 'attesa') return b;
+      if (!b && Ed.produzioneFinita) return null;
+      await Promise.race([Ed.attendiCambio(), sleep(2000)]);
+    }
+  } finally { clearTimeout(timer); }
+}
+
+function fineTG() {
+  P.modo = null; P.inAttesa = false; P.traccia = -1;
+  audio.pause(); audio.loop = false;
+  evidenzia(null);
+  $('comandiTG').classList.add('nascosto');
+  stato('Fine del notiziario. Qui sotto trovi i podcast e la radio.');
+  aggiornaTastoPlay();
+  $('listaPodcast').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+audio.addEventListener('ended', () => {
+  if (P.modo === 'tg' && !P.inAttesa) vaiATraccia(P.traccia + 1);
+  else if (P.modo === 'podcast') { aggiornaMini(); }
+});
+audio.addEventListener('error', () => {
+  if (P.urlCorrente === URL_SILENZIO) return;
+  if (P.modo === 'radio') { stato(''); radioCasuale(true); }
+  else if (P.modo === 'podcast') $('miniSotto').textContent = 'Questo episodio non si riesce a riprodurre. Usa “Apri episodio”.';
+  else if (P.modo === 'tg') vaiATraccia(P.traccia + 1);
+});
+['play', 'pause', 'playing'].forEach((ev) => audio.addEventListener(ev, () => { aggiornaTastoPlay(); aggiornaMini(); }));
+audio.addEventListener('timeupdate', () => {
+  if (P.modo === 'podcast' && audio.duration && isFinite(audio.duration)) {
+    if (!trascinando) $('miniPosizione').value = Math.round((audio.currentTime / audio.duration) * 1000);
+    try { navigator.mediaSession?.setPositionState?.({ duration: audio.duration, position: audio.currentTime, playbackRate: 1 }); } catch {}
+  }
+});
+
+function pausaOContinua() {
+  if (P.parlando) {
+    if (speechSynthesis.paused) speechSynthesis.resume(); else speechSynthesis.pause();
+    aggiornaTastoPlay(); return;
+  }
+  if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+}
+
+function aggiornaTastoPlay() {
+  const tg = P.modo === 'tg';
+  const suona = tg && ((P.parlando && !speechSynthesis.paused) || !audio.paused);
+  $('iconaPlay').innerHTML = suona
+    ? '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>'
+    : '<path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/>';
+  $('tastoPlay').setAttribute('aria-label', suona ? 'Pausa' : 'Ascolta il notiziario');
+  $('etichettaPlay').textContent = suona ? 'In onda — tocca per la pausa' : (tg ? 'In pausa — tocca per continuare' : 'Ascolta il notiziario');
+}
+
+/* ---------- Media Session (schermata di blocco, auto via Bluetooth) ---------- */
+function metadati(titolo, sotto, immagine) {
+  P.titolo = titolo; P.sotto = sotto;
+  if (!('mediaSession' in navigator)) return;
+  const base = new URL('icons/icon-512.png', location.href).href;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: sotto ? `${titolo} – ${sotto}` : titolo, artist: 'TG di Famiglia', album: 'Notizie del giorno',
+    artwork: [{ src: immagine || base, sizes: '512x512', type: 'image/png' }],
+  });
+}
+if ('mediaSession' in navigator) {
+  const ms = navigator.mediaSession;
+  const prova = (azione, fn) => { try { ms.setActionHandler(azione, fn); } catch {} };
+  prova('play', () => { if (P.parlando) speechSynthesis.resume(); else audio.play(); });
+  prova('pause', () => { if (P.parlando) speechSynthesis.pause(); else audio.pause(); });
+  prova('nexttrack', () => { if (P.modo === 'tg') vaiATraccia(P.traccia + 1); else if (P.modo === 'radio') radioCasuale(true); });
+  prova('previoustrack', () => { if (P.modo === 'tg') vaiATraccia(Math.max(1, P.traccia - 1)); else if (P.modo === 'podcast') audio.currentTime = 0; });
+  prova('seekbackward', (d) => { if (P.modo === 'podcast') audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || 15)); });
+  prova('seekforward', (d) => { if (P.modo === 'podcast') audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + (d.seekOffset || 30)); });
+  prova('stop', () => fermaTutto());
+}
+
+/* ---------- Podcast e radio nel mini player ---------- */
+function suonaPodcast(p) {
+  ++P.token; window.speechSynthesis?.cancel();
+  P.modo = 'podcast'; P.inAttesa = false; P.parlando = false;
+  $('comandiTG').classList.add('nascosto'); evidenzia(null);
+  impostaSorgente(p.audio);
+  metadati(p.nome, p.episodio, p.immagine);
+  mostraMini(p.nome, p.episodio, true);
+  stato(''); aggiornaTastoPlay();
+}
+
+let stazioni = null, radioIndice = -1;
+async function caricaStazioni() {
+  if (stazioni) return stazioni;
+  const server = ['https://de1.api.radio-browser.info', 'https://nl1.api.radio-browser.info', 'https://at1.api.radio-browser.info', 'https://fi1.api.radio-browser.info'];
+  const generi = /pop|rock|dance|hits|music|musica|oldies|jazz|classic|80s|90s|70s|60s|disco|italian|italiana|cantautor|soul|funk|lounge|chill|blues|country|indie|electronic|house/i;
+  const noMusica = /news|notizie|talk|sport|religio|catholic|cattolic|christian|cristian|gospel|politic|informazione/i;
+  for (const s of server.sort(() => Math.random() - 0.5)) {
+    try {
+      const q = new URLSearchParams({ countrycode: 'IT', hidebroken: 'true', is_https: 'true', order: 'votes', reverse: 'true', limit: '300' });
+      const r = await fetch(`${s}/json/stations/search?${q}`);
+      if (!r.ok) continue;
+      const lista = (await r.json()).filter((x) => /^https:\/\//i.test(x.url_resolved || '') && generi.test(x.tags || '') && !noMusica.test(`${x.tags} ${x.name}`));
+      if (lista.length) { stazioni = lista.slice(0, 120); return stazioni; }
+    } catch (e) { console.warn('radio', s, e); }
+  }
+  throw new Error('nessuna radio');
+}
+async function radioCasuale(cambia = false) {
+  ++P.token; window.speechSynthesis?.cancel();
+  P.modo = 'radio'; P.inAttesa = false; P.parlando = false;
+  $('comandiTG').classList.add('nascosto'); evidenzia(null); aggiornaTastoPlay();
+  $('radioNome').textContent = 'Cerco una radio…';
+  // sblocca subito l'audio dentro il tocco (iPhone), poi cambia sorgente
+  if (!cambia) impostaSorgente(URL_SILENZIO, true);
+  try {
+    const l = await caricaStazioni();
+    let i; do { i = Math.floor(Math.random() * l.length); } while (l.length > 1 && i === radioIndice);
+    radioIndice = i;
+    const s = l[i];
+    const nome = s.name.trim();
+    $('radioNome').textContent = '📻 ' + nome;
+    $('radioCambia').disabled = false;
+    impostaSorgente(s.url_resolved);
+    metadati(nome, 'Radio', s.favicon && /^https:/.test(s.favicon) ? s.favicon : undefined);
+    mostraMini(nome, 'Radio in diretta', false);
+  } catch {
+    $('radioNome').textContent = 'Non riesco a trovare una radio ora. Riprova più tardi.';
+    P.modo = null; audio.pause();
+  }
+}
+
+function mostraMini(titolo, sotto, conBarra) {
+  $('miniTitolo').textContent = titolo; $('miniSotto').textContent = sotto;
+  $('miniBarra').classList.toggle('nascosto', !conBarra);
+  $('miniIndietro').classList.toggle('nascosto', !conBarra);
+  $('mini').hidden = false; aggiornaMini();
+}
+function nascondiMini() { $('mini').hidden = true; }
+function aggiornaMini() { $('miniPlay').textContent = audio.paused ? '▶' : '⏸'; $('miniPlay').setAttribute('aria-label', audio.paused ? 'Riprendi' : 'Pausa'); }
+function fermaTutto() {
+  ++P.token; window.speechSynthesis?.cancel();
+  audio.pause(); P.modo = null; P.inAttesa = false; P.parlando = false;
+  nascondiMini(); $('comandiTG').classList.add('nascosto'); evidenzia(null); aggiornaTastoPlay();
+}
+let trascinando = false;
+$('miniPosizione').addEventListener('input', () => { trascinando = true; });
+$('miniPosizione').addEventListener('change', (e) => {
+  trascinando = false;
+  if (audio.duration && isFinite(audio.duration)) audio.currentTime = (e.target.value / 1000) * audio.duration;
+});
+$('miniPlay').onclick = () => (audio.paused ? audio.play().catch(() => {}) : audio.pause());
+$('miniStop').onclick = fermaTutto;
+$('miniIndietro').onclick = () => { audio.currentTime = Math.max(0, audio.currentTime - 15); };
+
+/* =====================================================================
+   INTERFACCIA
+   ===================================================================== */
+function stato(testo, errore = false) {
+  const el = $('stato'); el.textContent = testo; el.classList.toggle('errore', errore);
+}
+function avviso(testo) {
+  const id = 'av-' + testo.length + testo.slice(0, 12);
+  if (document.getElementById(id)) return;
+  const d = document.createElement('div'); d.className = 'avviso'; d.id = id; d.textContent = testo;
+  $('avvisi').appendChild(d);
+}
+function erroreChiave(e) {
+  stato(e.messaggioUtente, true);
+  avviso(e.messaggioUtente + ' Tocca ⚙️ in alto per cambiarla.');
+}
+function mostraAvvisoData(g) {
+  const oggi = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  if (g.giorno && g.giorno < oggi) {
+    const quando = new Date(g.generato).toLocaleString('it-IT', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+    avviso(`Le notizie di oggi non sono ancora pronte (arrivano verso le 6 del mattino). Per ora ascolti quelle raccolte ${quando}.`);
+  }
+}
+function renderNotizie() {
+  const el = $('listaNotizie');
+  if (!Ed.notizie.length) { el.innerHTML = '<p class="segnaposto scheda">Le notizie compariranno qui appena pronte.</p>'; return; }
+  el.innerHTML = Ed.notizie.map((n, i) => `
+    <article class="scheda notizia" id="notizia-${i}">
+      <div class="riga"><span class="numero">${i + 1}</span><div style="flex:1">
+        <span class="badge ${n.categoria === 'calcio' ? 'calcio' : ''}">${n.categoria === 'calcio' ? '⚽ Calcio' : 'Attualità'}</span>
+        <h3>${esc(n.titolo)}</h3></div></div>
+      <p>${esc(n.testo)}</p>
+      <div class="fonte">Fonte: ${esc(n.fonte)}</div>
+      ${n.link ? `<a class="btn" href="${esc(linkSicuro(n.link))}" target="_blank" rel="noopener">Approfondisci ↗</a>` : ''}
+    </article>`).join('') + (Ed.finito ? '' : '<p class="segnaposto">Altre notizie in arrivo…</p>');
+  if (evidenziate) evidenzia(evidenziate, false);
+}
+function renderPodcast() {
+  const el = $('listaPodcast');
+  if (!Ed.podcast) { el.innerHTML = '<p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p>'; return; }
+  if (!Ed.podcast.length) { el.innerHTML = '<p class="scheda">Oggi non ci sono episodi nuovi dei podcast consigliati.</p>'; return; }
+  el.innerHTML = Ed.podcast.map((p, i) => `
+    <article class="scheda podcast">
+      <div class="testa">
+        ${p.immagine ? `<img src="${esc(linkSicuro(p.immagine))}" alt="" loading="lazy">` : ''}
+        <div><div class="nome">${p.calcio ? '⚽ ' : ''}${esc(p.nome)}</div><div class="episodio">${esc(p.episodio)}</div></div>
+      </div>
+      <p>${esc(p.spiegazione)}</p>
+      <div class="azioni">
+        <button class="btn rosso" data-podcast="${i}" type="button">▶️ Ascolta</button>
+        <a class="btn" href="${esc(linkSicuro(p.link))}" target="_blank" rel="noopener">Apri episodio ↗</a>
+      </div>
+    </article>`).join('');
+}
+$('listaPodcast').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-podcast]');
+  if (b) suonaPodcast(Ed.podcast[+b.dataset.podcast]);
+});
+let evidenziate = null;
+function evidenzia(indici, scorri = true) {
+  evidenziate = indici;
+  document.querySelectorAll('.notizia.in-onda').forEach((x) => x.classList.remove('in-onda'));
+  if (!indici) return;
+  indici.forEach((i) => $('notizia-' + i)?.classList.add('in-onda'));
+  if (scorri) $('notizia-' + indici[0])?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ---------- Schermate ---------- */
+function mostra(schermata) {
+  $('schermataChiave').classList.toggle('nascosto', schermata !== 'chiave');
+  $('schermataTG').classList.toggle('nascosto', schermata !== 'tg');
+  $('apriImpostazioni').classList.toggle('nascosto', schermata !== 'tg');
+}
+async function salvaChiaveDa(campo, statoEl, poi) {
+  const k = campo.value.trim().replace(/\s+/g, '');
+  if (!k) { statoEl.textContent = 'Incolla prima la chiave.'; return; }
+  statoEl.classList.remove('errore'); statoEl.textContent = 'Controllo la chiave…';
+  const v = await verificaChiave(k);
+  if (!v.ok) { statoEl.textContent = v.msg; statoEl.classList.add('errore'); return; }
+  chiave = k; ls.set('tg_chiave', k); campo.value = '';
+  statoEl.textContent = '✅ Chiave salvata!';
+  poi?.();
+}
+$('salvaChiave').onclick = () => salvaChiaveDa($('campoChiave'), $('statoChiave'), avviaApp);
+$('campoChiave').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('salvaChiave').click(); });
+$('incolla').onclick = async () => {
+  try { $('campoChiave').value = (await navigator.clipboard.readText()).trim(); }
+  catch { $('statoChiave').textContent = 'Tieni premuto nel riquadro e scegli “Incolla”.'; $('campoChiave').focus(); }
+};
+$('apriImpostazioni').onclick = () => {
+  $('chiaveMascherata').textContent = chiave ? chiave.slice(0, 6) + '…' + chiave.slice(-4) : '(nessuna)';
+  $('statoImpostazioni').textContent = '';
+  $('infoVersione').textContent = `Versione ${CONFIG.versione} · voce: ${ls.get('tg_modello_voce') || '—'} · testo: ${ls.get('tg_modello_testo') || '—'}` + (Ed.grezzo ? ` · dati del ${new Date(Ed.grezzo.generato).toLocaleString('it-IT')}` : '');
+  $('impostazioni').showModal();
+};
+$('chiudiImpostazioni').onclick = () => $('impostazioni').close();
+$('salvaNuova').onclick = () => salvaChiaveDa($('nuovaChiave'), $('statoImpostazioni'), () => { vocePerOggiKO = false; $('avvisi').innerHTML = ''; prepara(true); });
+$('cancellaChiave').onclick = () => {
+  if (!confirm('Vuoi davvero cancellare la chiave da questo telefono?')) return;
+  ls.del('tg_chiave'); chiave = ''; fermaTutto(); $('impostazioni').close(); mostra('chiave');
+};
+$('rigenera').onclick = async () => {
+  $('impostazioni').close(); fermaTutto(); vocePerOggiKO = false; $('avvisi').innerHTML = '';
+  if (Ed.grezzo) for (const k of await db.keys()) if (String(k).includes(Ed.grezzo.generato)) await db.del(k);
+  prepara(true);
+};
+$('tastoPlay').onclick = () => { if (P.modo === 'tg') pausaOContinua(); else avviaTG(); };
+$('avanti').onclick = () => { if (P.modo === 'tg') vaiATraccia(P.traccia + 1); };
+$('indietro').onclick = () => { if (P.modo === 'tg') vaiATraccia(Math.max(1, P.traccia - 1)); };
+$('radioCasuale').onclick = () => radioCasuale(false);
+$('radioCambia').onclick = () => radioCasuale(true);
+
+function avviaApp() {
+  mostra('tg');
+  prepara();
+}
+
+/* ---------- Avvio ---------- */
+$('oggi').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+chiaveDaIndirizzo();
+if (chiave) avviaApp(); else mostra('chiave');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
+document.addEventListener('visibilitychange', () => {
+  // Riaperta il giorno dopo senza ricaricare: controlla se ci sono dati nuovi
+  if (document.visibilityState === 'visible' && chiave && !audioAttivo() && Ed.finito) {
+    caricaGrezzo().then((g) => { if (g && Ed.grezzo && g.generato !== Ed.grezzo.generato) { $('avvisi').innerHTML = ''; prepara(true); } });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: Raccolta notizie e pubblicazione
+
+on:
+  schedule:
+    - cron: "30 4 * * *"   # ogni giorno alle 04:30 UTC (05:30 ora solare, 06:30 ora legale)
+  workflow_dispatch:        # avvio manuale da GitHub > Actions
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  raccolta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Dipendenze
+        run: pip install -r requirements.txt
+      - name: Prepara il sito
+        run: |
+          mkdir -p _site/data
+          cp -r index.html manifest.json sw.js icons assets _site/
+          touch _site/.nojekyll
+      - name: Raccogli notizie e podcast
+        env:
+          TZ: Europe/Rome
+        run: python scripts/raccogli.py _site/data
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  pubblicazione:
+    needs: raccolta
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
