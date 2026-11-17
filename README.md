@@ -75,11 +75,26 @@ lontani che diventano un'idea di business e un'intuizione creativa: una al giorn
 discutono per circa 9 minuti, con due voci neurali). Fonti, canali YouTube, radio, libri e concetti sono in
 `config/tech.json`.
 
+**Scheda ALTRO**: **Futuro del lavoro** (le notizie più interessanti del giorno su come cambia il lavoro,
+con intelligenza artificiale, nuove professioni e competenze, più l'ultima puntata di un podcast sul tema
+e tre video recenti da YouTube), **News ricerca** (scienza, innovazione e tecnologia: gli ultimi articoli
+di Le Scienze, ANSA Scienza & Tecnica, Nature News e WIRED Italia, il portale CORDIS dell'Unione Europea,
+l'ultima puntata di *Ci vuole una scienza*, *Scientificast* e *2024* di Radio 24, gli ultimi video di
+Entropy for Life e Kurzgesagt) e **News economia circolare** (EconomiaCircolare.com, Materia Rinnovabile,
+Ellen MacArthur Foundation, Rinnovabili.it e ICESP; i podcast di LifeGate e *The Circular Economy Show*,
+il collegamento ai podcast del Sole 24 Ore; i video di Ellen MacArthur Foundation e Geopop). Siti,
+podcast e canali sono in `config/altro.json`.
+
 Le sezioni informative (sport, partite, cultura, eventi, detto) sono scritte ogni mattina sul server a
 partire dalle notizie raccolte e lette dalla voce neurale: se una cosa non compare nelle notizie (per
 esempio il canale di una partita) non viene indicata. Podcast fai da te, Gran consiglio e 6 cappelli nascono sul
 momento sul telefono: usano la chiave Gemini dell'utente e le voci di Gemini (con la voce del telefono
 come riserva).
+
+Se una sezione del mattino (Altri sport, Partite di oggi, Eventi e sagre, Il detto del giorno, Futuro
+del lavoro) per qualche motivo non si è caricata, al suo posto compare il tasto **▶️ Cerca ora**: il
+telefono la prepara subito con la chiave Gemini dell'utente, partendo dalle notizie raccolte la mattina,
+e la tiene salvata per tutta la giornata.
 
 ## Come funziona
 
@@ -200,6 +215,7 @@ quel QR**: contiene la chiave. Il QR e il cartoncino generici (senza chiave) son
 | **Schede CALCIO e VARIE** | `config/varie.json`: `squadre` = sezioni della scheda CALCIO (per aggiungerne una: nuovo `id`, feed con quella `categoria` in `fonti.json`, podcast con quel `gruppo` in `podcast.json`, eventuale stream della radio), `meteo` (località e coordinate), `tv` (pagine della guida e canali), `radio_preferite` (quelle proposte la prima volta) e `settimana` (quanti titoli al giorno conservare per la rassegna). |
 | **Avvio automatico e podcast a fine TG** | `index.html`, `CONFIG.avvioAutomatico` e `CONFIG.podcastAFineTG` (`true`/`false`). |
 | **Raccolta differenziata** | `config/differenziata.json`: i giorni di Viterbo per zona (da aggiornare a mano se Viterbo Ambiente cambia i calendari) e l'indirizzo da cui si scarica ogni mattina il calendario di Vitorchiano. |
+| **Scheda ALTRO** | `config/altro.json`: per ogni rubrica `siti` (con `feed` si mostrano gli ultimi articoli, senza solo il collegamento), `podcast` (cercati su Apple Podcasts: si ascolta l'ultima puntata; con `solo_link` si apre il sito) e `youtube` (id del canale). I video sul lavoro si cercano su YouTube con il testo di `youtube_cerca`; le notizie sul lavoro vengono dai feed con categoria `lavoro` in `config/fonti.json`. |
 | **Il detto del giorno** | `config/detti.json`: se l'elenco `detti` è vuoto il proverbio lo sceglie Gemini; aggiungendo i proverbi di famiglia ne viene letto uno al giorno, a rotazione. |
 | **Podcast** | `config/podcast.json`: `nome` (parte del titolo su Apple Podcasts), `autore` (parte del nome dell'editore) e `calcio`. Se la ricerca non lo trova, aggiungi `"feedUrl": "https://…"`. Vengono presi solo episodi con audio pubblico usciti negli ultimi `giorni_massimi` giorni. |
 | **Voce** | `index.html`, oggetto `CONFIG` in cima allo script: `voce` (es. `Kore`, `Aoede`, `Leda`, `Callirrhoe`, `Zephyr`) . Alla voce viene inviato solo il testo da leggere, senza istruzioni di tono, perché i modelli vocali a volte le leggono ad alta voce. Dopo una modifica conviene alzare `VERSIONE_CACHE` (es. `'v4'`) per rigenerare gli audio salvati. |

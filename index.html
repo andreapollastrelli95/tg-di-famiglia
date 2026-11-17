@@ -79,6 +79,13 @@ h2{font-size:24px;margin:28px 0 12px;color:var(--blu)}
 .menu-sezioni .btn.attiva{background:var(--blu);color:var(--carta)}
 .spiega{font-size:18px;color:var(--tenue);margin:0 0 14px}
 .schede button:last-child:nth-child(3n+1){grid-column:1/-1}
+.schede button:last-child:nth-child(3n+2){grid-column:span 2}
+.titoli-sito{list-style:none;padding:0;margin:10px 0 12px;font-size:17px}
+.titoli-sito li{padding:7px 0;border-top:1px solid var(--blu-chiaro)}
+.titoli-sito a{color:inherit}
+.video-mini{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin:10px 0;color:inherit;text-decoration:none}
+.video-mini img{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:var(--blu-chiaro)}
+.cerca-ora{border:2px dashed var(--blu)}
 .video img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:var(--blu-chiaro);display:block;margin-bottom:10px}
 .numerino{display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:50%;background:var(--blu);color:var(--carta);font-weight:800;font-size:17px;margin-right:8px}
 .scintilla{border-left:6px solid #e2a400}
@@ -197,6 +204,7 @@ dialog h2{margin-top:0}
       <button id="schedaVarie" type="button">🧩 VARIE</button>
       <button id="schedaNovita" type="button">✨ NOVITÀ</button>
       <button id="schedaTech" type="button">🤖 TECH &amp; AI</button>
+      <button id="schedaAltro" type="button">🌍 ALTRO</button>
     </div>
 
     <!-- Scheda TG: solo il notiziario -->
@@ -420,6 +428,16 @@ dialog h2{margin-top:0}
         <div id="testoDibattito"></div>
       </section>
     </div>
+
+    <!-- Scheda ALTRO: futuro del lavoro, ricerca e scienza, economia circolare -->
+    <div id="paginaAltro" class="nascosto">
+      <div class="menu-sezioni" id="menuAltro">
+        <button class="btn" data-apri="alavoro" type="button">💼 Futuro del lavoro</button>
+        <button class="btn" data-apri="aricerca" type="button">🔬 News ricerca</button>
+        <button class="btn" data-apri="acircolare" type="button">♻️ News economia circolare</button>
+      </div>
+      <div id="contenutoAltro"></div>
+    </div>
   </section>
 </main>
 
@@ -487,7 +505,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.6.0',
+  versione: '2.7.0',
 };
 const VERSIONE_CACHE = 'v8'; // cambiarla invalida la cache audio/testo
 
@@ -2170,10 +2188,10 @@ function schedaPodcast(p, attributo) {
     </article>`;
 }
 /* Schede CALCIO e VARIE: in alto i tasti-intestazione, sotto si apre solo la sezione scelta. */
-const sezioneAperta = { calcio: null, varie: null, novita: null, tech: null };
+const sezioneAperta = { calcio: null, varie: null, novita: null, tech: null, altro: null };
 function apriSezione(scheda, id, scorri = true) {
   sezioneAperta[scheda] = id;
-  const pagina = $({ calcio: 'paginaCalcio', varie: 'paginaVarie', novita: 'paginaNovita', tech: 'paginaTech' }[scheda]);
+  const pagina = $({ calcio: 'paginaCalcio', varie: 'paginaVarie', novita: 'paginaNovita', tech: 'paginaTech', altro: 'paginaAltro' }[scheda]);
   let scelta = null;
   pagina.querySelectorAll('[data-sezione]').forEach((el) => {
     const questa = el.dataset.sezione === id;
@@ -2241,7 +2259,8 @@ const registroAscolto = {}; // id -> { titolo, testo } dei testi che si possono 
 const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
 const GIORNI_LUNGHI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
 function renderExtra() {
-  const x = Ed.extra, g = Ed.grezzo;
+  const g = Ed.grezzo;
+  const x = conCercati(Ed.extra);
   const spiega = (t) => `<p class="spiega">${t}</p>`;
   const nonPronto = '<p class="scheda">Questa sezione viene preparata ogni mattina insieme al notiziario: oggi non è ancora disponibile.</p>';
   const ascolta = (id, titolo, testo, etichetta = '▶️ Ascolta') => {
@@ -2250,15 +2269,16 @@ function renderExtra() {
   };
   const sezione = (id, titolo, corpo) => `<section data-sezione="${id}" class="nascosto"><h2>${titolo}</h2>${corpo}</section>`;
   const elenco = (lista, riga) => (lista?.length ? `<ul class="elenco">${lista.map(riga).join('')}</ul>` : '');
+  const cerca = (sez, motivo = 'Questa sezione si prepara da sola ogni mattina, ma oggi non si è caricata.') => tastoCerca(sez, motivo);
 
   // ---------------- VARIE
   let h = '';
   const sport = [['tennis', '🎾 Tennis'], ['formula1', '🏎️ Formula 1'], ['motogp', '🏍️ MotoGP']];
   h += sezione('sport', '🎾 Altri sport', spiega('Tennis (Sinner e gli altri italiani), Formula 1 e MotoGP: le notizie principali, i risultati e, quando sono noti, gli orari in TV.')
-    + (x && sport.some(([c]) => x.altri_sport?.[c]) ? sport.filter(([c]) => x.altri_sport[c]).map(([c, nome]) => `<article class="scheda"><h3 style="margin-top:0">${nome}</h3><p>${esc(x.altri_sport[c])}</p>${ascolta('sport-' + c, nome.replace(/^\S+ /, ''), x.altri_sport[c])}</article>`).join('') : nonPronto));
+    + (x && sport.some(([c]) => x.altri_sport?.[c]) ? sport.filter(([c]) => x.altri_sport[c]).map(([c, nome]) => `<article class="scheda"><h3 style="margin-top:0">${nome}</h3><p>${esc(x.altri_sport[c])}</p>${ascolta('sport-' + c, nome.replace(/^\S+ /, ''), x.altri_sport[c])}</article>`).join('') : cerca('sport')));
   const pa = x?.partite_oggi;
   h += sezione('partite', '⚽ Partite di oggi', spiega('Orario e canale TV delle partite di oggi che riguardano le squadre italiane: Serie A, coppe e Nazionale. Gli orari vengono dalle notizie raccolte al mattino: se manca il canale, non era indicato.')
-    + (pa?.testo ? `<div class="scheda"><p>${esc(pa.testo)}</p>${ascolta('partite', 'Partite di oggi', pa.testo)}${elenco(pa.lista, (m) => `<li><b>${esc(m.ora || '—')}</b> · ${esc(m.partita)}<span>${esc([m.competizione, m.canale].filter(Boolean).join(' · '))}</span></li>`)}</div>` : nonPronto));
+    + (pa?.testo ? `<div class="scheda"><p>${esc(pa.testo)}</p>${ascolta('partite', 'Partite di oggi', pa.testo)}${elenco(pa.lista, (m) => `<li><b>${esc(m.ora || '—')}</b> · ${esc(m.partita)}<span>${esc([m.competizione, m.canale].filter(Boolean).join(' · '))}</span></li>`)}</div>` : cerca('partite')));
   const citta = [['roma', 'Roma'], ['viterbo', 'Viterbo'], ['tuscia', 'Tuscia'], ['orvieto', 'Orvieto'], ['civitavecchia', 'Civitavecchia'], ['tolfa', 'Tolfa']];
   const scelta = citta.some(([c]) => c === ls.get('tg_citta')) ? ls.get('tg_citta') : 'viterbo';
   const cu = x?.cultura?.[scelta];
@@ -2273,10 +2293,10 @@ function renderExtra() {
   const ev = x?.eventi_weekend;
   h += sezione('eventi', '🎪 Eventi e sagre nella Tuscia', spiega(`Sagre, feste e appuntamenti in provincia di Viterbo nel fine settimana${ev?.periodo ? ' ' + esc(ev.periodo) : ''}.`)
     + (ev?.testo ? `<div class="scheda"><p>${esc(ev.testo)}</p>${ascolta('eventi', 'Eventi e sagre nella Tuscia', ev.testo)}${elenco(ev.lista, (e2) => `<li><b>${esc(e2.titolo)}</b><span>${esc([e2.dove, e2.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
-      : (x ? '<p class="scheda">Per questo fine settimana non risultano eventi nelle notizie raccolte.</p>' : nonPronto))
+      : cerca('eventi', x?.eventi_weekend ? 'Nelle notizie raccolte stamattina non risultano eventi per questo fine settimana.' : undefined))
     + [['civitavecchia', 'Civitavecchia'], ['tolfa', 'Tolfa'], ['orvieto', 'Orvieto']].map(([c, nome]) => {
       const ec = x?.eventi_citta?.[c];
-      if (!x) return '';
+      if (!x?.eventi_citta) return '';
       return `<h3>📍 ${nome}</h3>` + (ec?.testo ? `<div class="scheda"><p style="margin-top:0">${esc(ec.testo)}</p>${ascolta('eventi-' + c, 'Eventi e sagre a ' + nome, ec.testo)}${elenco(ec.lista, (e2) => `<li><b>${esc(e2.titolo)}</b><span>${esc([e2.dove, e2.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
         : `<p class="scheda">Per questo fine settimana a ${nome} non risultano eventi nelle notizie raccolte.</p>`);
     }).join(''));
@@ -2286,11 +2306,162 @@ function renderExtra() {
     + (d?.proverbio ? `<article class="scheda accadde"><p class="piccolo" style="margin-top:0">In dialetto ${esc(d.dialetto.toLowerCase())}</p><p class="detto">“${esc(d.proverbio)}”</p>
         <p><b>Vuol dire:</b> ${esc(d.traduzione)}</p><p>${esc(d.spiegazione)}</p>
         ${ascolta('detto', 'Il detto del giorno', `${d.proverbio}. Vuol dire: ${d.traduzione}. ${d.spiegazione}`)}
-        ${d.scelto_da === 'ia' ? '<p class="piccolo">Scelto dall\'intelligenza artificiale: la grafia dialettale può non essere perfetta.</p>' : ''}</article>` : nonPronto));
+        ${d.scelto_da === 'ia' ? '<p class="piccolo">Scelto dall\'intelligenza artificiale: la grafia dialettale può non essere perfetta.</p>' : ''}</article>` : cerca('detto')));
   $('contenutoNovita').innerHTML = h;
   renderSalute();
   renderTech();
+  renderAltro();
   apriSezione('varie', sezioneAperta.varie, false); apriSezione('novita', sezioneAperta.novita, false);
+}
+
+/* ---------- "Cerca ora": se una sezione del mattino non si è caricata, la prepara il telefono con la chiave Gemini
+   usando le notizie raccolte stamattina. Il risultato resta salvato per tutta la giornata. ---------- */
+let cercati = {}, cercatiDi = null;
+const cercaInCorso = {};
+function conCercati(extra) {
+  const gen = Ed.grezzo?.generato;
+  if (gen && cercatiDi !== gen) {
+    cercatiDi = gen; cercati = {};
+    db.get(`varia:${VERSIONE_CACHE}:${gen}:cercati`).then((v) => { if (v && cercatiDi === gen) { cercati = v; renderExtra(); } }).catch(() => {});
+  }
+  if (!Object.keys(cercati).length) return extra;
+  const x = { ...(extra || {}) };
+  const vuoto = (v) => !v || (typeof v === 'string' ? !v.trim() : (v.testo !== undefined ? !v.testo : !Object.values(v).some((y) => (typeof y === 'string' ? y.trim() : y?.testo))));
+  for (const [k, v] of Object.entries(cercati)) if (vuoto(x[k]) && !vuoto(v)) x[k] = v;
+  return x;
+}
+function tastoCerca(sez, motivo) {
+  const stato = cercaInCorso[sez];
+  return `<div class="scheda cerca-ora"><p style="margin-top:0">${esc(motivo)} ${sez === 'detto' ? 'Tocca il tasto e lo scelgo adesso.' : 'Tocca il tasto e la cerco adesso tra le notizie di oggi.'}</p>
+    <button class="btn rosso" data-cerca="${sez}" type="button" ${stato === 'cerco' ? 'disabled' : ''}>${stato === 'cerco' ? '🔎 Sto cercando…' : '▶️ Cerca ora'}</button>
+    ${stato && stato !== 'cerco' ? `<p class="piccolo" style="margin:8px 0 0">${esc(stato)}</p>` : ''}</div>`;
+}
+function elencoNotizie(categorie, massimo) {
+  return (Ed.grezzo?.notizie || []).filter((n) => categorie.includes(n.categoria)).slice(0, massimo)
+    .map((n) => `${n.fonte} | ${(n.data || '').slice(5, 16).replace('T', ' ')} | ${n.titolo}${n.sommario ? ' — ' + n.sommario.slice(0, 200) : ''}`).join('\n') || '(nessuna)';
+}
+function fineSettimana(iso) {
+  const g = new Date(iso + 'T12:00:00'), w = (g.getDay() + 6) % 7; // 0 = lunedì
+  const ven = new Date(g); ven.setDate(g.getDate() + (w <= 4 ? 4 - w : -(w - 4)));
+  const dom = new Date(ven); dom.setDate(ven.getDate() + 2);
+  return [ven, dom];
+}
+const MESI_IT = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+function compitoCerca(sez) {
+  const S = { type: 'STRING' };
+  const ogg = (campi, altro = {}) => { const prop = Object.fromEntries(campi.map((c) => [c, S])); Object.assign(prop, altro); return { type: 'OBJECT', properties: prop, required: Object.keys(prop), propertyOrdering: Object.keys(prop) }; };
+  const blocco = (campi) => ogg([], { lista: { type: 'ARRAY', items: ogg(campi) }, testo: S });
+  const iso = Ed.grezzo?.giorno || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  const g = new Date(iso + 'T12:00:00');
+  const oggi = g.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const regole = `Oggi è ${oggi}. Usa SOLO le informazioni degli elenchi qui sotto: non inventare eventi, date, orari, luoghi, canali TV o risultati. Quando non c'è materiale lascia "testo" vuoto ("") e "lista" vuota. I testi saranno letti ad alta voce: frasi brevi, niente elenchi puntati né emoji. Scrivi in italiano corretto. Rispondi solo con il JSON richiesto.`;
+  if (sez === 'sport') return {
+    prompt: `${regole}\n\nCOMPITO: tre testi, "tennis" (Sinner e gli altri italiani), "formula1" e "motogp". Ciascuno tra 60 e 80 parole: notizie principali, risultati più recenti e, solo se indicati negli elenchi, prossimi appuntamenti con giorno, orario e canale TV.\n\nTENNIS:\n${elencoNotizie(['tennis'], 30)}\n\nFORMULA 1:\n${elencoNotizie(['formula1'], 30)}\n\nMOTOGP:\n${elencoNotizie(['motogp'], 30)}`,
+    schema: ogg(['tennis', 'formula1', 'motogp']),
+    salva: (j) => ({ altri_sport: { tennis: (j.tennis || '').trim(), formula1: (j.formula1 || '').trim(), motogp: (j.motogp || '').trim() } }),
+  };
+  if (sez === 'partite') {
+    const tv = (Ed.grezzo?.tv?.sport || []).map((t) => `${t.canale} | ${t.ora} | ${t.titolo}`).join('\n') || '(nessun dato)';
+    return {
+      prompt: `${regole}\n\nCOMPITO: le partite di calcio di oggi, ${oggi}, che riguardano squadre italiane (Serie A, Coppa Italia, coppe europee, Nazionale). "lista": per ogni partita "partita", "competizione", "ora", "canale" (stringa vuota se non risultano). "testo": tra 40 e 80 parole. Se non risultano partite oggi scrivi nel testo: "Dalle notizie raccolte non risultano partite di squadre italiane in programma oggi." e lascia la lista vuota.\n\nCALCIO E SPORT:\n${elencoNotizie(['sport', 'calcio', 'juve', 'inter'], 120)}\n\nSPORT IN TV OGGI (canale | ora | programma):\n${tv}`,
+      schema: blocco(['partita', 'competizione', 'ora', 'canale']),
+      salva: (j) => ({ partite_oggi: { testo: (j.testo || '').trim(), lista: j.lista || [] } }),
+    };
+  }
+  if (sez === 'eventi') {
+    const [ven, dom] = fineSettimana(iso);
+    const citta = ['civitavecchia', 'tolfa', 'orvieto'];
+    return {
+      prompt: `${regole}\n\nCOMPITO: "eventi_weekend": eventi e sagre nella Tuscia (provincia di Viterbo) previsti nel fine settimana da venerdì ${ven.getDate()} ${MESI_IT[ven.getMonth()]} a domenica ${dom.getDate()} ${MESI_IT[dom.getMonth()]}. "lista": fino a 10 voci con "titolo", "dove" (comune e luogo), "quando" (giorno e ora, se indicati). "testo": tra 80 e 110 parole.\nPoi "eventi_citta": gli eventi dello stesso fine settimana a "civitavecchia", "tolfa" e "orvieto" (per Tolfa solo ciò che riguarda Tolfa). Per ogni città "lista" (fino a 6 voci, stessi campi) e "testo" (tra 40 e 70 parole).\n\nEVENTI E NOTIZIE DALLA TUSCIA:\n${elencoNotizie(['eventi', 'tuscia'], 110)}\n\nORVIETO:\n${elencoNotizie(['orvieto'], 45)}\n\nCIVITAVECCHIA E TOLFA:\n${elencoNotizie(['civitavecchia'], 70)}`,
+      schema: ogg([], { eventi_weekend: blocco(['titolo', 'dove', 'quando']), eventi_citta: ogg([], Object.fromEntries(citta.map((c) => [c, blocco(['titolo', 'dove', 'quando'])]))) }),
+      salva: (j) => ({
+        eventi_weekend: { testo: (j.eventi_weekend?.testo || '').trim(), lista: j.eventi_weekend?.lista || [], periodo: `da venerdì ${ven.getDate()} a domenica ${dom.getDate()} ${MESI_IT[dom.getMonth()]}` },
+        eventi_citta: Object.fromEntries(citta.map((c) => [c, { testo: (j.eventi_citta?.[c]?.testo || '').trim(), lista: j.eventi_citta?.[c]?.lista || [] }])),
+      }),
+    };
+  }
+  if (sez === 'detto') {
+    const giornoAnno = Math.round((g - new Date(g.getFullYear(), 0, 1, 12)) / 864e5) + 1;
+    const dialetto = (Date.UTC(g.getFullYear(), g.getMonth(), g.getDate()) / 864e5 + 719163) % 2 === 0 ? 'viterbese' : 'orvietano'; // come il server (toordinal)
+    return {
+      prompt: `Il detto del giorno. Scegli un proverbio popolare in dialetto ${dialetto}, tra quelli realmente tramandati nella tradizione contadina di quella zona (non inventarne uno nuovo). Oggi è il giorno numero ${giornoAnno} dell'anno: non scegliere sempre i più ovvi. Campi: "dialetto" ("${dialetto}"), "proverbio" (in dialetto, grafia semplice), "traduzione" (in italiano), "spiegazione" (30-40 parole: che cosa insegna e quando si dice). Rispondi solo con il JSON richiesto.`,
+      schema: ogg(['dialetto', 'proverbio', 'traduzione', 'spiegazione']),
+      salva: (j) => (j.proverbio ? { detto: { dialetto: j.dialetto || dialetto, proverbio: j.proverbio.trim(), traduzione: (j.traduzione || '').trim(), spiegazione: (j.spiegazione || '').trim(), scelto_da: 'ia' } } : {}),
+    };
+  }
+  if (sez === 'lavoro') return {
+    prompt: `${regole}\n\nCOMPITO: le 6 notizie più interessanti sul futuro del lavoro (intelligenza artificiale e occupazione, nuove professioni e competenze, lavoro da remoto, settimana corta, automazione, formazione, giovani e lavoro). Scarta borsa, conti aziendali e notizie che non parlano di come cambia il lavoro. "intro": una frase (massimo 30 parole) sul tema del giorno. "notizie": per ciascuna "titolo" (massimo 10 parole), "testo" (tra 40 e 60 parole), "fonte" (la testata).\n\nNOTIZIE:\n${elencoNotizie(['lavoro', 'tech', 'futuro'], 160)}`,
+    schema: ogg(['intro'], { notizie: { type: 'ARRAY', items: ogg(['titolo', 'testo', 'fonte']) } }),
+    salva: (j) => ({ lavoro: { intro: (j.intro || '').trim(), notizie: (j.notizie || []).filter((n) => n.titolo && n.testo).slice(0, 6) } }),
+  };
+  return null;
+}
+async function cercaOra(sez) {
+  const compito = compitoCerca(sez);
+  if (!compito || cercaInCorso[sez] === 'cerco') return;
+  const ridisegna = () => { renderExtra(); for (const k of ['varie', 'novita', 'altro']) if (sezioneAperta[k]) apriSezione(k, sezioneAperta[k], false); };
+  if (!chiave) { cercaInCorso[sez] = 'Per cercare dal telefono serve la chiave Gemini: aggiungila da ⚙️ Impostazioni.'; return ridisegna(); }
+  if (!Ed.grezzo?.notizie && sez !== 'detto') { cercaInCorso[sez] = 'Le notizie di oggi non sono ancora arrivate: riprova tra poco.'; return ridisegna(); }
+  cercaInCorso[sez] = 'cerco'; ridisegna();
+  try {
+    const nuovo = compito.salva(await jsonLibero(compito.prompt, compito.schema));
+    const vuoto = !Object.values(nuovo).some((v) => (typeof v === 'string' ? v : v?.testo || v?.proverbio || v?.notizie?.length || Object.values(v || {}).some((y) => (typeof y === 'string' ? y : y?.testo))));
+    if (vuoto) cercaInCorso[sez] = 'Nelle notizie di oggi non ho trovato niente per questa sezione.';
+    else {
+      delete cercaInCorso[sez];
+      Object.assign(cercati, nuovo);
+      if (Ed.grezzo?.generato) db.set(`varia:${VERSIONE_CACHE}:${Ed.grezzo.generato}:cercati`, cercati);
+    }
+  } catch (e) {
+    cercaInCorso[sez] = 'Non sono riuscito a cercare adesso' + (e?.message ? ` (${e.message})` : '') + '. Riprova tra qualche minuto.';
+  }
+  ridisegna();
+}
+
+/* ---------- Scheda ALTRO: futuro del lavoro, news dalla ricerca, economia circolare ---------- */
+function renderAltro() {
+  const a = Ed.grezzo?.altro, dalTelefono = conCercati(null)?.lavoro;
+  const lav = Ed.tech?.lavoro?.notizie?.length || !dalTelefono ? Ed.tech?.lavoro : { ...(Ed.tech?.lavoro || {}), ...dalTelefono };
+  const spiega = (t) => `<p class="spiega">${t}</p>`;
+  const sezione = (id, titolo, corpo) => `<section data-sezione="${id}" class="nascosto"><h2>${titolo}</h2>${corpo}</section>`;
+  const attesa = '<p class="segnaposto scheda">Arriva tra poco, appena i dati di oggi sono pronti.</p>';
+  const quando = (iso) => (iso ? giornoNome(iso.slice(0, 10)) + (iso.slice(0, 4) !== new Date().getFullYear() + '' ? ' ' + iso.slice(0, 4) : '') : '');
+  const fuori = (url, testo, cls = 'btn') => `<a class="${cls}" href="${esc(linkSicuro(url))}" target="_blank" rel="noopener">${testo}</a>`;
+  const podcastHtml = (r, voci) => voci.map(({ p, i }) => {
+    const u = p.ultimo;
+    return `<article class="scheda podcast"><div class="testa">${u?.immagine ? `<img src="${esc(linkSicuro(u.immagine))}" alt="" loading="lazy">` : ''}
+      <div><div class="nome">${esc(p.nome)}</div><div class="episodio">${u ? esc(u.episodio) + (u.data ? ' · ' + esc(quando(u.data)) : '') : esc(p.autore || '')}</div></div></div>
+      <p>${esc(p.descrizione || '')}</p><div class="azioni">${u ? `<button class="btn rosso" data-podcast-altro="${r}:${i}" type="button">▶️ Ascolta l'ultima puntata</button>${fuori(u.link, 'Apri episodio ↗')}`
+        : fuori(p.url || `https://www.google.com/search?q=${encodeURIComponent(p.nome + ' ' + (p.autore || '') + ' podcast')}`, 'Apri il sito ↗')}</div></article>`;
+  }).join('');
+  const sitiHtml = (lista) => lista.map((x) => `<article class="scheda"><h3 style="margin-top:0">${esc(x.nome)}</h3><p>${esc(x.descrizione || '')}</p>
+      ${x.titoli?.length ? `<p class="piccolo" style="margin:0">Gli ultimi articoli:</p><ul class="titoli-sito">${x.titoli.map((t) => `<li><a href="${esc(linkSicuro(t.link))}" target="_blank" rel="noopener">${esc(t.titolo)}</a>${t.data ? ` <span class="piccolo">· ${esc(quando(t.data))}</span>` : ''}</li>`).join('')}</ul>` : ''}
+      ${fuori(x.url, 'Apri il sito ↗')}</article>`).join('');
+  const canaliHtml = (lista) => lista.map((c) => `<article class="scheda"><h3 style="margin-top:0">▶️ ${esc(c.nome)}</h3><p>${esc(c.descrizione || '')}</p>
+      ${(c.video || []).map((v) => `<a class="video-mini" href="${esc(linkSicuro(v.link))}" target="_blank" rel="noopener"><img src="${esc(linkSicuro(v.immagine))}" alt="" loading="lazy"><span><b>${esc(v.titolo)}</b><br><span class="piccolo">${esc(quando(v.data))}</span></span></a>`).join('')}
+      ${fuori('https://www.youtube.com/channel/' + c.canale, 'Apri il canale ↗', 'btn rosso')}</article>`).join('');
+  const rubrica = (r, testa) => (a?.[r] ? `<h3>📰 Siti da seguire</h3>${sitiHtml(a[r].siti || [])}<h3>🎧 Podcast</h3>${podcastHtml(r, (a[r].podcast || []).map((p, i) => ({ p, i })))}<h3>📺 Canali YouTube</h3>${canaliHtml(a[r].youtube || [])}` : attesa);
+  let h = '';
+  // ---- Futuro del lavoro
+  let corpo = spiega('Come sta cambiando il lavoro: intelligenza artificiale, nuove professioni e competenze, lavoro da remoto e formazione. Ogni mattina le notizie più interessanti, un podcast sul tema e tre video da YouTube.');
+  if (lav?.notizie?.length) {
+    const testo = 'Il futuro del lavoro.\n\n' + (lav.intro ? lav.intro + '\n\n' : '') + lav.notizie.map((n) => `${n.titolo}.\n\n${n.testo}`).join('\n\n');
+    registroAscolto.lavoro = { titolo: 'Il futuro del lavoro', testo };
+    corpo += (lav.intro ? `<article class="scheda scintilla"><p style="margin:0">${esc(lav.intro)}</p></article>` : '')
+      + '<p><button class="btn rosso" data-ascolta="lavoro" type="button">▶️ Ascolta le notizie</button></p>' + lav.notizie.map(schedaNotizia).join('');
+  } else if (Ed.grezzo) corpo += tastoCerca('lavoro', 'Le notizie sul lavoro si preparano da sole ogni mattina, ma oggi non si sono caricate.');
+  else corpo += attesa;
+  const pods = (a?.lavoro?.podcast || []).map((p, i) => ({ p, i })).filter((x) => x.p.ultimo).sort((x, y) => (y.p.ultimo.data || '').localeCompare(x.p.ultimo.data || ''));
+  if (pods.length) corpo += `<h3>🎧 Il podcast</h3>` + podcastHtml('lavoro', [pods[0]]);
+  const vids = lav?.video?.length ? lav.video : [...(a?.lavoro?.video_cercati || [])].sort((x, y) => y.visualizzazioni - x.visualizzazioni).slice(0, 3);
+  if (vids.length) corpo += '<h3>▶️ Tre video da YouTube</h3>' + vids.map((v) => `<article class="scheda video"><a href="${esc(linkSicuro(v.link))}" target="_blank" rel="noopener"><img src="${esc(linkSicuro(v.immagine))}" alt="" loading="lazy"></a><h3 style="margin:0 0 6px">${esc(v.titolo)}</h3><div class="fonte" style="margin:0 0 8px">${esc(v.canale)}${v.quando ? ' · ' + esc(v.quando) : ''}</div>${v.perche ? `<p>${esc(v.perche)}</p>` : ''}${fuori(v.link, '▶️ Guarda su YouTube', 'btn rosso')}</article>`).join('');
+  h += sezione('alavoro', '💼 Futuro del lavoro', corpo);
+  // ---- News ricerca
+  h += sezione('aricerca', '🔬 News ricerca', spiega('Scienza, innovazione e tecnologia da fonti affidabili: per ogni sito gli ultimi articoli usciti, l\'ultima puntata di tre podcast di divulgazione e gli ultimi video di due canali YouTube. Tutto si aggiorna da solo ogni mattina.') + rubrica('ricerca'));
+  // ---- Economia circolare
+  h += sezione('acircolare', '♻️ News economia circolare', spiega('Riciclo, riuso, materie prime e sostenibilità: le fonti più autorevoli sull\'economia circolare, in Italia e nel mondo. Per i siti con notizie aggiornate trovi gli ultimi articoli; per gli altri il collegamento diretto. Poi i podcast e i canali YouTube sul tema.') + rubrica('circolare'));
+  $('contenutoAltro').innerHTML = h;
+  apriSezione('altro', sezioneAperta.altro, false);
 }
 
 /* ---------- VARIE: sentieri della salute, ricettario di famiglia, angolo del fai da te ---------- */
@@ -2778,8 +2949,15 @@ ${Ed.notizie.map((n, i) => `${i + 1}. ${n.titolo}. ${n.testo}`).join('\n')}`);
 function toccoSchede(e) {
   const v = Ed.varie;
   let b;
-  if ((b = e.target.closest('[data-apri]'))) return apriSezione({ paginaCalcio: 'calcio', paginaNovita: 'novita', paginaTech: 'tech' }[b.closest('[id^="pagina"]')?.id] || 'varie', b.dataset.apri);
+  if ((b = e.target.closest('[data-apri]'))) return apriSezione({ paginaCalcio: 'calcio', paginaNovita: 'novita', paginaTech: 'tech', paginaAltro: 'altro' }[b.closest('[id^="pagina"]')?.id] || 'varie', b.dataset.apri);
   if ((b = e.target.closest('[data-podcast-tech]'))) return suonaPodcast(Ed.tech.podcast[+b.dataset.podcastTech]);
+  if ((b = e.target.closest('[data-cerca]'))) return cercaOra(b.dataset.cerca);
+  if ((b = e.target.closest('[data-podcast-altro]'))) {
+    const [r, i] = b.dataset.podcastAltro.split(':');
+    const p2 = Ed.grezzo?.altro?.[r]?.podcast?.[+i];
+    if (p2?.ultimo) return suonaPodcast({ ...p2.ultimo, nome: p2.nome });
+    return;
+  }
   if ((b = e.target.closest('[data-radio-tech]'))) {
     const r = Ed.grezzo?.tech?.radio?.[+b.dataset.radioTech];
     if (!r) return;
@@ -2833,18 +3011,19 @@ $('paginaVarie').addEventListener('click', toccoSchede);
 $('paginaRadio').addEventListener('click', toccoSchede);
 $('paginaNovita').addEventListener('click', toccoSchede);
 $('paginaTech').addEventListener('click', toccoSchede);
+$('paginaAltro').addEventListener('click', toccoSchede);
 $('chiediCalcio').onclick = chiediCalcio;
 $('ascoltaRisposta').onclick = () => ascoltaVaria('ai-' + codice(ultimaRisposta), 'Risposta sul calcio', ultimaRisposta);
 $('cercaRadioBtn').onclick = cercaRadio;
 $('cercaRadio').addEventListener('keydown', (e) => { if (e.key === 'Enter') cercaRadio(); });
 function mostraScheda(quale, inCima = true) {
-  for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita', 'Tech']) {
+  for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita', 'Tech', 'Altro']) {
     $('pagina' + id).classList.toggle('nascosto', quale !== id.toLowerCase());
     $('scheda' + id).classList.toggle('attiva', quale === id.toLowerCase());
   }
   if (inCima) window.scrollTo({ top: 0 });
 }
-for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita', 'Tech']) $('scheda' + id).onclick = () => mostraScheda(id.toLowerCase());
+for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita', 'Tech', 'Altro']) $('scheda' + id).onclick = () => mostraScheda(id.toLowerCase());
 function renderPodcast() {
   const el = $('listaPodcast');
   if (!Ed.podcast) { el.innerHTML = '<p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p>'; return; }

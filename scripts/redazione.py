@@ -516,6 +516,8 @@ def prompt_tech(grezzo: dict, scintilla: tuple[str, str]) -> str:
                       for v in (grezzo.get("tech") or {}).get("youtube", [])[:60]) or "(nessuno)"
     pod = "\n".join(f"{p['id']} | {p['nome']} | episodio: {p['episodio']} | {(p.get('descrizione') or '')[:250]}"
                     for p in grezzo["podcast"] if p.get("gruppo") == "tech") or "(nessuno)"
+    video_lavoro = "\n".join(f"{v['vid']} | {v['canale']} | {v['quando']} | {v['visualizzazioni']} | {v['titolo']}"
+                             for v in (((grezzo.get("altro") or {}).get("lavoro") or {}).get("video_cercati") or [])) or "(nessuno)"
     a, b = scintilla
     return f"""Sei il curatore di una rubrica su tecnologia e intelligenza artificiale per una famiglia italiana. Oggi è {oggi}.
 Scrivi in italiano semplice e chiaro, adatto anche a chi non è esperto e da leggere ad alta voce: frasi brevi, niente elenchi puntati, niente emoji, sigle spiegate. Per notizie, futuro, video e podcast usa SOLO le informazioni degli elenchi: non inventare fatti, cifre, nomi o date.
@@ -532,6 +534,8 @@ COMPITO 5 – "video": fino a 10 video dall'elenco VIDEO che parlano davvero di 
 
 COMPITO 6 – "podcast": per ogni podcast dell'elenco PODCAST "id" e "spiegazione" (2 frasi brevi, massimo 35 parole: di che cosa parla l'episodio).
 
+COMPITO 8 – "lavoro": le 6 notizie più interessanti sul futuro del lavoro (intelligenza artificiale e occupazione, nuove professioni e competenze, lavoro da remoto, settimana corta, automazione, formazione, giovani e lavoro), prese da tutti gli elenchi NOTIZIE TECH, SCIENZA E FUTURO e LAVORO ED ECONOMIA. Scarta borsa, conti aziendali e notizie che non parlano di come cambia il lavoro. Per ciascuna "id", "titolo" (massimo 10 parole) e "testo" (tra 40 e 60 parole: che cosa succede e che cosa cambia per chi lavora). Poi "lavoro_video": i 3 video più interessanti e seri dall'elenco VIDEO SUL LAVORO (in italiano, sul futuro del lavoro; scarta pubblicità, corsi a pagamento e titoli acchiappaclic), ciascuno con "vid" e "perche" (massimo 25 parole). "lavoro_intro": una frase (massimo 30 parole) che riassume il tema del giorno.
+
 COMPITO 7 – "scintilla": la scintilla della serendipità. Unisci i due concetti lontani "{a}" e "{b}" in modo inaspettato ma sensato. "ponte": una frase su che cosa li collega. "nome_idea": il nome dell'idea di business (massimo 5 parole). "idea": tra 60 e 80 parole, l'idea di business concreta (che cosa offre, a chi, come guadagna). "intuizione": tra 40 e 60 parole, l'intuizione creativa inaspettata che nasce dall'incontro dei due concetti. "primo_passo": massimo 20 parole.
 
 Rispondi solo con il JSON richiesto.
@@ -546,7 +550,13 @@ VIDEO (vid | canale | data | titolo — descrizione):
 {video}
 
 PODCAST:
-{pod}"""
+{pod}
+
+LAVORO ED ECONOMIA:
+{elenco('lavoro', 50)}
+
+VIDEO SUL LAVORO (vid | canale | quando | visualizzazioni | titolo):
+{video_lavoro}"""
 
 
 def schema_tech() -> dict:
@@ -558,7 +568,7 @@ def schema_tech() -> dict:
         return {"type": "OBJECT", "properties": prop, "required": list(prop), "propertyOrdering": list(prop)}
 
     lista = lambda campi, extra=None: {"type": "ARRAY", "items": ogg(campi, extra)}  # noqa: E731
-    ordine = ["notizie", "tendenze", "idee", "futuro", "video", "podcast", "scintilla"]
+    ordine = ["notizie", "tendenze", "idee", "futuro", "video", "podcast", "scintilla", "lavoro", "lavoro_video", "lavoro_intro"]
     return {"type": "OBJECT", "required": ordine, "propertyOrdering": ordine, "properties": {
         "notizie": lista(["id", "titolo", "testo"], {"fonti_ids": {"type": "ARRAY", "items": S}}),
         "tendenze": S,
@@ -566,7 +576,10 @@ def schema_tech() -> dict:
         "futuro": lista(["id", "titolo", "testo"]),
         "video": lista(["vid", "perche"]),
         "podcast": lista(["id", "spiegazione"]),
-        "scintilla": ogg(["ponte", "nome_idea", "idea", "intuizione", "primo_passo"])}}
+        "scintilla": ogg(["ponte", "nome_idea", "idea", "intuizione", "primo_passo"]),
+        "lavoro": lista(["id", "titolo", "testo"]),
+        "lavoro_video": lista(["vid", "perche"]),
+        "lavoro_intro": S}}
 
 
 def prompt_dibattito(notizie: list[dict]) -> str:
@@ -616,8 +629,15 @@ def scrivi_tech(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict | None, dict
     spieg = {p.get("id"): p.get("spiegazione", "") for p in j.get("podcast") or []}
     podcast = [{**p, "spiegazione": spieg.get(p["id"]) or riassunto(p.get("descrizione"))} for p in grezzo["podcast"] if p.get("gruppo") == "tech"][:10]
     sc = {**(j.get("scintilla") or {}), "a": scintilla[0], "b": scintilla[1]}
+    lavoro = [completa_notizia(grezzo, n, "lavoro") for n in (j.get("lavoro") or []) if n.get("id") in per_id][:6]
+    cercati = {v["vid"]: v for v in (((grezzo.get("altro") or {}).get("lavoro") or {}).get("video_cercati") or [])}
+    lavoro_video = []
+    for v in j.get("lavoro_video") or []:
+        if v.get("vid") in cercati and all(x["id"] != cercati[v["vid"]]["id"] for x in lavoro_video):
+            lavoro_video.append({**cercati[v["vid"]], "perche": (v.get("perche") or "").strip()})
     tech = {"notizie": notizie, "tendenze": (j.get("tendenze") or "").strip(), "idee": (j.get("idee") or [])[:10], "futuro": futuro,
-            "video": video, "podcast": podcast, "scintilla": sc}
+            "video": video, "podcast": podcast, "scintilla": sc,
+            "lavoro": {"intro": (j.get("lavoro_intro") or "").strip(), "notizie": lavoro, "video": lavoro_video[:3]}}
     voce = {}
     if notizie:
         voce["tech-notizie"] = "Le notizie di oggi su tecnologia e intelligenza artificiale.\n\n" + "\n\n".join(f"{n['titolo']}.\n\n{n['testo']}" for n in notizie) \
@@ -627,6 +647,9 @@ def scrivi_tech(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict | None, dict
             f"Idea numero {i + 1}: {x.get('titolo', '')}.\n\n{x.get('idea', '')} Primo passo: {x.get('primo_passo', '')}" for i, x in enumerate(tech["idee"]))
     if futuro:
         voce["tech-futuro"] = "Il futuro in pillole.\n\n" + "\n\n".join(f"{x['titolo']}.\n\n{x['testo']}" for x in futuro)
+    if lavoro:
+        voce["lavoro"] = "Il futuro del lavoro.\n\n" + (tech["lavoro"]["intro"] + "\n\n" if tech["lavoro"]["intro"] else "") + "\n\n".join(
+            f"{n['titolo']}.\n\n{n['testo']}" for n in lavoro)
     if sc.get("idea"):
         voce["tech-scintilla"] = (f"La scintilla della serendipità. Oggi uniamo {sc['a']} e {sc['b']}.\n\n{sc.get('ponte', '')}\n\n"
                                   f"L'idea si chiama {sc.get('nome_idea', '')}.\n\n{sc['idea']}\n\nL'intuizione: {sc.get('intuizione', '')}\n\nPrimo passo: {sc.get('primo_passo', '')}")
@@ -639,7 +662,7 @@ def scrivi_tech(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict | None, dict
             dibattito = {"titolo": (dj.get("titolo") or "Due IA parlano di IA").strip(), "turni": turni}
     except Exception as e:  # noqa: BLE001
         log(f"  ! dibattito: {type(e).__name__} {str(e)[:200]}")
-    log(f"  tech: {len(notizie)} notizie, {len(tech['idee'])} idee, {len(futuro)} pillole, {len(video)} video, {len(podcast)} podcast, "
+    log(f"  tech: {len(notizie)} notizie, {len(tech['idee'])} idee, {len(futuro)} pillole, {len(video)} video, {len(podcast)} podcast, lavoro {len(lavoro)} notizie e {len(lavoro_video)} video, "
         f"scintilla {scintilla[0]} + {scintilla[1]}, dibattito {len(dibattito['turni']) if dibattito else 0} battute")
     return tech, voce, dibattito
 
