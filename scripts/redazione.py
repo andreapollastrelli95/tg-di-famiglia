@@ -556,8 +556,11 @@ def parti_di(testo: str, massimo: int = 135) -> list[str]:
     return out
 
 
-async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce_extra: dict | None = None) -> dict:
-    audio = cartella / "audio"
+async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce_extra: dict | None = None, sigla_edizione: str = "") -> dict:
+    # Ogni edizione ha la sua cartella (data/audio/<edizione>/): così l'audio di un'edizione non può mai
+    # mescolarsi con la scaletta di un'altra, anche se il sito viene ripubblicato mentre qualcuno ascolta.
+    sottocartella = f"audio/{sigla_edizione}" if sigla_edizione else "audio"
+    audio = cartella / sottocartella
     audio.mkdir(parents=True, exist_ok=True)
     lavori = []  # (file, testo, dove mettere il percorso)
     ed["saluto"] = {"testo": cfg["saluto"]}
@@ -594,7 +597,7 @@ async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce
     async def uno(nome, testo, dove):
         async with limite:
             voce = await leggi(testo, audio / nome, cfg)
-        dove["audio"] = f"data/audio/{nome}" if voce else None
+        dove["audio"] = f"data/{sottocartella}/{nome}" if voce else None
         if voce:
             usate.add(voce)
 
@@ -629,8 +632,12 @@ def main() -> None:
         log(f"  testi: {len(ed['notizie'])} notizie, {len(ed['podcast'])} podcast, {len(ed['varie']['squadre'])} sezioni calcio (modello {modello})")
         ed["extra"], voce_extra = scrivi_extra(chiave, cfg, grezzo)
         rassegne = scrivi_rassegne(chiave, cfg, cartella)
-        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella, voce_extra))
-        ed.update({"versione": 1, "generato": grezzo["generato"], "giorno": grezzo["giorno"], "modello": modello,
+        sigla_edizione = re.sub(r"\D", "", grezzo["generato"])[:14]  # es. 20261117042712
+        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella, voce_extra, sigla_edizione))
+        # controllo di coerenza: titolo k e notizia k devono essere la stessa notizia, nello stesso ordine
+        for k, n in enumerate(ed["notizie"]):
+            assert ed["titoli"][k + 1]["testo"] == n["titolo"] and ed["blocchi"][k]["notizie"] == [k], f"scaletta incoerente alla notizia {k + 1}"
+        ed.update({"versione": 2, "sigla": sigla_edizione, "generato": grezzo["generato"], "giorno": grezzo["giorno"], "modello": modello,
                    "scritto": datetime.now().astimezone().isoformat(timespec="seconds")})
         (cartella / "edizione.json").write_text(json.dumps(ed, ensure_ascii=False, indent=1), encoding="utf-8")
         log(f"Scritto {cartella / 'edizione.json'}")

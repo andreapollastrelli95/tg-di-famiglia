@@ -414,7 +414,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.3.0',
+  versione: '2.3.1',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -1015,7 +1015,10 @@ async function caricaEdizioneServer(g) {
     const r = await fetch(`data/edizione.json?v=${encodeURIComponent(g.generato)}`, { cache: 'no-store' });
     if (!r.ok) return null;
     const e = await r.json();
-    return e.generato === g.generato && e.notizie?.length && e.blocchi?.length ? e : null;
+    // solo l'edizione di questi dati, con l'audio nella sua cartella (le edizioni vecchie riusavano gli stessi nomi di file)
+    const coerente = e.generato === g.generato && e.notizie?.length && e.blocchi?.length && e.sigla
+      && e.blocchi.every((b) => !b.audio || b.audio.includes(`/${e.sigla}/`));
+    return coerente ? e : null;
   } catch { return null; }
 }
 function usaEdizioneServer(e) {
@@ -1258,7 +1261,8 @@ function titoliNoti() {
   const sc = [];
   for (const t of Ed.scaletta) { if (!t) break; sc.push(t); }
   const daNotizie = Ed.notizie.map((n) => n.titolo);
-  return sc.length && sc.length >= daNotizie.length ? sc : daNotizie;
+  // i titoli delle notizie già arrivate valgono più della scaletta (sono quelli che verranno letti)
+  return daNotizie.length >= sc.length || Ed.finito ? daNotizie : sc;
 }
 const quantiTitoli = () => (Ed.titoli.completo ? Ed.titoli.testi.length - 1 : TOTALE_NOTIZIE);
 
@@ -1274,9 +1278,17 @@ async function produciTitoli(vivo) {
   const primi = titoliNoti().slice(0, PRIMI);
   T.testi = [CONFIG.titoli, ...primi];
   Ed.avvisa();
-  const g1 = gruppoTitoli(0, T.testi.length, vivo);
-  if (!await aspetta(() => titoliNoti().length >= TOTALE_NOTIZIE || Ed.finito)) return;
-  T.testi.push(...titoliNoti().slice(primi.length, TOTALE_NOTIZIE));
+  let g1 = gruppoTitoli(0, T.testi.length, vivo);
+  // il resto dei titoli si prende dalle notizie vere, nell'ordine in cui verranno lette
+  if (!await aspetta(() => Ed.notizie.length >= TOTALE_NOTIZIE || Ed.finito)) return;
+  const veri = Ed.notizie.map((n) => n.titolo);
+  if (primi.some((t, i) => veri[i] && t !== veri[i])) {
+    // la scaletta aveva un ordine diverso dalle notizie: si rifanno i primi titoli, così titolo k = notizia k
+    primi.forEach((_, i) => { if (veri[i]) T.testi[1 + i] = veri[i]; delete T.pezzi[1 + i]; });
+    await g1;
+    g1 = gruppoTitoli(0, 1 + primi.length, vivo);
+  }
+  T.testi.push(...veri.slice(primi.length, TOTALE_NOTIZIE));
   T.completo = true; Ed.avvisa();
   const g2 = T.testi.length > 1 + primi.length ? gruppoTitoli(1 + primi.length, T.testi.length, vivo) : null;
   await g1; await g2;
@@ -1415,8 +1427,19 @@ async function avviaTG() {
   P.modo = 'tg'; nascondiMini();
   $('comandiTG').classList.remove('nascosto');
   aggiornaTastoPlay();
-  if (!Ed.grezzo && Ed.finito) prepara(true); else prepara();
+  if (!Ed.grezzo && Ed.finito) prepara(true); else { prepara(); controllaEdizione(); }
   return vaiA({ t: 'sigla' });
+}
+/** Se nel frattempo il server ha pubblicato un'edizione nuova, la carica (durante la sigla, prima delle notizie).
+ *  Restituisce true se ha ricaricato. */
+async function controllaEdizione() {
+  if (!Ed.grezzo || !Ed.finito) return false;
+  const g = await caricaGrezzo();
+  if (!g || g.generato === Ed.grezzo.generato) return false;
+  console.info('edizione nuova sul server: ricarico');
+  $('avvisi').innerHTML = '';
+  await prepara(true);
+  return true;
 }
 
 async function vaiA(p) {
@@ -1561,8 +1584,16 @@ audio.addEventListener('error', () => {
   }
   else if (P.modo === 'podcast') $('miniSotto').textContent = 'Questo episodio non si riesce a riprodurre. Usa “Apri episodio”.';
   else if (P.modo === 'diretta') $('miniSotto').textContent = 'La radio non risponde ora. Riprova più tardi.';
-  else if (P.modo === 'tg') vaiA(prossimoPasso());
+  else if (P.modo === 'tg') {
+    // un audio dell'edizione non c'è più (il sito è stato ripubblicato): ricarica l'edizione nuova e riprendi dallo stesso punto
+    const passo = P.passo, mio = P.token;
+    if (P.urlCorrente?.includes('data/audio/') && !P.ricaricato) {
+      P.ricaricato = true;
+      controllaEdizione().then((nuova) => { if (mio === P.token) vaiA(nuova ? passo : prossimoPasso()); });
+    } else vaiA(prossimoPasso());
+  }
 });
+audio.addEventListener('playing', () => { P.ricaricato = false; });
 audio.addEventListener('playing', () => { P.radioErrori = 0; });
 ['play', 'pause', 'playing'].forEach((ev) => audio.addEventListener(ev, () => { aggiornaTastoPlay(); aggiornaMini(); }));
 audio.addEventListener('timeupdate', () => {

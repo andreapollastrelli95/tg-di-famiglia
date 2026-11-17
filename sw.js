@@ -4,7 +4,7 @@
    - data/*.json: sempre dalla rete (network-first), copia di riserva in cache
    - data/audio/*.mp3: voce del giorno, scaricata a ogni nuova edizione e poi disponibile anche offline
    - richieste ad altri siti (Gemini, podcast, radio): non toccate */
-const CACHE = 'tg-famiglia-v8';
+const CACHE = 'tg-famiglia-v9';
 const GUSCIO = ['./', 'index.html', 'manifest.json', 
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
@@ -48,8 +48,10 @@ async function audioDelGiorno(req) {
     r = await fetch(req.url, { cache: 'no-store' });
     if (!r.ok) return r;
     await c.put(req.url, r.clone());
-    const v = new URL(req.url).searchParams.get('v'); // via gli audio delle edizioni precedenti
-    for (const k of await c.keys()) { const u = new URL(k.url); if (u.pathname.includes('/data/audio/') && u.searchParams.get('v') !== v) c.delete(k); }
+    // via gli audio delle edizioni precedenti (ogni edizione ha la sua cartella data/audio/<edizione>/)
+    const cartella = (u) => u.pathname.split('/data/audio/')[1]?.split('/')[0];
+    const attuale = cartella(new URL(req.url));
+    for (const k of await c.keys()) { const u = new URL(k.url); if (u.pathname.includes('/data/audio/') && cartella(u) !== attuale) c.delete(k); }
   }
   const range = /bytes=(\d*)-(\d*)/.exec(req.headers.get('range') || '');
   if (!range) return r;
