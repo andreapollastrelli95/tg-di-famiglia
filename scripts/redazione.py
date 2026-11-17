@@ -512,7 +512,7 @@ def taglia_silenzi(file: Path) -> None:
               "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.10,areverse")
     try:
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(file), "-af", filtro, "-ar", "24000", "-ac", "1",
-                        "-b:a", "64k", str(tmp)], check=True, timeout=60)
+                        "-b:a", "48k", str(tmp)], check=True, timeout=60)
         if tmp.exists() and tmp.stat().st_size > 1500:
             tmp.replace(file)
     except Exception as e:  # noqa: BLE001 - se il taglio non riesce resta il file originale
