@@ -411,7 +411,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.2.0',
+  versione: '2.2.1',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -2344,10 +2344,11 @@ async function tgInDialetto(dialetto) {
   const mio = preparaLettura(titolo, 'Traduco il TG…');
   st.textContent = 'Sto riscrivendo le notizie in dialetto: ci vuole mezzo minuto…'; out.innerHTML = '';
   try {
-    const k = `dialetto:${VERSIONE_CACHE}:${Ed.grezzo?.generato}:${dialetto}`;
+    const k = `dialetto:${VERSIONE_CACHE}:${Ed.grezzo?.generato}:${dialetto}:2`;
     let testo = (await db.get(k))?.testo;
     if (!testo) {
-      testo = await testoLibero(`Riscrivi il telegiornale qui sotto in dialetto ${dialetto}${dialetto === 'romano' ? ' (romanesco)' : dialetto === 'viterbese' ? ' (il dialetto di Viterbo e della Tuscia)' : ' (il dialetto di Orvieto)'}, come lo racconterebbe una persona del posto, simpatica ma rispettosa.
+      testo = await testoLibero(`Riscrivi il telegiornale qui sotto in dialetto ${dialetto}${dialetto === 'romano' ? ' (romanesco)' : dialetto === 'viterbese' ? ' (il dialetto di Viterbo e della Tuscia)' : ' (il dialetto di Orvieto, in Umbria)'}, come lo racconterebbe una persona del posto, simpatica ma rispettosa.${dialetto === 'orvietano' ? `
+Deve suonare proprio umbro e campagnolo, non romano né toscano: la parlata di un contadino della campagna orvietana che racconta le notizie al bar del paese. Usa le forme tipiche dell'Umbria: infiniti tronchi (magnà, fà, dì, gì per "andare": "so' gito", "gimo"), "nun" per "non", "mo'" per "adesso", "'l" e "lu" per l'articolo, "quillo" e "quisto", "ce sta", "'sto" e "'sta", "frego" e "freghi" per "ragazzo" e "ragazzi", "'n" per "un" e per "in", "tocca" per "bisogna", vocali finali smorzate e raddoppi dove servono. Infila qualche paragone preso dalla campagna (la vigna, l'orto, l'olio, le bestie, il tempo che fa) e qualche esclamazione da paese. Scrivi le parole come si pronunciano, in modo che letto ad alta voce si senta la cadenza umbra.` : ''}
 Comincia con un saluto in dialetto, poi racconta ogni notizia in 2 o 3 frasi (un paragrafo per notizia, separati da una riga vuota) e chiudi con un saluto. In tutto tra 450 e 550 parole.
 Mantieni esatti i fatti, i nomi e i numeri: cambia solo il modo di dirli. Usa un dialetto comprensibile, con grafia semplice e leggibile ad alta voce; niente volgarità, niente prese in giro di persone o tragedie. Rispondi solo con il testo.
 
