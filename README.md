@@ -51,7 +51,11 @@ serata e sport in 30 secondi), **Accadde oggi**, **Rassegna stampa della domenic
 della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive),
 **Altri sport** (tennis, Formula 1 e MotoGP: notizie, risultati e orari TV quando sono noti),
 **Partite di oggi** (orario e canale delle partite delle squadre italiane) e **Concerti, teatro e
-mostre** dei prossimi 30 giorni a Roma, Viterbo, nella Tuscia, a Orvieto, Civitavecchia o Tolfa, a scelta.
+mostre** dei prossimi 30 giorni a Roma, Viterbo, nella Tuscia, a Orvieto, Civitavecchia o Tolfa, a scelta. Poi **I sentieri
+della salute** (camminate e trekking leggeri nella Tuscia, a Orvieto, Civitavecchia e Tolfa: ogni settimana
+un percorso consigliato per la domenica con il meteo previsto; l'elenco è in `config/sentieri.json`),
+**Ricettario di famiglia** (una ricetta tradizionale al giorno e altre a caso con un tasto; i piatti sono
+in `config/ricette.json`) e **Angolo del fai da te** (cinque idee al giorno di hobbistica e giardinaggio).
 
 **Scheda NOVITÀ**: **Eventi e sagre nella Tuscia** (quelli del fine settimana, e sotto quelli di Civitavecchia, Tolfa e Orvieto), **Raccolta
 differenziata** (che cosa mettere fuori stasera e calendario dei ritiri: Viterbo e Civitavecchia zona per zona,
@@ -63,7 +67,7 @@ riga che spiega a che cosa serve.
 
 **Scheda TECH & AI**: **Notizie AI** (le dieci notizie del giorno su tecnologia e intelligenza
 artificiale e i trend del futuro), **Podcast AI** (podcast italiani di tecnologia), **Radio AI** (dieci radio
-scelte, tra informazione, cultura digitale e intrattenimento), **Idee AI**
+scelte, tra informazione, attualità, cultura digitale e intrattenimento), **Idee AI**
 (dieci idee nuove al giorno), **Futuro AI** (dieci pillole sulle scoperte più sorprendenti), **YouTube
 link** (dieci video recenti dai canali italiani di tecnologia più seguiti), **La scintilla della serendipità** (due concetti
 lontani che diventano un'idea di business e un'intuizione creativa: una al giorno, altre a richiesta),

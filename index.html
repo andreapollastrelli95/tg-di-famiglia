@@ -276,8 +276,32 @@ dialog h2{margin-top:0}
         <button class="btn" data-apri="sport" type="button">🎾 Altri sport</button>
         <button class="btn" data-apri="partite" type="button">⚽ Partite di oggi</button>
         <button class="btn" data-apri="cultura" type="button">🎭 Concerti, teatro e mostre</button>
+        <button class="btn" data-apri="sentieri" type="button">🥾 I sentieri della salute</button>
+        <button class="btn" data-apri="ricettario" type="button">🍝 Ricettario di famiglia</button>
+        <button class="btn" data-apri="faidate" type="button">🔨 Angolo del fai da te</button>
       </div>
       <div id="contenutoVarie"></div>
+      <section data-sezione="sentieri" class="nascosto">
+        <h2>🥾 I sentieri della salute</h2>
+        <p class="spiega">Idee per una camminata, un trekking leggero o un percorso nella natura la domenica, nella Tuscia, a Orvieto, a Civitavecchia e sui Monti della Tolfa. Ogni settimana c'è un percorso consigliato con il meteo previsto per domenica; sotto trovi tutti gli altri, con il tasto per arrivarci.</p>
+        <div id="sentieriContenuto"></div>
+      </section>
+      <section data-sezione="ricettario" class="nascosto">
+        <h2>🍝 Ricettario di famiglia</h2>
+        <p class="spiega">Le ricette della tradizione della Tuscia, di Orvieto, di Civitavecchia e di Tolfa. Ogni giorno ce n'è una nuova, con ingredienti e passaggi; con il tasto qui sotto ne peschi un'altra a caso.</p>
+        <div id="ricettaOggi"></div>
+        <div class="riga-btn"><button class="btn pieno" id="altraRicetta" type="button">🎲 Un'altra ricetta a caso</button></div>
+        <p class="stato" id="statoRicetta" role="status" aria-live="polite"></p>
+        <div id="ricettaNuova"></div>
+      </section>
+      <section data-sezione="faidate" class="nascosto">
+        <h2>🔨 Angolo del fai da te</h2>
+        <p class="spiega">Cinque idee al giorno per il tempo libero: piccoli lavori di hobbistica e di giardinaggio adatti alla stagione, con che cosa serve e come si fa. Con il tasto qui sotto ne arrivano altre cinque a caso.</p>
+        <div id="faidateOggi"></div>
+        <div class="riga-btn"><button class="btn pieno" id="altreIdee" type="button">🎲 Altre 5 idee</button></div>
+        <p class="stato" id="statoFaidate" role="status" aria-live="polite"></p>
+        <div id="faidateNuove"></div>
+      </section>
       <section data-sezione="rassegna" class="nascosto">
         <h2>🗞️ Rassegna stampa della domenica</h2>
         <div class="scheda">
@@ -463,7 +487,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.5.0',
+  versione: '2.6.0',
 };
 const VERSIONE_CACHE = 'v8'; // cambiarla invalida la cache audio/testo
 
@@ -2264,9 +2288,106 @@ function renderExtra() {
         ${ascolta('detto', 'Il detto del giorno', `${d.proverbio}. Vuol dire: ${d.traduzione}. ${d.spiegazione}`)}
         ${d.scelto_da === 'ia' ? '<p class="piccolo">Scelto dall\'intelligenza artificiale: la grafia dialettale può non essere perfetta.</p>' : ''}</article>` : nonPronto));
   $('contenutoNovita').innerHTML = h;
+  renderSalute();
   renderTech();
   apriSezione('varie', sezioneAperta.varie, false); apriSezione('novita', sezioneAperta.novita, false);
 }
+
+/* ---------- VARIE: sentieri della salute, ricettario di famiglia, angolo del fai da te ---------- */
+const ZONE_SENTIERI = [['tutte', 'Tutte'], ['tuscia', 'Tuscia'], ['orvieto', 'Orvieto'], ['civitavecchia', 'Civitavecchia'], ['tolfa', 'Tolfa']];
+const LUOGO_METEO = { tuscia: 'viterbo', orvieto: 'orvieto', civitavecchia: 'civitavecchia', tolfa: 'tolfa' };
+function prossimaDomenica() {
+  const oggi = new Date(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }) + 'T12:00:00');
+  oggi.setDate(oggi.getDate() + ((7 - oggi.getDay()) % 7));
+  return oggi.toLocaleDateString('sv-SE');
+}
+function renderSalute() {
+  const g = Ed.grezzo, x = Ed.extra;
+  if (!$('sentieriContenuto')) return;
+  // ---- sentieri
+  const tutti = g?.sentieri || [];
+  const zona = ZONE_SENTIERI.some(([z]) => z === ls.get('tg_zona_sentieri')) ? ls.get('tg_zona_sentieri') : 'tutte';
+  const lista = tutti.filter((t) => zona === 'tutte' || t.zona === zona);
+  let h = `<div class="scelte">${ZONE_SENTIERI.map(([z, nome]) => `<button class="btn ${z === zona ? 'attiva' : ''}" data-zona-sentieri="${z}" type="button">${nome}</button>`).join('')}</div>`;
+  if (lista.length) {
+    const settimana = Math.floor(Date.parse(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }) + 'T00:00:00Z') / 86400000 / 7);
+    const r = casuale(settimana * 7907 + 11), ordine = lista.map((t) => [r(), t]).sort((a, b) => a[0] - b[0]).map((a) => a[1]);
+    const scelto = ordine[0];
+    const dom = prossimaDomenica();
+    const luogo = (g?.meteo_luoghi || []).find((m) => m.id === LUOGO_METEO[scelto.zona]);
+    const prev = luogo?.giorni?.find((d) => d.data === dom);
+    const meteoTesto = prev ? `${meteoCodice(prev.codice).emoji} ${meteoCodice(prev.codice).testo}, da ${prev.tmin} a ${prev.tmax} gradi, pioggia ${prev.pioggia_prob ?? '–'}%` : '';
+    const consiglioPioggia = prev && (prev.pioggia_prob ?? 0) >= 60 ? ' Per domenica è prevista pioggia: meglio un percorso breve o rimandare.' : '';
+    registroAscolto['sentiero'] = { titolo: 'Il sentiero della domenica', testo: `Il sentiero di questa domenica: ${scelto.nome}, a ${scelto.comune}. ${scelto.descrizione} Difficoltà ${scelto.difficolta}, durata ${scelto.durata}.${prev ? ` Il meteo previsto per domenica: ${meteoCodice(prev.codice).testo}, da ${prev.tmin} a ${prev.tmax} gradi.` : ''}${consiglioPioggia} Prima di partire controlla sempre accessi e condizioni del sentiero.` };
+    h += `<article class="scheda scintilla"><p class="piccolo" style="margin-top:0">Il consiglio per domenica ${esc(giornoNome(dom))}</p><h3 style="margin:0 0 6px">${esc(scelto.nome)}</h3>
+      <div class="fonte" style="margin:0 0 8px">${esc(scelto.comune)} · ${esc(scelto.difficolta)} · ${esc(scelto.durata)}</div><p>${esc(scelto.descrizione)}</p>
+      ${meteoTesto ? `<p class="evidenza"><b>Meteo di domenica:</b> ${esc(meteoTesto)}${esc(consiglioPioggia)}</p>` : ''}
+      <div class="riga-btn"><button class="btn rosso" data-ascolta="sentiero" type="button">▶️ Ascolta</button><a class="btn" href="https://www.google.com/maps/search/${encodeURIComponent(scelto.cerca)}" target="_blank" rel="noopener">🗺️ Come arrivare</a></div></article>`;
+    h += `<h3>Tutti i percorsi${zona === 'tutte' ? '' : ' · ' + esc(ZONE_SENTIERI.find(([z]) => z === zona)[1])}</h3>` + ordine.slice(1).map((t) => `<article class="scheda"><h3 style="margin:0 0 6px">${esc(t.nome)}</h3>
+      <div class="fonte" style="margin:0 0 8px">${esc(t.comune)} · ${esc(t.difficolta)} · ${esc(t.durata)}</div><p>${esc(t.descrizione)}</p>
+      <a class="btn" href="https://www.google.com/maps/search/${encodeURIComponent(t.cerca)}" target="_blank" rel="noopener">🗺️ Come arrivare</a></article>`).join('')
+      + '<p class="piccolo">Prima di partire verifica sempre accessi, orari e condizioni del sentiero; porta acqua e scarpe adatte.</p>';
+  } else h += '<p class="scheda">I percorsi compaiono appena i dati del giorno sono pronti.</p>';
+  $('sentieriContenuto').innerHTML = h;
+  // ---- ricetta del giorno e fai da te (preparati sul server)
+  $('ricettaOggi').innerHTML = x?.ricetta ? schedaRicetta(x.ricetta, 'La ricetta di oggi', 'ricetta') : '<p class="scheda">La ricetta del giorno viene preparata ogni mattina: oggi non è ancora pronta. Puoi pescarne una con il tasto qui sotto.</p>';
+  $('faidateOggi').innerHTML = x?.fai_da_te?.length ? schedeFaidate(x.fai_da_te, 'faidate') : '<p class="scheda">Le idee del giorno vengono preparate ogni mattina: oggi non sono ancora pronte.</p>';
+}
+function schedaRicetta(r, etichetta, id) {
+  const testo = `${r.nome}, dalla zona di ${r.zona}. ${r.storia || ''} Per ${r.porzioni || 'quattro persone'} servono: ${(r.ingredienti || []).join(', ')}. ${(r.procedimento || []).join(' ')} ${r.consiglio ? 'Il consiglio: ' + r.consiglio : ''}`;
+  registroAscolto[id] = { titolo: 'Ricettario di famiglia', testo };
+  return `<article class="scheda"><p class="piccolo" style="margin-top:0">${esc(etichetta)} · ${esc(r.zona)}</p><h3 style="margin:0 0 8px">🍽️ ${esc(r.nome)}</h3>
+    ${r.storia ? `<p><i>${esc(r.storia)}</i></p>` : ''}
+    <p><b>Ingredienti${r.porzioni ? ' (' + esc(r.porzioni) + ')' : ''}</b></p><ul style="margin-top:0">${(r.ingredienti || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+    <p><b>Procedimento</b></p><ol style="margin-top:0">${(r.procedimento || []).map((i) => `<li style="margin-bottom:6px">${esc(i)}</li>`).join('')}</ol>
+    ${r.consiglio ? `<p class="evidenza"><b>Il trucco della nonna:</b> ${esc(r.consiglio)}</p>` : ''}
+    <button class="btn rosso" data-ascolta="${esc(id)}" type="button">▶️ Ascolta la ricetta</button></article>`;
+}
+function schedeFaidate(idee, id) {
+  registroAscolto[id] = { titolo: 'Angolo del fai da te', testo: idee.map((d) => `${d.titolo}. Serve: ${d.cosa_serve}. ${d.come_fare}`).join('\n\n') };
+  return `<p><button class="btn rosso" data-ascolta="${esc(id)}" type="button">▶️ Ascolta le idee</button></p>` + idee.map((d, i) => `<article class="scheda"><h3 style="margin-top:0"><span class="numerino">${i + 1}</span>${d.tipo === 'giardinaggio' ? '🌱' : '🔨'} ${esc(d.titolo)}</h3>
+    <span class="badge">${esc(d.tipo || '')} · ${esc(d.difficolta || '')}</span><p><b>Serve:</b> ${esc(d.cosa_serve)}</p><p style="margin-bottom:0">${esc(d.come_fare)}</p></article>`).join('');
+}
+const SCHEMA_RICETTA = {
+  type: 'OBJECT', required: ['storia', 'porzioni', 'ingredienti', 'procedimento', 'consiglio'], propertyOrdering: ['storia', 'porzioni', 'ingredienti', 'procedimento', 'consiglio'],
+  properties: { storia: { type: 'STRING' }, porzioni: { type: 'STRING' }, ingredienti: { type: 'ARRAY', items: { type: 'STRING' } }, procedimento: { type: 'ARRAY', items: { type: 'STRING' } }, consiglio: { type: 'STRING' } },
+};
+let ultimoPiatto = '';
+$('altraRicetta').onclick = async () => {
+  const st = $('statoRicetta');
+  st.classList.remove('errore');
+  if (!chiave) { st.textContent = 'Per pescare altre ricette serve la chiave Gemini: tocca ⚙️ in alto e incollala. Intanto c\'è quella di oggi, qui sopra.'; return; }
+  const piatti = (Ed.grezzo?.piatti || []).filter((p2) => p2.nome !== ultimoPiatto && p2.nome !== Ed.extra?.ricetta?.nome);
+  if (!piatti.length) { st.textContent = 'Il ricettario non è ancora pronto: riprova tra poco.'; return; }
+  const piatto = piatti[Math.floor(Math.random() * piatti.length)];
+  ultimoPiatto = piatto.nome;
+  st.textContent = `Apro il ricettario: ${piatto.nome}…`; $('ricettaNuova').innerHTML = ''; $('altraRicetta').disabled = true;
+  try {
+    const r = await jsonLibero(`Scrivi in italiano la ricetta tradizionale di "${piatto.nome}" (${piatto.zona}), come si fa in famiglia. "storia": 1 o 2 frasi sull'origine e su quando si mangia. "porzioni": per quante persone. "ingredienti": l'elenco, uno per voce, con le quantità. "procedimento": i passaggi in ordine, uno per voce, frasi semplici. "consiglio": un trucco della nonna (massimo 25 parole). Niente emoji.`, SCHEMA_RICETTA);
+    $('ricettaNuova').innerHTML = schedaRicetta({ ...piatto, ...r }, 'Pescata a caso', 'ricetta-' + codice(piatto.nome));
+    st.textContent = '';
+  } catch (e) { console.warn('ricetta', e); st.textContent = e.messaggioUtente || 'Il ricettario non risponde. Riprova tra poco.'; st.classList.add('errore'); }
+  $('altraRicetta').disabled = false;
+};
+const SCHEMA_FAIDATE = {
+  type: 'OBJECT', required: ['idee'], properties: { idee: { type: 'ARRAY', items: { type: 'OBJECT', required: ['titolo', 'tipo', 'cosa_serve', 'come_fare', 'difficolta'], propertyOrdering: ['titolo', 'tipo', 'cosa_serve', 'come_fare', 'difficolta'],
+    properties: { titolo: { type: 'STRING' }, tipo: { type: 'STRING', enum: ['hobbistica', 'giardinaggio'] }, cosa_serve: { type: 'STRING' }, come_fare: { type: 'STRING' }, difficolta: { type: 'STRING', enum: ['facile', 'media'] } } } } },
+};
+$('altreIdee').onclick = async () => {
+  const st = $('statoFaidate');
+  st.classList.remove('errore');
+  if (!chiave) { st.textContent = 'Per avere altre idee serve la chiave Gemini: tocca ⚙️ in alto e incollala. Intanto ci sono quelle di oggi, qui sopra.'; return; }
+  const mese = new Date().toLocaleDateString('it-IT', { month: 'long' });
+  const temi = ['legno', 'riciclo creativo', 'regali fatti a mano', 'piccole riparazioni di casa', 'decorazioni', 'orto sul balcone', 'piante aromatiche', 'potature', 'semina', 'compostaggio', 'piante da interno', 'attrezzi da giardino'];
+  const spunti = temi.sort(() => Math.random() - 0.5).slice(0, 3).join(', ');
+  st.textContent = 'Cerco nuove idee…'; $('faidateNuove').innerHTML = ''; $('altreIdee').disabled = true;
+  try {
+    const j = await jsonLibero(`Proponi in italiano 5 idee nuove e semplici per il tempo libero da fare in casa o in giardino a ${mese}: 3 di hobbistica e 2 di giardinaggio o orto (anche sul balcone), adatte alla stagione. Prendi spunto da: ${spunti}. Per ciascuna "titolo" (massimo 7 parole), "tipo", "cosa_serve" (materiali, massimo 20 parole), "come_fare" (tra 40 e 60 parole) e "difficolta". Niente emoji.`, SCHEMA_FAIDATE);
+    $('faidateNuove').innerHTML = schedeFaidate((j.idee || []).slice(0, 5), 'faidate-' + Date.now().toString(36));
+    st.textContent = '';
+  } catch (e) { console.warn('fai da te', e); st.textContent = e.messaggioUtente || 'Le idee non sono arrivate. Riprova tra poco.'; st.classList.add('errore'); }
+  $('altreIdee').disabled = false;
+};
 
 /* ---------- Scheda TECH & AI: preparata ogni mattina sul server (testi e voce neurale) ---------- */
 /** Dieci libri a settimana dalla vetrina, mescolati e alternando i temi (filosofia, mente, società, economia). */
@@ -2670,6 +2791,7 @@ function toccoSchede(e) {
   }
   if ((b = e.target.closest('[data-citta]'))) { ls.set('tg_citta', b.dataset.citta); return renderExtra(); }
   if ((b = e.target.closest('[data-luogo]'))) { ls.set('tg_meteo', b.dataset.luogo); return renderVarie(); }
+  if ((b = e.target.closest('[data-zona-sentieri]'))) { ls.set('tg_zona_sentieri', b.dataset.zonaSentieri); return renderSalute(); }
   if ((b = e.target.closest('[data-zona-civ]'))) { ls.set('tg_zona_civ', b.dataset.zonaCiv); return renderExtra(); }
   if ((b = e.target.closest('[data-zona-orv]'))) { ls.set('tg_zona_orv', b.dataset.zonaOrv); return renderExtra(); }
   if ((b = e.target.closest('[data-zona]'))) { ls.set('tg_zona_viterbo', b.dataset.zona); return renderExtra(); }

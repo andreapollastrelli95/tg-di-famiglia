@@ -493,6 +493,8 @@ def main():
         "radio_preferite": varie.get("radio_preferite", []),
         "differenziata": raccogli_differenziata(),
         "tech": raccogli_tech(),
+        "sentieri": leggi_config("sentieri.json").get("sentieri", []),
+        "piatti": leggi_config("ricette.json").get("piatti", []),
         "meteo_luoghi": raccogli_meteo_luoghi(varie.get("meteo_luoghi") or ([dict(varie["meteo"], id="viterbo")] if varie.get("meteo") else [])),
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }

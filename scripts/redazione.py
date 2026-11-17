@@ -351,6 +351,13 @@ def fine_settimana(giorno: str) -> tuple[date, date]:
     return ven, ven + timedelta(days=2)
 
 
+def piatto_del_giorno(grezzo: dict) -> dict:
+    """Il piatto della ricetta del giorno: scelto a caso, ma uguale per tutti nello stesso giorno."""
+    import random
+    piatti = grezzo.get("piatti") or [{"nome": "Acquacotta", "zona": "Tuscia"}]
+    return random.Random("ricetta" + grezzo["giorno"]).choice(piatti)
+
+
 def prompt_extra(grezzo: dict, con_detto: bool) -> str:
     g = date.fromisoformat(grezzo["giorno"])
     oggi = f"{GIORNI[g.weekday()]} {g.day} {MESI[g.month - 1]} {g.year}"
@@ -376,6 +383,10 @@ COMPITO 3 – "partite_oggi": le partite di calcio di oggi, {oggi}, che riguarda
 
 COMPITO 4 – "cultura": concerti, spettacoli teatrali e mostre in programma da oggi ai prossimi 30 giorni, separati per zona: "roma", "viterbo" (la città), "tuscia" (il resto della provincia), "orvieto", "civitavecchia" e "tolfa" (per queste due usa l'elenco CIVITAVECCHIA E TOLFA, assegnando a Tolfa solo ciò che riguarda Tolfa). Per ogni zona "lista": fino a 8 voci con "titolo", "tipo" (concerto, teatro, mostra o altro), "dove", "quando"; "testo": tra 60 e 90 parole.
 {detto}
+
+COMPITO 6 – "ricetta": la ricetta tradizionale di "{piatto_del_giorno(grezzo)['nome']}" ({piatto_del_giorno(grezzo)['zona']}), come si fa in famiglia. "storia": 1 o 2 frasi sull'origine e su quando si mangia. "porzioni": per quante persone. "ingredienti": l'elenco, uno per voce, con le quantità. "procedimento": i passaggi in ordine, uno per voce, frasi semplici. "consiglio": un trucco della nonna (massimo 25 parole). Per questo compito puoi usare la tua conoscenza della cucina tradizionale.
+
+COMPITO 7 – "fai_da_te": 5 idee nuove e semplici per il tempo libero da fare in casa o in giardino in questo periodo dell'anno ({MESI[g.month - 1]}): 3 di hobbistica (bricolage, riciclo creativo, piccoli lavori di casa, regali fatti a mano) e 2 di giardinaggio o orto (anche sul balcone), adatte alla stagione. Per ciascuna "titolo" (massimo 7 parole), "tipo" ("hobbistica" o "giardinaggio"), "cosa_serve" (materiali, massimo 20 parole), "come_fare" (tra 40 e 60 parole) e "difficolta" ("facile" o "media"). Varia ogni giorno: oggi è il giorno numero {g.timetuple().tm_yday} dell'anno. Per questo compito puoi usare la tua conoscenza.
 
 Rispondi solo con il JSON richiesto.
 
@@ -419,14 +430,16 @@ def schema_extra() -> dict:
     def blocco(campi_lista):
         return ogg([], {"lista": {"type": "ARRAY", "items": ogg(campi_lista)}, "testo": S})
 
-    ordine = ["eventi_weekend", "eventi_citta", "altri_sport", "partite_oggi", "cultura", "detto"]
+    ordine = ["eventi_weekend", "eventi_citta", "altri_sport", "partite_oggi", "cultura", "detto", "ricetta", "fai_da_te"]
     return {"type": "OBJECT", "required": ordine, "propertyOrdering": ordine, "properties": {
         "eventi_weekend": blocco(["titolo", "dove", "quando"]),
         "eventi_citta": ogg([], {c: blocco(["titolo", "dove", "quando"]) for c, _ in CITTA_EVENTI}),
         "altri_sport": ogg([c for c, _ in SPORT]),
         "partite_oggi": blocco(["partita", "competizione", "ora", "canale"]),
         "cultura": ogg([], {c: blocco(["titolo", "tipo", "dove", "quando"]) for c, _, _ in CITTA}),
-        "detto": ogg(["dialetto", "proverbio", "traduzione", "spiegazione"])}}
+        "detto": ogg(["dialetto", "proverbio", "traduzione", "spiegazione"]),
+        "ricetta": ogg(["storia", "porzioni"], {"ingredienti": {"type": "ARRAY", "items": S}, "procedimento": {"type": "ARRAY", "items": S}, "consiglio": S}),
+        "fai_da_te": {"type": "ARRAY", "items": ogg(["titolo", "tipo", "cosa_serve", "come_fare", "difficolta"])}}}
 
 
 def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
@@ -452,6 +465,10 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
         "partite_oggi": pulito(j.get("partite_oggi")),
         "cultura": {c: pulito((j.get("cultura") or {}).get(c)) for c, _, _ in CITTA},
     }
+    r = j.get("ricetta") or {}
+    if r.get("ingredienti") and r.get("procedimento"):
+        extra["ricetta"] = {**piatto_del_giorno(grezzo), **{k: r.get(k) for k in ("storia", "porzioni", "ingredienti", "procedimento", "consiglio")}}
+    extra["fai_da_te"] = [x for x in (j.get("fai_da_te") or []) if x.get("titolo") and x.get("come_fare")][:5]
     detto = miei[g.toordinal() % len(miei)] if miei else (j.get("detto") or {})
     if (detto.get("proverbio") or "").strip():
         extra["detto"] = {k: (detto.get(k) or "").strip() for k in ("dialetto", "proverbio", "traduzione", "spiegazione")}
@@ -470,12 +487,18 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
     for c, nome, _ in CITTA:
         if extra["cultura"][c]["testo"]:
             voce[f"cultura-{c}"] = f"Concerti, teatro e mostre: {nome.split(' (')[0]}.\n\n" + extra["cultura"][c]["testo"]
+    if extra.get("ricetta"):
+        r = extra["ricetta"]
+        voce["ricetta"] = (f"La ricetta di oggi: {r['nome']}, dalla zona di {r['zona']}.\n\n{r.get('storia') or ''}\n\nPer {r.get('porzioni') or 'quattro persone'} servono: "
+                           + ", ".join(r["ingredienti"]) + ".\n\n" + "\n\n".join(r["procedimento"]) + (f"\n\nIl consiglio: {r['consiglio']}" if r.get("consiglio") else ""))
+    if extra["fai_da_te"]:
+        voce["faidate"] = "L'angolo del fai da te.\n\n" + "\n\n".join(f"{x['titolo']}. Serve: {x['cosa_serve']}. {x['come_fare']}" for x in extra["fai_da_te"])
     if extra.get("detto"):
         d = extra["detto"]
         voce["detto"] = f"Il detto del giorno, in dialetto {d['dialetto']}.\n\n{d['proverbio']}.\n\nVuol dire: {d['traduzione']}.\n\n{d['spiegazione']}"
     log(f"  extra: {len(extra['eventi_weekend']['lista'])} eventi, {len(extra['partite_oggi']['lista'])} partite, "
         f"città {[len(extra['eventi_citta'][c]['lista']) for c, _ in CITTA_EVENTI]}, cultura {[len(extra['cultura'][c]['lista']) for c, _, _ in CITTA]}, "
-        f"detto {'sì' if extra.get('detto') else 'no'}")
+        f"detto {'sì' if extra.get('detto') else 'no'}, ricetta {extra.get('ricetta', {}).get('nome', 'no')}, fai da te {len(extra['fai_da_te'])}")
     return extra, voce
 
 
