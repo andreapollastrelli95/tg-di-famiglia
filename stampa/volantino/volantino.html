@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Volantino TG di Famiglia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  @page { size: 148mm 210mm; margin: 0; }
+  :root { --verde: #0f3d2e; --verde2: #155240; --oro: #d9b25a; --rosso: #b8202f; --crema: #f7f0e1; --testo: #1d2a24; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--verde); }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--testo); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pagina { width: 148mm; height: 210mm; position: relative; overflow: hidden; background: var(--verde); page-break-after: always; }
+  .pagina:last-child { page-break-after: auto; }
+  .deco { position: absolute; inset: 0; pointer-events: none; }
+  .neve { position: absolute; bottom: 0; left: 0; width: 100%; }
+  h1, h2, .serif { font-family: 'Playfair Display', Georgia, serif; }
+
+  /* ---------- FRONTE ---------- */
+  .auguri { position: absolute; top: 33mm; width: 100%; text-align: center; color: var(--crema); }
+  .auguri .piccolo { font-family: 'Playfair Display', serif; color: var(--oro); letter-spacing: 6px; font-size: 17pt; font-weight: 700; }
+  .auguri h1 { margin: 0; font-size: 40pt; font-weight: 900; letter-spacing: 1px; line-height: 1.05; }
+  .cornice { position: absolute; top: 72mm; left: 50%; transform: translateX(-50%); width: 76mm; padding: 6mm; background: #fff; border: 2.2mm solid var(--oro); border-radius: 7mm; }
+  .cornice img { width: 100%; display: block; }
+  .inquadra { position: absolute; top: 158mm; width: 100%; text-align: center; color: var(--rosso); font-weight: 800; font-size: 13pt; }
+  .firma { position: absolute; top: 171mm; width: 100%; text-align: center; color: var(--rosso); font-family: 'Playfair Display', serif; font-weight: 900; font-size: 19pt; letter-spacing: 1.5px; }
+  .firma .stella { color: var(--oro); font-size: 14pt; vertical-align: 3px; margin: 0 3mm; }
+  .sotto { position: absolute; top: 183mm; width: 100%; text-align: center; color: var(--testo); font-size: 11pt; }
+
+  /* ---------- RETRO ---------- */
+  .retro { padding: 9mm 8mm 0; }
+  .retro .testa { text-align: center; color: var(--crema); margin-bottom: 4mm; }
+  .retro .testa .piccolo { font-family: 'Playfair Display', serif; color: var(--oro); letter-spacing: 5px; font-size: 11pt; font-weight: 700; }
+  .retro .testa h2 { margin: 0; font-size: 25pt; font-weight: 900; }
+  .box { background: var(--crema); border: 0.8mm solid var(--oro); border-radius: 4mm; padding: 3.2mm 4.5mm; margin-bottom: 3mm; position: relative; z-index: 1; }
+  .box h3 { margin: 0 0 1.5mm; font-family: 'Playfair Display', serif; color: var(--rosso); font-size: 14.5pt; }
+  .box h3 .ico { font-family: Inter, sans-serif; margin-right: 1.5mm; }
+  .box ol { margin: 0; padding-left: 6mm; font-size: 12pt; line-height: 1.38; }
+  .box p { margin: 0; font-size: 12pt; line-height: 1.38; }
+  .box b { color: var(--verde); }
+  .box .nota { font-size: 10.5pt; margin-top: 1.5mm; color: #3b4a43; }
+  .tasto { display: inline-block; border: 0.35mm solid var(--verde); border-radius: 1.5mm; padding: 0 1.4mm; font-weight: 800; color: var(--verde); background: #fff; }
+  .chiusa { position: absolute; bottom: 7mm; width: 100%; left: 0; text-align: center; font-family: 'Playfair Display', serif; color: var(--rosso); font-weight: 900; font-size: 13.5pt; z-index: 1; }
+</style>
+</head>
+<body>
+
+<!-- ======================= FRONTE ======================= -->
+<section class="pagina">
+  <svg class="deco" viewBox="0 0 148 210" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- palline appese -->
+    <g stroke="#d9b25a" stroke-width=".3">
+      <line x1="14" y1="0" x2="14" y2="11"/><line x1="31" y1="0" x2="31" y2="19"/><line x1="54" y1="0" x2="54" y2="9"/>
+      <line x1="74" y1="0" x2="74" y2="15"/><line x1="94" y1="0" x2="94" y2="8"/><line x1="117" y1="0" x2="117" y2="17"/><line x1="134" y1="0" x2="134" y2="10"/>
+    </g>
+    <g>
+      <rect x="13" y="10" width="2" height="1.6" fill="#d9b25a"/><circle cx="14" cy="15" r="3.6" fill="#b8202f"/>
+      <rect x="30" y="18" width="2" height="1.6" fill="#d9b25a"/><circle cx="31" cy="23" r="3.6" fill="#d9b25a"/>
+      <rect x="53" y="8" width="2" height="1.6" fill="#d9b25a"/><circle cx="54" cy="13" r="3.6" fill="#f7f0e1"/>
+      <rect x="73" y="14" width="2" height="1.6" fill="#d9b25a"/><circle cx="74" cy="19" r="3.6" fill="#b8202f"/>
+      <rect x="93" y="7" width="2" height="1.6" fill="#d9b25a"/><circle cx="94" cy="12" r="3.6" fill="#d9b25a"/>
+      <rect x="116" y="16" width="2" height="1.6" fill="#d9b25a"/><circle cx="117" cy="21" r="3.6" fill="#f7f0e1"/>
+      <rect x="133" y="9" width="2" height="1.6" fill="#d9b25a"/><circle cx="134" cy="14" r="3.6" fill="#b8202f"/>
+    </g>
+    <!-- fiocchi -->
+    <g fill="#8fb3a4" font-size="4" font-family="sans-serif" opacity=".7">
+      <text x="8" y="40">✻</text><text x="135" y="38">✻</text><text x="22" y="62">✻</text><text x="128" y="70">✻</text>
+      <text x="6" y="110">✻</text><text x="140" y="118">✻</text><text x="44" y="30">✻</text><text x="104" y="30">✻</text>
+    </g>
+    <!-- albero -->
+    <g transform="translate(6,96)">
+      <polygon points="14,0 15.3,3.2 18.6,3.2 16,5.2 17,8.4 14,6.5 11,8.4 12,5.2 9.4,3.2 12.7,3.2" fill="#d9b25a"/>
+      <polygon points="14,7 25,22 3,22" fill="#2f7a55"/>
+      <polygon points="14,15 28,33 0,33" fill="#2a6f4d"/>
+      <polygon points="14,24 30,45 -2,45" fill="#256646"/>
+      <rect x="11.5" y="45" width="5" height="6" fill="#7a4a28"/>
+      <circle cx="10" cy="20" r="1.2" fill="#b8202f"/><circle cx="18" cy="27" r="1.2" fill="#f7f0e1"/><circle cx="8" cy="31" r="1.2" fill="#d9b25a"/>
+      <circle cx="21" cy="37" r="1.2" fill="#b8202f"/><circle cx="6" cy="41" r="1.2" fill="#f7f0e1"/><circle cx="14" cy="40" r="1.2" fill="#d9b25a"/>
+    </g>
+    <!-- regali -->
+    <g transform="translate(116,128)">
+      <rect x="0" y="5" width="15" height="13" fill="#b8202f"/><rect x="6.4" y="5" width="2.2" height="13" fill="#d9b25a"/>
+      <rect x="-.8" y="3" width="16.6" height="3" fill="#a01b28"/><path d="M7.5 3 C4 -1, 2 2, 7.5 3 C11 -1, 13 2, 7.5 3" fill="none" stroke="#d9b25a" stroke-width=".9"/>
+      <rect x="17" y="9" width="10" height="9" fill="#f7f0e1"/><rect x="21" y="9" width="2" height="9" fill="#2f7a55"/><rect x="16.4" y="7.6" width="11.2" height="2" fill="#e6dcc4"/>
+    </g>
+    <!-- agrifoglio -->
+    <g transform="translate(36,66)"><path d="M0 2 C4 -2, 9 -1, 12 2 C8 3, 4 4, 0 2Z" fill="#2f7a55"/><path d="M24 2 C20 -2, 15 -1, 12 2 C16 3, 20 4, 24 2Z" fill="#2f7a55"/><circle cx="11" cy="3" r="1.4" fill="#b8202f"/><circle cx="13.4" cy="3.6" r="1.4" fill="#b8202f"/><circle cx="12" cy="5.2" r="1.4" fill="#b8202f"/></g>
+    <g transform="translate(92,146)"><path d="M0 2 C4 -2, 9 -1, 12 2 C8 3, 4 4, 0 2Z" fill="#2f7a55"/><path d="M24 2 C20 -2, 15 -1, 12 2 C16 3, 20 4, 24 2Z" fill="#2f7a55"/><circle cx="11" cy="3" r="1.4" fill="#b8202f"/><circle cx="13.4" cy="3.6" r="1.4" fill="#b8202f"/><circle cx="12" cy="5.2" r="1.4" fill="#b8202f"/></g>
+    <!-- neve in basso -->
+    <path d="M0 150 C25 143, 45 146, 74 149 C100 152, 120 144, 148 147 L148 210 L0 210Z" fill="#f7f0e1"/>
+    <path d="M0 153 C25 147, 45 150, 74 153 C100 156, 120 148, 148 151" fill="none" stroke="#d9b25a" stroke-width=".35"/>
+  </svg>
+  <div class="auguri"><div class="piccolo">AUGURI DI</div><h1>BUON NATALE</h1></div>
+  <div class="cornice"><img src="qr.svg" alt="QR del TG di Famiglia"></div>
+  <div class="inquadra">📱 Inquadra il QR con la fotocamera del telefono</div>
+  <div class="firma"><span class="stella">★</span>TG DI FAMIGLIA<span class="stella">★</span></div>
+  <div class="sotto">Il notiziario di casa, ogni mattina · Istruzioni sul retro ➜</div>
+</section>
+
+<!-- ======================= RETRO ======================= -->
+<section class="pagina retro">
+  <svg class="deco" viewBox="0 0 148 210" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#d9b25a" stroke-width=".3"><line x1="10" y1="0" x2="10" y2="8"/><line x1="138" y1="0" x2="138" y2="9"/></g>
+    <circle cx="10" cy="12" r="3.2" fill="#d9b25a"/><circle cx="138" cy="13" r="3.2" fill="#b8202f"/>
+    <path d="M0 192 C30 186, 50 189, 74 191 C100 193, 120 186, 148 189 L148 210 L0 210Z" fill="#f7f0e1"/>
+  </svg>
+  <div class="testa"><div class="piccolo">ISTRUZIONI</div><h2>TG DI FAMIGLIA</h2></div>
+
+  <div class="box">
+    <h3><span class="ico">🤖</span>Telefono Android (Chrome)</h3>
+    <ol>
+      <li>Inquadra il QR con la <b>fotocamera</b>.</li>
+      <li>Apri il link con <b>Chrome</b>.</li>
+      <li>Tocca il menu <span class="tasto">⋮</span> in alto a destra.</li>
+      <li>Scegli <b>«Aggiungi a schermata Home»</b> oppure <b>«Installa app»</b>.</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h3><span class="ico">🍏</span>iPhone (Safari)</h3>
+    <ol>
+      <li>Inquadra il QR con la <b>fotocamera</b>.</li>
+      <li>Apri il link con <b>Safari</b>.</li>
+      <li>Tocca il tasto <b>Condividi</b> <span class="tasto">⬆︎</span> in basso.</li>
+      <li>Scegli <b>«Aggiungi alla schermata Home»</b>.</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h3><span class="ico">🔑</span>Il primo avvio</h3>
+    <p>L'app chiede una <b>chiave Google Gemini</b>, gratuita:</p>
+    <ol>
+      <li>Vai su <b>aistudio.google.com/apikey</b> ed entra con l'account Google (quello di Gmail).</li>
+      <li>Premi <b>«Crea chiave API»</b> (Create API key) e poi <b>Copia</b>.</li>
+      <li>Torna nell'app, <b>incolla</b> la chiave e premi <span class="tasto">▶</span> <b>Play</b>.</li>
+    </ol>
+    <p class="nota">Si inserisce una volta sola e resta salvata solo sul tuo telefono. Non serve la carta di credito.</p>
+  </div>
+
+  <div class="chiusa">★ In auto? Collega il Bluetooth e premi play! ★</div>
+</section>
+</body>
+</html>
