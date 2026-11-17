@@ -400,6 +400,9 @@ const CONFIG = {
   attesaMassimaNotizia: 20000,  // lo stesso per una notizia
   // righe di materiale inviate a Gemini per categoria (le più recenti): meno righe = risposta più rapida
   righeMassime: { generale: 150, tuscia: 60, sport: 50, calcio: 50, altre: 35 },
+  // Pacchetti sonori (assets/suoni/N/): sigla, stacchi e sottofondo abbinati tra loro.
+  // Ogni giorno ne viene scelto uno a caso, sempre diverso dal giorno prima (stesso per tutta la famiglia).
+  suoni: { cartella: 'assets/suoni', nomi: ['Classico', 'Sinfonico', 'Elettronico', 'Pianoforte', 'Fanfara', 'Serale', 'Ultima ora', 'Mattino', 'Notturno', 'Avventura'] },
   avvioAutomatico: true,                // all'apertura parte da solo (se il telefono lo permette, altrimenti al primo tocco)
   podcastAFineTG: true,                 // finito il TG parte da solo il primo podcast
   // Scaletta del TG: sezioni in ordine. 'annuncio' è la frase detta dalla voce all'inizio della sezione.
@@ -411,7 +414,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.2.1',
+  versione: '2.3.0',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -523,7 +526,43 @@ function dividiAudio(bytes, rate, testi) {
   }
   return pezzi;
 }
-const URL_TAPPETO = 'assets/tappeto.wav'; // sottofondo musicale mentre la voce si prepara
+/* ---------- Pacchetto sonoro del giorno ---------- */
+function casuale(seme) { // generatore pseudo-casuale con seme (mulberry32)
+  return () => { seme |= 0; seme = (seme + 0x6D2B79F5) | 0; let t = Math.imul(seme ^ (seme >>> 15), 1 | seme); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+/** Il pacchetto di oggi: i giorni sono raggruppati in giri lunghi quanto i pacchetti, ogni giro è un mescolamento
+ *  casuale di tutti i pacchetti. Così ogni giorno è diverso dal precedente e in un giro si sentono tutti. */
+function pacchettoDelGiorno(data = new Date()) {
+  const N = CONFIG.suoni.nomi.length;
+  const giorno = Math.floor(Date.parse(data.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }) + 'T00:00:00Z') / 86400000);
+  const giro = (g) => {
+    const r = casuale(g * 7919 + 17), a = [...Array(N).keys()];
+    for (let i = N - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  };
+  const ordine = giro(Math.floor(giorno / N));
+  if (ordine[0] === giro(Math.floor(giorno / N) - 1)[N - 1]) [ordine[0], ordine[1]] = [ordine[1], ordine[0]]; // niente doppioni a cavallo dei giri
+  const n = ordine[giorno % N] + 1;
+  return { n, nome: CONFIG.suoni.nomi[n - 1] };
+}
+const PACCHETTO = pacchettoDelGiorno();
+const suono = (file) => `${CONFIG.suoni.cartella}/${PACCHETTO.n}/${file}`;
+const URL_SIGLA = suono('sigla.mp3'), URL_STACCO = suono('stacco.mp3'), URL_STACCO_LUNGO = suono('stacco-lungo.mp3');
+const URL_TAPPETO = suono('tappeto.wav'); // sottofondo musicale mentre la voce si prepara
+/** Scarica in sottofondo i suoni di oggi: il service worker li conserva e il TG non aspetta la rete. */
+function preparaSuoni() { [URL_SIGLA, URL_STACCO, URL_STACCO_LUNGO, URL_TAPPETO].forEach((u) => fetch(u).catch(() => {})); }
+/** Scarica in anticipo le prossime letture del TG, così tra un pezzo e l'altro non ci sono pause di caricamento. */
+const giaCaricati = new Set();
+function preCaricaProssimi(da) {
+  const s = scaletta();
+  let i = s.findIndex((x) => stessoPasso(x, da)), presi = 0;
+  while (presi < 2 && ++i < s.length && i > 0) {
+    const p = s[i];
+    const url = p.t === 'titolo' ? Ed.titoli.pezzi[p.k]?.url : (p.t === 'voce' ? Ed.blocchi[p.k]?.url : null);
+    if (p.t === 'titolo' || p.t === 'voce') presi++;
+    if (url && !giaCaricati.has(url)) { giaCaricati.add(url); fetch(url).catch(() => giaCaricati.delete(url)); }
+  }
+}
 const URL_SILENZIO = URL.createObjectURL(pcmAWav(new Uint8Array(24000 * 2), 24000)); // 1 s di silenzio
 
 /* =====================================================================
@@ -1389,7 +1428,8 @@ async function vaiA(p) {
     evidenzia(null);
     metadati('TG di Famiglia', 'Sigla');
     stato('🎺 Sigla…');
-    return impostaSorgente('assets/sigla.mp3');
+    preCaricaProssimi(p);
+    return impostaSorgente(URL_SIGLA);
   }
   if (p.t === 'suono') {
     let lungo = !!p.lungo;
@@ -1408,7 +1448,8 @@ async function vaiA(p) {
     }
     evidenzia(null);
     stato('🎵');
-    return impostaSorgente(lungo ? 'assets/stacco-lungo.mp3' : 'assets/stacco.mp3');
+    preCaricaProssimi(p);
+    return impostaSorgente(lungo ? URL_STACCO_LUNGO : URL_STACCO);
   }
   let t, etichetta;
   if (p.t === 'saluto') {
@@ -1434,6 +1475,7 @@ async function vaiA(p) {
   metadati('TG di Famiglia', etichetta);
   if (t.url || t.blob) {
     stato(`🔊 ${etichetta}`);
+    preCaricaProssimi(p);
     return impostaSorgente(t.url || URL.createObjectURL(t.blob));
   }
   // riserva: voce del telefono
@@ -2464,7 +2506,7 @@ $('incolla').onclick = async () => {
 $('apriImpostazioni').onclick = () => {
   $('chiaveMascherata').textContent = chiave ? chiave.slice(0, 6) + '…' + chiave.slice(-4) : '(nessuna)';
   $('statoImpostazioni').textContent = '';
-  $('infoVersione').textContent = `Versione ${CONFIG.versione} · voce: ${ls.get('tg_modello_voce') || '—'} · testo: ${ls.get('tg_modello_testo') || '—'}` + (Ed.grezzo ? ` · dati del ${new Date(Ed.grezzo.generato).toLocaleString('it-IT')}` : '');
+  $('infoVersione').textContent = `Versione ${CONFIG.versione} · suoni di oggi: ${PACCHETTO.nome} · voce: ${ls.get('tg_modello_voce') || '—'} · testo: ${ls.get('tg_modello_testo') || '—'}` + (Ed.grezzo ? ` · dati del ${new Date(Ed.grezzo.generato).toLocaleString('it-IT')}` : '');
   $('impostazioni').showModal();
 };
 $('chiudiImpostazioni').onclick = () => $('impostazioni').close();
@@ -2492,6 +2534,7 @@ $('radioAttualita').onclick = () => radioCasuale(false, 'attualita');
 $('radioCambia').onclick = () => radioCasuale(true);
 
 function avviaApp() {
+  preparaSuoni();
   mostra('tg');
   prepara();
   renderRadioPreferite();

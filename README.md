@@ -29,6 +29,12 @@ sullo schermo.
 6. **Accadde oggi** (curiosità storica di circa 20 secondi) e chiusura;
 7. finito il TG **parte da solo il primo podcast** e si apre la scheda PODCAST.
 
+**Suoni del giorno**: in `assets/suoni/` ci sono 10 pacchetti sonori (Classico, Sinfonico, Elettronico,
+Pianoforte, Fanfara, Serale, Ultima ora, Mattino, Notturno, Avventura). Ogni pacchetto ha sigla, stacco
+corto, stacco lungo e musica d'attesa nella stessa tonalità e con lo stesso tema, così si combinano bene.
+Ogni giorno l'app ne sceglie uno a caso, sempre diverso dal giorno prima (lo stesso per tutta la
+famiglia); quello di oggi è indicato in ⚙️.
+
 **Scheda PODCAST**: i 10 podcast consigliati del giorno, caricati da soli all'apertura dell'app.
 
 **Scheda RADIO**: radio casuali per genere (musica, classica, jazz, country, da viaggio, sportive, attualità)
@@ -206,7 +212,7 @@ ogni mese e riattiva il workflow di raccolta.
 
 ```bash
 pip install numpy lameenc pillow qrcode reportlab
-python tools/genera_sigla.py          # sigla, stacchi e sottofondo in assets/ (musica originale sintetizzata)
+python tools/genera_suoni.py          # 10 pacchetti sonori in assets/suoni/ (musica originale sintetizzata)
 python tools/genera_icone.py          # icons/*.png
 python tools/genera_qr_cartoncino.py --url https://andreapollastrelli95.github.io/tg-di-famiglia/
 ```

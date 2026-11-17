@@ -1,10 +1,11 @@
 /* TG di Famiglia – service worker
-   - interfaccia e sigla: in cache (funzionano anche offline)
+   - interfaccia: in cache (funziona anche offline); i pacchetti sonori (assets/suoni/N/) entrano in cache
+     la prima volta che servono, quindi dopo qualche giorno ci sono tutti
    - data/*.json: sempre dalla rete (network-first), copia di riserva in cache
    - data/audio/*.mp3: voce del giorno, scaricata a ogni nuova edizione e poi disponibile anche offline
    - richieste ad altri siti (Gemini, podcast, radio): non toccate */
-const CACHE = 'tg-famiglia-v7';
-const GUSCIO = ['./', 'index.html', 'manifest.json', 'assets/sigla.mp3', 'assets/tappeto.wav', 'assets/stacco.mp3', 'assets/stacco-lungo.mp3',
+const CACHE = 'tg-famiglia-v8';
+const GUSCIO = ['./', 'index.html', 'manifest.json', 
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

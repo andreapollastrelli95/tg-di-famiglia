@@ -4,7 +4,7 @@
     "it-IT-ElsaNeural",
     "it-IT-IsabellaNeural"
   ],
-  "velocita": "+2%",
+  "velocita": "+4%",
   "tono": "+0Hz",
   "modelli": [
     "gemini-flash-latest",
@@ -42,5 +42,6 @@
     "calcio": 50,
     "altre": 35
   },
-  "rassegne": true
+  "rassegne": true,
+  "taglia_silenzi": true
 }

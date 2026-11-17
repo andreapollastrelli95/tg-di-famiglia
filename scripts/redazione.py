@@ -500,6 +500,27 @@ def pulisci_per_voce(testo: str) -> str:
     return "\n".join(paragrafi)
 
 
+def taglia_silenzi(file: Path) -> None:
+    """Toglie il silenzio all'inizio e alla fine di una lettura (edge-tts ne lascia circa 0,2 e 0,3 secondi),
+    lasciando un margine minimo: tra una notizia e lo stacco non ci sono pause morte. Serve ffmpeg; senza, non fa nulla."""
+    import shutil
+    import subprocess
+    if not shutil.which("ffmpeg"):
+        return
+    tmp = file.with_suffix(".tmp.mp3")
+    filtro = ("silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.04,"
+              "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.10,areverse")
+    try:
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(file), "-af", filtro, "-ar", "24000", "-ac", "1",
+                        "-b:a", "64k", str(tmp)], check=True, timeout=60)
+        if tmp.exists() and tmp.stat().st_size > 1500:
+            tmp.replace(file)
+    except Exception as e:  # noqa: BLE001 - se il taglio non riesce resta il file originale
+        log(f"    ! taglio silenzi {file.name}: {e}")
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 async def leggi(testo: str, file: Path, cfg: dict) -> str | None:
     """Sintetizza un testo in MP3. 3 tentativi per voce, poi la voce di riserva. Restituisce la voce usata."""
     import edge_tts
@@ -511,6 +532,8 @@ async def leggi(testo: str, file: Path, cfg: dict) -> str | None:
             try:
                 await edge_tts.Communicate(pulito, voce, rate=cfg.get("velocita", "+0%"), pitch=cfg.get("tono", "+0Hz")).save(str(file))
                 if file.exists() and file.stat().st_size > 1500:
+                    if cfg.get("taglia_silenzi"):
+                        await asyncio.to_thread(taglia_silenzi, file)
                     return voce
                 raise RuntimeError("file audio vuoto")
             except Exception as e:  # noqa: BLE001 - rete o servizio momentaneamente non disponibile
