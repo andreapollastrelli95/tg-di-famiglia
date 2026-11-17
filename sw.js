@@ -4,7 +4,7 @@
    - data/*.json: sempre dalla rete (network-first), copia di riserva in cache
    - data/audio/*.mp3: voce del giorno, scaricata a ogni nuova edizione e poi disponibile anche offline
    - richieste ad altri siti (Gemini, podcast, radio): non toccate */
-const CACHE = 'tg-famiglia-v11';
+const CACHE = 'tg-famiglia-v12';
 const GUSCIO = ['./', 'index.html', 'manifest.json', 
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
@@ -13,7 +13,7 @@ self.addEventListener('install', (e) => {
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
-    .then((k) => Promise.all(k.filter((n) => n !== CACHE).map((n) => caches.delete(n))))
+    .then((k) => Promise.all(k.filter((n) => n.startsWith('tg-famiglia-') && n !== CACHE).map((n) => caches.delete(n)))) // solo le cache di questa app: sullo stesso dominio ci sono anche altre app
     .then(() => self.clients.claim()));
 });
 
