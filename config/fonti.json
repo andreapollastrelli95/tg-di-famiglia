@@ -1,5 +1,5 @@
 {
-  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (sezioni della scheda CALCIO, vedi config/varie.json) | tennis | formula1 | motogp (Altri sport) | eventi | orvieto | roma (eventi del fine settimana, concerti, teatro e mostre). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
+  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (sezioni della scheda CALCIO, vedi config/varie.json) | tennis | formula1 | motogp (Altri sport) | eventi | orvieto | roma (eventi del fine settimana, concerti, teatro e mostre) | tech | futuro (scheda TECH & AI). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
   "ore_massime": 30,
   "max_per_feed": 25,
   "feed": [
@@ -74,6 +74,21 @@
     {"fonte": "OrvietoLife", "categoria": "orvieto", "ore_massime": 168, "max": 15, "url": "https://www.orvietolife.it/feed/"},
     {"fonte": "Il Messaggero Spettacoli", "categoria": "roma", "ore_massime": 168, "max": 20, "url": "https://www.ilmessaggero.it/rss/spettacoli.xml"},
     {"fonte": "Funweek", "categoria": "roma", "ore_massime": 336, "max": 15, "url": "https://www.funweek.it/feed/"},
-    {"fonte": "RomaToday", "categoria": "roma", "ore_massime": 72, "max": 25, "url": "https://www.romatoday.it/rss"}
+    {"fonte": "RomaToday", "categoria": "roma", "ore_massime": 72, "max": 25, "url": "https://www.romatoday.it/rss"},
+
+    {"fonte": "Il Post", "categoria": "tech", "ore_massime": 72, "max": 10, "url": "https://www.ilpost.it/tecnologia/feed/"},
+    {"fonte": "DDay", "categoria": "tech", "ore_massime": 48, "max": 20, "url": "https://www.dday.it/rss"},
+    {"fonte": "Punto Informatico", "categoria": "tech", "ore_massime": 48, "max": 15, "url": "https://www.punto-informatico.it/feed/"},
+    {"fonte": "AI4Business", "categoria": "tech", "ore_massime": 96, "max": 10, "url": "https://www.ai4business.it/feed/"},
+    {"fonte": "Agenda Digitale", "categoria": "tech", "ore_massime": 96, "max": 10, "url": "https://www.agendadigitale.eu/feed/"},
+    {"fonte": "StartupItalia", "categoria": "tech", "ore_massime": 48, "max": 15, "url": "https://www.startupitalia.eu/feed"},
+    {"fonte": "la Repubblica Tecnologia", "categoria": "tech", "ore_massime": 48, "max": 12, "url": "https://www.repubblica.it/rss/tecnologia/rss2.0.xml"},
+    {"fonte": "Corriere Tecnologia", "categoria": "tech", "ore_massime": 48, "max": 15, "url": "https://www.corriere.it/dynamic-feed/rss/section/Tecnologia.xml"},
+    {"fonte": "HDblog", "categoria": "tech", "ore_massime": 36, "max": 12, "url": "https://www.hdblog.it/feed/"},
+    {"fonte": "MIT Technology Review", "categoria": "tech", "ore_massime": 96, "max": 10, "url": "https://www.technologyreview.com/feed/"},
+    {"fonte": "The Verge", "categoria": "tech", "ore_massime": 72, "max": 10, "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"},
+    {"fonte": "TechCrunch", "categoria": "tech", "ore_massime": 72, "max": 12, "url": "https://techcrunch.com/category/artificial-intelligence/feed/"},
+    {"fonte": "ANSA Scienza e Tecnica", "categoria": "futuro", "ore_massime": 120, "max": 25, "url": "https://www.ansa.it/canale_scienza_tecnica/notizie/scienzaetecnica_rss.xml"},
+    {"fonte": "Focus", "categoria": "futuro", "ore_massime": 120, "max": 20, "url": "https://www.focus.it/rss"}
   ]
 }

@@ -333,6 +333,39 @@ def raccogli_differenziata() -> dict | None:
     return cfg
 
 
+# ---------------------------------------------------------------- scheda TECH & AI
+def raccogli_tech() -> dict | None:
+    """Video recenti dei canali YouTube (dai feed RSS pubblici, senza chiave) e i dati fissi della scheda."""
+    try:
+        cfg = leggi_config("tech.json")
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! tech: {e}")
+        return None
+    limite = ORA - timedelta(days=cfg.get("youtube_giorni", 10))
+    video = []
+    for c in cfg.get("youtube", []):
+        try:
+            feed = feedparser.parse(scarica(f"https://www.youtube.com/feeds/videos.xml?channel_id={c['canale']}", ua=UA_BROWSER))
+            presi = 0
+            for e in feed.entries:
+                quando = data_voce(e)
+                vid = e.get("yt_videoid") or (e.get("id", "").split(":")[-1])
+                if not vid or not quando or quando < limite or "/shorts/" in e.get("link", ""):
+                    continue
+                video.append({"id": vid, "titolo": pulisci(e.get("title"), 160), "canale": c["nome"],
+                              "descrizione": pulisci(e.get("summary") or (e.get("media_description") or ""), 220),
+                              "data": quando.isoformat(timespec="minutes"), "link": f"https://www.youtube.com/watch?v={vid}",
+                              "immagine": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"})
+                presi += 1
+            log(f"  youtube {c['nome']:<18} {presi:>2} video recenti")
+        except Exception as e:  # noqa: BLE001
+            log(f"  ! youtube {c['nome']}: {e}")
+    video.sort(key=lambda v: v["data"], reverse=True)
+    for i, v in enumerate(video, 1):
+        v["vid"] = f"y{i}"
+    return {"youtube": video, "radio": cfg.get("radio", []), "libri": cfg.get("libri", []), "concetti": cfg.get("concetti", {})}
+
+
 # ---------------------------------------------------------------- archivio della settimana
 def aggiorna_settimana(cfg: dict, notizie: list[dict], giorno: str, uscita: Path) -> None:
     """Rassegna della domenica: conserva i titoli degli ultimi giorni in data/settimana.json.
@@ -385,6 +418,7 @@ def main():
         "squadre": varie.get("squadre", []),
         "radio_preferite": varie.get("radio_preferite", []),
         "differenziata": raccogli_differenziata(),
+        "tech": raccogli_tech(),
         "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }

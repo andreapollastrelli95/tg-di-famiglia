@@ -61,6 +61,16 @@ conclusione) e **Gran consiglio dell'IA** (racconti un problema: Leo il creativo
 il pragmatico ne parlano per circa 10 minuti e propongono una soluzione) e **6 cappelli per pensare** (fai una domanda: sei voci la guardano ognuna dal suo punto di vista secondo il metodo di Edward de Bono, cioè fatti, emozioni, rischi, vantaggi, idee nuove e metodo, e una settima voce tira le somme). In queste tre sezioni la lettura parte da sola dopo pochi secondi, mentre il testo viene ancora scritto. Ogni sezione comincia con una
 riga che spiega a che cosa serve.
 
+**Scheda TECH & AI**: **Notizie AI** (le dieci notizie del giorno su tecnologia e intelligenza
+artificiale e i trend del futuro), **Podcast AI** (podcast italiani di tecnologia), **Radio AI** (le radio
+di parola che parlano più spesso di tecnologia e scienza: radio solo sull'IA non esistono), **Idee AI**
+(dieci idee nuove al giorno), **Futuro AI** (dieci pillole sulle scoperte più sorprendenti), **YouTube
+link** (dieci video recenti da canali di tecnologia), **La scintilla della serendipità** (due concetti
+lontani che diventano un'idea di business e un'intuizione creativa: una al giorno, altre a richiesta),
+**Consigli sul futuro** (dieci libri, cambiano ogni settimana) e **Dibattito tra AI sulla AI** (Ada e Alan
+discutono per circa 9 minuti, con due voci neurali). Fonti, canali YouTube, radio, libri e concetti sono in
+`config/tech.json`.
+
 Le sezioni informative (sport, partite, cultura, eventi, detto) sono scritte ogni mattina sul server a
 partire dalle notizie raccolte e lette dalla voce neurale: se una cosa non compare nelle notizie (per
 esempio il canale di una partita) non viene indicata. Podcast fai da te, Gran consiglio e 6 cappelli nascono sul

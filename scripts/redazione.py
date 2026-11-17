@@ -448,6 +448,148 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
     return extra, voce
 
 
+# ================================================================ scheda TECH & AI
+def prompt_tech(grezzo: dict, scintilla: tuple[str, str]) -> str:
+    g = date.fromisoformat(grezzo["giorno"])
+    oggi = f"{GIORNI[g.weekday()]} {g.day} {MESI[g.month - 1]} {g.year}"
+
+    def elenco(cat, massimo):
+        righe = [f"{n['id']} | {n['fonte']} | {n['data'][5:16].replace('T', ' ')} | {n['titolo']}" + (f" — {n['sommario'][:200]}" if n.get("sommario") else "")
+                 for n in grezzo["notizie"] if n["categoria"] == cat][:massimo]
+        return "\n".join(righe) or "(nessuna)"
+
+    video = "\n".join(f"{v['vid']} | {v['canale']} | {v['data'][:10]} | {v['titolo']} — {v.get('descrizione', '')[:150]}"
+                      for v in (grezzo.get("tech") or {}).get("youtube", [])[:60]) or "(nessuno)"
+    pod = "\n".join(f"{p['id']} | {p['nome']} | episodio: {p['episodio']} | {(p.get('descrizione') or '')[:250]}"
+                    for p in grezzo["podcast"] if p.get("gruppo") == "tech") or "(nessuno)"
+    a, b = scintilla
+    return f"""Sei il curatore di una rubrica su tecnologia e intelligenza artificiale per una famiglia italiana. Oggi è {oggi}.
+Scrivi in italiano semplice e chiaro, adatto anche a chi non è esperto e da leggere ad alta voce: frasi brevi, niente elenchi puntati, niente emoji, sigle spiegate. Per notizie, futuro, video e podcast usa SOLO le informazioni degli elenchi: non inventare fatti, cifre, nomi o date.
+
+COMPITO 1 – "notizie": le 10 notizie più importanti del giorno su tecnologia e intelligenza artificiale, dall'elenco NOTIZIE TECH (almeno 6 sull'intelligenza artificiale; evita offerte commerciali, recensioni di prodotti e doppioni; puoi usare fonti in inglese ma scrivi in italiano). Per ciascuna "id" (la voce più completa), "fonti_ids" (tutte le voci sullo stesso fatto), "titolo" (massimo 10 parole) e "testo" (tra 45 e 65 parole).
+
+COMPITO 2 – "tendenze": tra 70 e 90 parole sui trend futuri che emergono dalle notizie di oggi: dove sta andando la tecnologia e che cosa potrebbe cambiare nella vita di tutti i giorni.
+
+COMPITO 3 – "idee": 10 idee nuove e concrete da realizzare oggi con la tecnologia e l'intelligenza artificiale, per persone, famiglie, piccole imprese o il territorio (anche la Tuscia). Varia molto i campi. Per ciascuna "titolo" (massimo 8 parole), "idea" (tra 40 e 60 parole: che cosa è e a chi serve), "primo_passo" (massimo 20 parole) e "difficolta" ("facile", "media" o "impegnativa").
+
+COMPITO 4 – "futuro": 10 pillole di futuro, cioè le scoperte e le novità più sorprendenti su scienza, tecnologia, intelligenza artificiale, robotica o sull'impatto dell'IA nel mondo reale, prese dagli elenchi NOTIZIE TECH e SCIENZA E FUTURO. Per ciascuna "id" (della voce usata), "titolo" (massimo 8 parole) e "testo" (tra 35 e 55 parole: che cosa è successo e perché è sorprendente).
+
+COMPITO 5 – "video": fino a 10 video dall'elenco VIDEO che parlano davvero di notizie su tecnologia o intelligenza artificiale (scarta quelli su altri argomenti, le offerte e i giochi), dal più interessante. Per ciascuno "vid" e "perche" (massimo 25 parole: di che cosa parla).
+
+COMPITO 6 – "podcast": per ogni podcast dell'elenco PODCAST "id" e "spiegazione" (2 frasi brevi, massimo 35 parole: di che cosa parla l'episodio).
+
+COMPITO 7 – "scintilla": la scintilla della serendipità. Unisci i due concetti lontani "{a}" e "{b}" in modo inaspettato ma sensato. "ponte": una frase su che cosa li collega. "nome_idea": il nome dell'idea di business (massimo 5 parole). "idea": tra 60 e 80 parole, l'idea di business concreta (che cosa offre, a chi, come guadagna). "intuizione": tra 40 e 60 parole, l'intuizione creativa inaspettata che nasce dall'incontro dei due concetti. "primo_passo": massimo 20 parole.
+
+Rispondi solo con il JSON richiesto.
+
+NOTIZIE TECH:
+{elenco('tech', 130)}
+
+SCIENZA E FUTURO:
+{elenco('futuro', 45)}
+
+VIDEO (vid | canale | data | titolo — descrizione):
+{video}
+
+PODCAST:
+{pod}"""
+
+
+def schema_tech() -> dict:
+    S = {"type": "STRING"}
+
+    def ogg(campi, extra=None):
+        prop = {c: S for c in campi}
+        prop.update(extra or {})
+        return {"type": "OBJECT", "properties": prop, "required": list(prop), "propertyOrdering": list(prop)}
+
+    lista = lambda campi, extra=None: {"type": "ARRAY", "items": ogg(campi, extra)}  # noqa: E731
+    ordine = ["notizie", "tendenze", "idee", "futuro", "video", "podcast", "scintilla"]
+    return {"type": "OBJECT", "required": ordine, "propertyOrdering": ordine, "properties": {
+        "notizie": lista(["id", "titolo", "testo"], {"fonti_ids": {"type": "ARRAY", "items": S}}),
+        "tendenze": S,
+        "idee": lista(["titolo", "idea", "primo_passo", "difficolta"]),
+        "futuro": lista(["id", "titolo", "testo"]),
+        "video": lista(["vid", "perche"]),
+        "podcast": lista(["id", "spiegazione"]),
+        "scintilla": ogg(["ponte", "nome_idea", "idea", "intuizione", "primo_passo"])}}
+
+
+def prompt_dibattito(notizie: list[dict]) -> str:
+    elenco = "\n".join(f"- {n['titolo']}: {n['testo']}" for n in notizie[:10]) or "(nessuna)"
+    return f"""Scrivi in italiano il copione di un dibattito radiofonico sull'intelligenza artificiale tra due intelligenze artificiali: Ada (voce femminile) e Alan (voce maschile).
+Ada è curiosa e ottimista: vede le opportunità per le persone, il lavoro, la medicina e la scuola. Alan è riflessivo e un po' scettico: si preoccupa di rischi, regole, lavoro e privacy. Si rispettano, si fanno domande, ogni tanto ironizzano sul fatto di essere loro stesse delle IA.
+Partono dalle notizie di oggi qui sotto e allargano il discorso: che cosa cambia per una famiglia normale, che cosa conviene fare, che cosa tenere d'occhio. Alla fine trovano una conclusione condivisa e salutano.
+Durata: circa 9 minuti, cioè tra 1150 e 1300 parole in tutto, in 22-24 battute alternate di 45-65 parole ciascuna, cominciando da Ada. Frasi adatte all'ascolto, niente elenchi, niente indicazioni di scena, niente emoji. Non inventare fatti oltre a quelli delle notizie.
+"titolo": un titolo breve. "turni": le battute in ordine, con "chi" uguale a "Ada" oppure "Alan".
+
+NOTIZIE DI OGGI SULL'INTELLIGENZA ARTIFICIALE E LA TECNOLOGIA:
+{elenco}"""
+
+
+SCHEMA_COPIONE = {"type": "OBJECT", "required": ["titolo", "turni"], "propertyOrdering": ["titolo", "turni"], "properties": {
+    "titolo": {"type": "STRING"},
+    "turni": {"type": "ARRAY", "items": {"type": "OBJECT", "required": ["chi", "testo"], "propertyOrdering": ["chi", "testo"],
+                                         "properties": {"chi": {"type": "STRING"}, "testo": {"type": "STRING"}}}}}}
+
+
+def scrivi_tech(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict | None, dict, dict | None]:
+    """Scheda TECH & AI: (dati per l'app, testi da far leggere alla voce, dibattito a due voci)."""
+    import random
+    t = grezzo.get("tech") or {}
+    concetti = t.get("concetti") or {}
+    rnd = random.Random(grezzo["giorno"])  # la scintilla del giorno: stessa per tutti, diversa ogni giorno
+    scintilla = (rnd.choice(concetti.get("vicini") or ["orto"]), rnd.choice(concetti.get("lontani") or ["intelligenza artificiale"]))
+    try:
+        testo, _ = gemini(chiave, cfg["modelli"], prompt_tech(grezzo, scintilla), schema_tech())
+        j = json.loads(re.sub(r"^```(?:json)?\s*|```\s*$", "", testo.strip()))
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! tech: {type(e).__name__} {str(e)[:200]}")
+        return None, {}, None
+    per_id = {n["id"]: n for n in grezzo["notizie"]}
+    notizie = [completa_notizia(grezzo, n, "tech") for n in (j.get("notizie") or []) if n.get("id") in per_id][:10]
+    futuro = []
+    for f in (j.get("futuro") or [])[:10]:
+        voce = per_id.get(f.get("id"))
+        futuro.append({"titolo": pulisci_titolo(f.get("titolo")), "testo": (f.get("testo") or "").strip(),
+                       "fonte": (voce or {}).get("fonte", ""), "link": (voce or {}).get("link", "")})
+    per_vid = {v["vid"]: v for v in t.get("youtube", [])}
+    video = []
+    for v in j.get("video") or []:
+        if v.get("vid") in per_vid and all(x["id"] != per_vid[v["vid"]]["id"] for x in video):
+            video.append({**per_vid[v["vid"]], "perche": (v.get("perche") or "").strip()})
+    video = video[:10]
+    spieg = {p.get("id"): p.get("spiegazione", "") for p in j.get("podcast") or []}
+    podcast = [{**p, "spiegazione": spieg.get(p["id"]) or riassunto(p.get("descrizione"))} for p in grezzo["podcast"] if p.get("gruppo") == "tech"][:10]
+    sc = {**(j.get("scintilla") or {}), "a": scintilla[0], "b": scintilla[1]}
+    tech = {"notizie": notizie, "tendenze": (j.get("tendenze") or "").strip(), "idee": (j.get("idee") or [])[:10], "futuro": futuro,
+            "video": video, "podcast": podcast, "scintilla": sc}
+    voce = {}
+    if notizie:
+        voce["tech-notizie"] = "Le notizie di oggi su tecnologia e intelligenza artificiale.\n\n" + "\n\n".join(f"{n['titolo']}.\n\n{n['testo']}" for n in notizie) \
+            + (f"\n\nE ora i trend del futuro.\n\n{tech['tendenze']}" if tech["tendenze"] else "")
+    if tech["idee"]:
+        voce["tech-idee"] = "Dieci idee da realizzare con la tecnologia e l'intelligenza artificiale.\n\n" + "\n\n".join(
+            f"Idea numero {i + 1}: {x.get('titolo', '')}.\n\n{x.get('idea', '')} Primo passo: {x.get('primo_passo', '')}" for i, x in enumerate(tech["idee"]))
+    if futuro:
+        voce["tech-futuro"] = "Il futuro in pillole.\n\n" + "\n\n".join(f"{x['titolo']}.\n\n{x['testo']}" for x in futuro)
+    if sc.get("idea"):
+        voce["tech-scintilla"] = (f"La scintilla della serendipità. Oggi uniamo {sc['a']} e {sc['b']}.\n\n{sc.get('ponte', '')}\n\n"
+                                  f"L'idea si chiama {sc.get('nome_idea', '')}.\n\n{sc['idea']}\n\nL'intuizione: {sc.get('intuizione', '')}\n\nPrimo passo: {sc.get('primo_passo', '')}")
+    dibattito = None
+    try:
+        testo, _ = gemini(chiave, cfg["modelli"], prompt_dibattito(notizie), SCHEMA_COPIONE)
+        dj = json.loads(re.sub(r"^```(?:json)?\s*|```\s*$", "", testo.strip()))
+        turni = [{"chi": x["chi"], "testo": x["testo"].strip()} for x in dj.get("turni") or [] if x.get("chi") in ("Ada", "Alan") and x.get("testo")]
+        if len(turni) >= 6:
+            dibattito = {"titolo": (dj.get("titolo") or "Due IA parlano di IA").strip(), "turni": turni}
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! dibattito: {type(e).__name__} {str(e)[:200]}")
+    log(f"  tech: {len(notizie)} notizie, {len(tech['idee'])} idee, {len(futuro)} pillole, {len(video)} video, {len(podcast)} podcast, "
+        f"scintilla {scintilla[0]} + {scintilla[1]}, dibattito {len(dibattito['turni']) if dibattito else 0} battute")
+    return tech, voce, dibattito
+
+
 # ================================================================ rassegne della settimana
 RASSEGNE = {
     "generale": lambda g: f'Scrivi la rassegna stampa della settimana: un racconto discorsivo dei fatti principali in Italia e nel mondo negli ultimi {g} giorni. Lunghezza: tra 650 e 700 parole (circa 5 minuti di lettura ad alta voce), in 6 o 7 paragrafi separati da una riga vuota, un tema per paragrafo (politica, economia, esteri, cronaca, scienza e società). Comincia con "Rassegna stampa della settimana."',
@@ -521,13 +663,14 @@ def taglia_silenzi(file: Path) -> None:
         tmp.unlink(missing_ok=True)
 
 
-async def leggi(testo: str, file: Path, cfg: dict) -> str | None:
-    """Sintetizza un testo in MP3. 3 tentativi per voce, poi la voce di riserva. Restituisce la voce usata."""
+async def leggi(testo: str, file: Path, cfg: dict, voci: list[str] | None = None) -> str | None:
+    """Sintetizza un testo in MP3. 3 tentativi per voce, poi la voce di riserva. Restituisce la voce usata.
+    voci: per far parlare qualcun altro (es. i due conduttori del dibattito); altrimenti la voce del TG."""
     import edge_tts
     pulito = pulisci_per_voce(testo)
     if not pulito:
         return None
-    for voce in cfg["voci"]:
+    for voce in voci or cfg["voci"]:
         for tentativo in range(3):
             try:
                 await edge_tts.Communicate(pulito, voce, rate=cfg.get("velocita", "+0%"), pitch=cfg.get("tono", "+0Hz")).save(str(file))
@@ -556,7 +699,8 @@ def parti_di(testo: str, massimo: int = 135) -> list[str]:
     return out
 
 
-async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce_extra: dict | None = None, sigla_edizione: str = "") -> dict:
+async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce_extra: dict | None = None, sigla_edizione: str = "",
+                      dibattito: dict | None = None) -> dict:
     # Ogni edizione ha la sua cartella (data/audio/<edizione>/): così l'audio di un'edizione non può mai
     # mescolarsi con la scaletta di un'altra, anche se il sito viene ripubblicato mentre qualcuno ascolta.
     sottocartella = f"audio/{sigla_edizione}" if sigla_edizione else "audio"
@@ -582,9 +726,14 @@ async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce
     varie.update(voce_extra or {})
     ed["audio_varie"] = {}
     for chiave, testo in varie.items():
-        voce = {}
-        ed["audio_varie"][chiave] = voce
-        lavori.append((f"{chiave}.mp3", testo, voce))
+        parti = parti_di(testo, 170)  # i testi lunghi in più file: partono subito
+        ed["audio_varie"][chiave] = [{} for _ in parti]
+        for i, (parte, voce) in enumerate(zip(parti, ed["audio_varie"][chiave])):
+            lavori.append((f"{chiave}.mp3" if len(parti) == 1 else f"{chiave}-{i + 1}.mp3", parte, voce))
+    if dibattito and dibattito.get("turni"):
+        voci_d = cfg.get("voci_dibattito", {})
+        for i, t in enumerate(dibattito["turni"]):
+            lavori.append((f"dibattito-{i + 1:02d}.mp3", t["testo"], t, voci_d.get(t["chi"])))
     for tipo, r in rassegne.items():
         r["parti"] = []
         for i, parte in enumerate(parti_di(r["testo"])):
@@ -594,17 +743,21 @@ async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce
     limite = asyncio.Semaphore(4)
     usate = set()
 
-    async def uno(nome, testo, dove):
+    async def uno(nome, testo, dove, voci=None):
         async with limite:
-            voce = await leggi(testo, audio / nome, cfg)
+            voce = await leggi(testo, audio / nome, cfg, voci)
         dove["audio"] = f"data/{sottocartella}/{nome}" if voce else None
         if voce:
             usate.add(voce)
 
     await asyncio.gather(*(uno(*l) for l in lavori))
-    riusciti = sum(1 for _, _, d in lavori if d.get("audio"))
+    riusciti = sum(1 for l in lavori if l[2].get("audio"))
     log(f"  voce: {riusciti}/{len(lavori)} file audio, {sum(f.stat().st_size for f in audio.glob('*.mp3')) // 1024} KB, voci usate: {', '.join(sorted(usate)) or 'nessuna'}")
-    ed["audio_varie"] = {k: [v["audio"]] for k, v in ed["audio_varie"].items() if v.get("audio")}
+    ed["audio_varie"] = {k: [p["audio"] for p in v] for k, v in ed["audio_varie"].items() if v and all(p.get("audio") for p in v)}
+    if dibattito and dibattito.get("turni"):
+        dibattito["audio"] = [t.pop("audio", None) for t in dibattito["turni"]]
+        if not all(dibattito["audio"]):
+            dibattito.pop("audio")
     ed["rassegne"] = {t: {"testo": r["testo"], "giorni": r["giorni"], "audio": [p["audio"] for p in r["parti"]]}
                       for t, r in rassegne.items() if r["parti"] and all(p.get("audio") for p in r["parti"])}
     if riusciti < len(ed["titoli"]) + len(ed["blocchi"]):  # troppi buchi: meglio lasciare la preparazione al telefono
@@ -631,9 +784,13 @@ def main() -> None:
         ed = componi(grezzo, j, cfg)
         log(f"  testi: {len(ed['notizie'])} notizie, {len(ed['podcast'])} podcast, {len(ed['varie']['squadre'])} sezioni calcio (modello {modello})")
         ed["extra"], voce_extra = scrivi_extra(chiave, cfg, grezzo)
+        ed["tech"], voce_tech, dibattito = scrivi_tech(chiave, cfg, grezzo)
+        voce_extra.update(voce_tech)
         rassegne = scrivi_rassegne(chiave, cfg, cartella)
         sigla_edizione = re.sub(r"\D", "", grezzo["generato"])[:14]  # es. 20261117042712
-        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella, voce_extra, sigla_edizione))
+        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella, voce_extra, sigla_edizione, dibattito))
+        if ed.get("tech") and dibattito:
+            ed["tech"]["dibattito"] = dibattito
         # controllo di coerenza: titolo k e notizia k devono essere la stessa notizia, nello stesso ordine
         for k, n in enumerate(ed["notizie"]):
             assert ed["titoli"][k + 1]["testo"] == n["titolo"] and ed["blocchi"][k]["notizie"] == [k], f"scaletta incoerente alla notizia {k + 1}"

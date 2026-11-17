@@ -43,5 +43,15 @@
     "altre": 35
   },
   "rassegne": true,
-  "taglia_silenzi": true
+  "taglia_silenzi": true,
+  "voci_dibattito": {
+    "Ada": [
+      "it-IT-IsabellaNeural",
+      "it-IT-ElsaNeural"
+    ],
+    "Alan": [
+      "it-IT-DiegoNeural",
+      "it-IT-GiuseppeMultilingualNeural"
+    ]
+  }
 }
