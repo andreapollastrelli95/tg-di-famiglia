@@ -1,7 +1,7 @@
 {
   "name": "TG di Famiglia",
   "short_name": "TG Famiglia",
-  "description": "Il notiziario quotidiano della Famiglia Pollastrelli",
+  "description": "Il notiziario quotidiano di famiglia",
   "lang": "it",
   "start_url": "./",
   "scope": "./",

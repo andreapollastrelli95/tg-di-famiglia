@@ -21,7 +21,7 @@ sullo schermo.
 
 **Scheda TG** (solo il notiziario)
 
-1. sigla, poi il saluto *"Un saluto a tutta la famiglia e bentrovati. Queste sono le notizie e i podcast del giorno consigliati. Buon ascolto e buona giornata."*;
+1. sigla, poi il saluto *"Buongiorno Famiglia! Queste sono le notizie e i podcast del giorno consigliati. Buon ascolto e buona giornata."*;
 2. suono di 5 secondi, la voce dice *"Titoli del TG di Famiglia"* e legge **i titoli** delle 10 notizie, con un suono di 3 secondi tra un titolo e l'altro;
 3. **5 notizie nazionali**, separate da uno stacco di 3 secondi;
 4. stacco leggero di 5 secondi, *"Notizie dalla Tuscia"* e **3 notizie da Viterbo e provincia**;
