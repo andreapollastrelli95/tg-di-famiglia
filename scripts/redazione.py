@@ -54,7 +54,7 @@ class ErroreGemini(Exception):
     pass
 
 
-def chiama_gemini(chiave: str, modello: str, corpo: dict, timeout: int = 150) -> dict:
+def chiama_gemini(chiave: str, modello: str, corpo: dict, timeout: int = 110) -> dict:
     req = urllib.request.Request(f"{API}{modello}:generateContent", data=json.dumps(corpo).encode("utf-8"),
                                  headers={"Content-Type": "application/json", "x-goog-api-key": chiave}, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -316,6 +316,138 @@ def componi(grezzo: dict, j: dict, cfg: dict) -> dict:
             "titoli": [{"testo": cfg["titoli"]}] + [{"testo": n["titolo"]} for n in notizie]}
 
 
+# ================================================================ sezioni extra (VARIE e NOVITÀ)
+CITTA = [("roma", "Roma", ["roma"]), ("viterbo", "Viterbo città", ["eventi", "tuscia"]),
+         ("tuscia", "Tuscia (provincia di Viterbo, esclusa la città)", ["eventi", "tuscia"]), ("orvieto", "Orvieto", ["orvieto"])]
+SPORT = [("tennis", "Tennis (Sinner e gli altri italiani)"), ("formula1", "Formula 1"), ("motogp", "MotoGP")]
+
+
+def fine_settimana(giorno: str) -> tuple[date, date]:
+    """Venerdì e domenica del fine settimana in arrivo (o in corso)."""
+    from datetime import timedelta
+    g = date.fromisoformat(giorno)
+    ven = g + timedelta(days=(4 - g.weekday()) % 7) if g.weekday() <= 4 else g - timedelta(days=g.weekday() - 4)
+    return ven, ven + timedelta(days=2)
+
+
+def prompt_extra(grezzo: dict, con_detto: bool) -> str:
+    g = date.fromisoformat(grezzo["giorno"])
+    oggi = f"{GIORNI[g.weekday()]} {g.day} {MESI[g.month - 1]} {g.year}"
+    ven, dom = fine_settimana(grezzo["giorno"])
+
+    def elenco(categorie, massimo):
+        righe = [f"{n['fonte']} | {n['data'][5:16].replace('T', ' ')} | {n['titolo']}" + (f" — {n['sommario'][:200]}" if n.get("sommario") else "")
+                 for n in grezzo["notizie"] if n["categoria"] in categorie][:massimo]
+        return "\n".join(righe) or "(nessuna)"
+
+    tv_sport = "\n".join(f"{t['canale']} | {t['ora']} | {t['titolo']}" for t in (grezzo.get("tv") or {}).get("sport", [])) or "(nessun dato)"
+    detto = f"""
+COMPITO 5 – "detto": il detto del giorno. Un proverbio popolare in dialetto {'viterbese' if g.toordinal() % 2 == 0 else 'orvietano'}, scelto tra quelli realmente tramandati nella tradizione contadina di quella zona (non inventarne uno nuovo). Oggi è il giorno numero {g.timetuple().tm_yday} dell'anno: non scegliere sempre i più ovvi. Campi: "dialetto", "proverbio" (in dialetto, grafia semplice), "traduzione" (in italiano), "spiegazione" (30-40 parole: che cosa insegna e quando si dice).""" if con_detto else '\nCOMPITO 5 – "detto": lascia tutti i campi vuoti.'
+    return f"""Sei il redattore di un notiziario per una famiglia di Viterbo. Oggi è {oggi}.
+Usa SOLO le informazioni presenti negli elenchi qui sotto: non inventare eventi, date, orari, luoghi, canali TV o risultati. Quando per una voce non c'è materiale, lascia "testo" vuoto ("") e "lista" vuota. I testi servono per essere letti ad alta voce: frasi brevi, niente elenchi puntati né emoji, orari e numeri scritti in modo leggibile. Scrivi in italiano corretto, con accenti e apostrofi normali.
+
+COMPITO 1 – "eventi_weekend": eventi e sagre nella Tuscia (provincia di Viterbo) previsti nel fine settimana da venerdì {ven.day} {MESI[ven.month - 1]} a domenica {dom.day} {MESI[dom.month - 1]}. "lista": fino a 10 voci con "titolo", "dove" (comune e luogo), "quando" (giorno e ora, se indicati). "testo": tra 80 e 110 parole che presentano gli appuntamenti principali.
+
+COMPITO 2 – "altri_sport": tre testi, "tennis" (Sinner e gli altri italiani), "formula1" e "motogp". Ciascuno tra 60 e 80 parole: notizie principali, risultati più recenti e, solo se indicati negli elenchi, prossimi appuntamenti con giorno, orario e canale TV.
+
+COMPITO 3 – "partite_oggi": le partite di calcio di oggi, {oggi}, che riguardano squadre italiane (Serie A, Coppa Italia, coppe europee, Nazionale). "lista": per ogni partita "partita", "competizione", "ora", "canale" (stringa vuota se orario o canale non risultano dagli elenchi). "testo": tra 40 e 80 parole. Se dagli elenchi non risultano partite in programma oggi scrivi nel testo: "Dalle notizie raccolte non risultano partite di squadre italiane in programma oggi." e lascia la lista vuota.
+
+COMPITO 4 – "cultura": concerti, spettacoli teatrali e mostre in programma da oggi ai prossimi 30 giorni, separati per zona: "roma", "viterbo" (la città), "tuscia" (il resto della provincia) e "orvieto". Per ogni zona "lista": fino a 8 voci con "titolo", "tipo" (concerto, teatro, mostra o altro), "dove", "quando"; "testo": tra 60 e 90 parole.
+{detto}
+
+Rispondi solo con il JSON richiesto.
+
+EVENTI E NOTIZIE DALLA TUSCIA:
+{elenco(['eventi', 'tuscia'], 110)}
+
+ORVIETO:
+{elenco(['orvieto'], 45)}
+
+ROMA:
+{elenco(['roma'], 55)}
+
+TENNIS:
+{elenco(['tennis'], 30)}
+
+FORMULA 1:
+{elenco(['formula1'], 30)}
+
+MOTOGP:
+{elenco(['motogp'], 30)}
+
+CALCIO E SPORT (per le partite di oggi):
+{elenco(['sport', 'calcio', 'juve', 'inter'], 120)}
+
+SPORT IN TV OGGI (canale | ora | programma):
+{tv_sport}"""
+
+
+def schema_extra() -> dict:
+    S = {"type": "STRING"}
+
+    def ogg(campi, extra=None):
+        prop = {c: S for c in campi}
+        prop.update(extra or {})
+        ordine = list(prop)
+        return {"type": "OBJECT", "properties": prop, "required": ordine, "propertyOrdering": ordine}
+
+    def blocco(campi_lista):
+        return ogg([], {"lista": {"type": "ARRAY", "items": ogg(campi_lista)}, "testo": S})
+
+    ordine = ["eventi_weekend", "altri_sport", "partite_oggi", "cultura", "detto"]
+    return {"type": "OBJECT", "required": ordine, "propertyOrdering": ordine, "properties": {
+        "eventi_weekend": blocco(["titolo", "dove", "quando"]),
+        "altri_sport": ogg([c for c, _ in SPORT]),
+        "partite_oggi": blocco(["partita", "competizione", "ora", "canale"]),
+        "cultura": ogg([], {c: blocco(["titolo", "tipo", "dove", "quando"]) for c, _, _ in CITTA}),
+        "detto": ogg(["dialetto", "proverbio", "traduzione", "spiegazione"])}}
+
+
+def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
+    """Sezioni extra: eventi del fine settimana, altri sport, partite di oggi, cultura per zona, detto del giorno.
+    Restituisce (dati per l'app, testi da far leggere alla voce)."""
+    g = date.fromisoformat(grezzo["giorno"])
+    try:
+        miei = json.loads((CONFIG / "detti.json").read_text(encoding="utf-8")).get("detti") or []
+    except Exception:  # noqa: BLE001
+        miei = []
+    try:
+        testo, _ = gemini(chiave, cfg["modelli"], prompt_extra(grezzo, con_detto=not miei), schema_extra())
+        j = json.loads(re.sub(r"^```(?:json)?\s*|```\s*$", "", testo.strip()))
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! sezioni extra: {type(e).__name__} {str(e)[:200]}")
+        j = {}
+    ven, dom = fine_settimana(grezzo["giorno"])
+    pulito = lambda b: {"testo": ((b or {}).get("testo") or "").strip(), "lista": [x for x in ((b or {}).get("lista") or []) if any(x.values())]}  # noqa: E731
+    extra = {
+        "eventi_weekend": {**pulito(j.get("eventi_weekend")), "periodo": f"da venerdì {ven.day} a domenica {dom.day} {MESI[dom.month - 1]}"},
+        "altri_sport": {c: ((j.get("altri_sport") or {}).get(c) or "").strip() for c, _ in SPORT},
+        "partite_oggi": pulito(j.get("partite_oggi")),
+        "cultura": {c: pulito((j.get("cultura") or {}).get(c)) for c, _, _ in CITTA},
+    }
+    detto = miei[g.toordinal() % len(miei)] if miei else (j.get("detto") or {})
+    if (detto.get("proverbio") or "").strip():
+        extra["detto"] = {k: (detto.get(k) or "").strip() for k in ("dialetto", "proverbio", "traduzione", "spiegazione")}
+        extra["detto"]["scelto_da"] = "famiglia" if miei else "ia"
+    voce = {}
+    if extra["eventi_weekend"]["testo"]:
+        voce["eventi"] = "Eventi e sagre nella Tuscia.\n\n" + extra["eventi_weekend"]["testo"]
+    for c, nome in SPORT:
+        if extra["altri_sport"][c]:
+            voce[f"sport-{c}"] = f"{nome.split(' (')[0]}.\n\n" + extra["altri_sport"][c]
+    if extra["partite_oggi"]["testo"]:
+        voce["partite"] = "Le partite di oggi.\n\n" + extra["partite_oggi"]["testo"]
+    for c, nome, _ in CITTA:
+        if extra["cultura"][c]["testo"]:
+            voce[f"cultura-{c}"] = f"Concerti, teatro e mostre: {nome.split(' (')[0]}.\n\n" + extra["cultura"][c]["testo"]
+    if extra.get("detto"):
+        d = extra["detto"]
+        voce["detto"] = f"Il detto del giorno, in dialetto {d['dialetto']}.\n\n{d['proverbio']}.\n\nVuol dire: {d['traduzione']}.\n\n{d['spiegazione']}"
+    log(f"  extra: {len(extra['eventi_weekend']['lista'])} eventi, {len(extra['partite_oggi']['lista'])} partite, "
+        f"cultura {[len(extra['cultura'][c]['lista']) for c, _, _ in CITTA]}, detto {'sì' if extra.get('detto') else 'no'}")
+    return extra, voce
+
+
 # ================================================================ rassegne della settimana
 RASSEGNE = {
     "generale": lambda g: f'Scrivi la rassegna stampa della settimana: un racconto discorsivo dei fatti principali in Italia e nel mondo negli ultimi {g} giorni. Lunghezza: tra 650 e 700 parole (circa 5 minuti di lettura ad alta voce), in 6 o 7 paragrafi separati da una riga vuota, un tema per paragrafo (politica, economia, esteri, cronaca, scienza e società). Comincia con "Rassegna stampa della settimana."',
@@ -401,7 +533,7 @@ def parti_di(testo: str, massimo: int = 135) -> list[str]:
     return out
 
 
-async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path) -> dict:
+async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce_extra: dict | None = None) -> dict:
     audio = cartella / "audio"
     audio.mkdir(parents=True, exist_ok=True)
     lavori = []  # (file, testo, dove mettere il percorso)
@@ -421,6 +553,7 @@ async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path) -> d
         varie["tv"] = "Stasera in TV.\n\n" + ed["varie"]["tv"]
     if ed["accadde"]:
         varie["accadde"] = "Accadde oggi.\n\n" + ed["accadde"]
+    varie.update(voce_extra or {})
     ed["audio_varie"] = {}
     for chiave, testo in varie.items():
         voce = {}
@@ -471,8 +604,9 @@ def main() -> None:
         j = json.loads(re.sub(r"^```(?:json)?\s*|```\s*$", "", testo.strip()))
         ed = componi(grezzo, j, cfg)
         log(f"  testi: {len(ed['notizie'])} notizie, {len(ed['podcast'])} podcast, {len(ed['varie']['squadre'])} sezioni calcio (modello {modello})")
+        ed["extra"], voce_extra = scrivi_extra(chiave, cfg, grezzo)
         rassegne = scrivi_rassegne(chiave, cfg, cartella)
-        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella))
+        ed = asyncio.run(genera_audio(ed, rassegne, cfg, cartella, voce_extra))
         ed.update({"versione": 1, "generato": grezzo["generato"], "giorno": grezzo["giorno"], "modello": modello,
                    "scritto": datetime.now().astimezone().isoformat(timespec="seconds")})
         (cartella / "edizione.json").write_text(json.dumps(ed, ensure_ascii=False, indent=1), encoding="utf-8")

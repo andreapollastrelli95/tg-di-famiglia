@@ -304,6 +304,35 @@ def raccogli_tv(cfg: dict) -> dict | None:
         return None
 
 
+# ---------------------------------------------------------------- raccolta differenziata
+def raccogli_differenziata() -> dict | None:
+    """Viterbo: calendari settimanali da config/differenziata.json. Vitorchiano: il calendario con le
+    date (festività comprese) scaricato dal sito del Comune, per le prossime tre settimane."""
+    try:
+        cfg = leggi_config("differenziata.json")
+    except Exception as e:  # noqa: BLE001
+        log(f"  ! differenziata: {e}")
+        return None
+    cfg.pop("_nota", None)
+    vit = cfg.get("vitorchiano") or {}
+    vit["calendario"] = []
+    if vit.get("calendario_url"):
+        try:
+            oggi = ORA.astimezone(ROMA).date()
+            fine = oggi + timedelta(days=21)
+            dati = json.loads(scarica(vit["calendario_url"], ua=UA_BROWSER)).get("data", [])
+            per_giorno: dict[str, list[str]] = {}
+            for v in dati:
+                if oggi.isoformat() <= v.get("date", "") <= fine.isoformat() and v.get("title"):
+                    per_giorno.setdefault(v["date"], []).append(v["title"])
+            vit["calendario"] = [{"data": d, "materiali": sorted(set(m))} for d, m in sorted(per_giorno.items())]
+            log(f"  differenziata Vitorchiano: {len(vit['calendario'])} giorni di ritiro nelle prossime 3 settimane")
+        except Exception as e:  # noqa: BLE001
+            log(f"  ! differenziata Vitorchiano: {e}")
+    vit.pop("calendario_url", None)
+    return cfg
+
+
 # ---------------------------------------------------------------- archivio della settimana
 def aggiorna_settimana(cfg: dict, notizie: list[dict], giorno: str, uscita: Path) -> None:
     """Rassegna della domenica: conserva i titoli degli ultimi giorni in data/settimana.json.
@@ -348,13 +377,14 @@ def main():
     podcast = raccogli_podcast()
     log("Varie:")
     dati = {
-        "versione": 3,
+        "versione": 4,
         "generato": ORA.isoformat(timespec="seconds"),
         "giorno": ORA.astimezone(ROMA).date().isoformat(),
         "notizie": notizie,
         "podcast": podcast,
         "squadre": varie.get("squadre", []),
         "radio_preferite": varie.get("radio_preferite", []),
+        "differenziata": raccogli_differenziata(),
         "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }

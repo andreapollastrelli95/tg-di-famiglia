@@ -1,0 +1,27 @@
+{
+  "_nota": "Raccolta differenziata porta a porta. Viterbo: calendari settimanali delle utenze domestiche pubblicati da Viterbo Ambiente (letti il 17/11/2026: se cambiano vanno aggiornati qui). Vitorchiano: il calendario con le date viene scaricato ogni mattina dal sito del Comune (scripts/raccogli.py).",
+  "viterbo": {
+    "nome": "Viterbo",
+    "gestore": "Viterbo Ambiente",
+    "telefono": "Numero verde 800 814848 - 0761 253997",
+    "fonte": "https://www.viterboambiente.net/pagine/calendari-viterbo",
+    "elenco_vie": "https://www.viterboambiente.net/MC-API/Risorse/StreamRisorsa.aspx?guid=0D241DC1-926C-461E-8EC6-D6D9698EBC47",
+    "esposizione": "Metti il contenitore fuori dal portone la sera prima del giorno di ritiro. Lo svuotamento avviene nell'arco della giornata.",
+    "festivi": "Se il giorno di ritiro è festivo il servizio non viene effettuato e slitta alla settimana successiva.",
+    "zone": [
+      {"id": "zona1", "nome": "Zona 1", "giorni": {"lun": ["Organico"], "mar": ["Carta e cartone"], "mer": ["Vetro", "Organico"], "gio": ["Indifferenziato"], "ven": ["Organico"], "sab": ["Plastica e metalli"], "dom": []}},
+      {"id": "zona2", "nome": "Zona 2", "giorni": {"lun": ["Carta e cartone"], "mar": ["Organico"], "mer": ["Indifferenziato"], "gio": ["Vetro", "Organico"], "ven": ["Plastica e metalli"], "sab": ["Organico"], "dom": []}},
+      {"id": "zona3", "nome": "Zona 3", "giorni": {"lun": ["Organico"], "mar": ["Indifferenziato"], "mer": ["Vetro", "Organico"], "gio": ["Carta e cartone"], "ven": ["Organico"], "sab": ["Plastica e metalli"], "dom": []}},
+      {"id": "zona4", "nome": "Zona 4", "giorni": {"lun": ["Indifferenziato"], "mar": ["Organico"], "mer": ["Carta e cartone"], "gio": ["Organico"], "ven": ["Plastica e metalli"], "sab": ["Vetro", "Organico"], "dom": []}},
+      {"id": "centro", "nome": "Centro storico", "giorni": {"lun": ["Organico"], "mar": ["Carta e cartone"], "mer": ["Organico"], "gio": ["Plastica e metalli"], "ven": ["Vetro", "Organico"], "sab": ["Indifferenziato"], "dom": []}}
+    ]
+  },
+  "vitorchiano": {
+    "nome": "Vitorchiano",
+    "calendario_url": "https://comune.vitorchiano.vt.it/api/internals/scenarios/1913/waste_zones/3224208/calendar",
+    "fonte": "https://comune.vitorchiano.vt.it/raccolta-differenziata",
+    "telefono": "Eco Sportello, via Santa Maria 2/A - 0761 373760",
+    "esposizione": "Esponi il contenitore dalle 22 della sera prima alle 5 del giorno di ritiro.",
+    "isola_ecologica": "Centro di raccolta comunale, via della Nunziatella 19. Orari indicati dal Comune: lunedì, mercoledì e giovedì 15-17 (14-16 in inverno); martedì, venerdì e sabato 10-13; prima domenica del mese 10-13."
+  }
+}

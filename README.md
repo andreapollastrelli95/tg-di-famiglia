@@ -40,9 +40,26 @@ Bianconera), **Inter** (3 notizie e podcast), **Serie A, Champions e calciomerca
 Radio Sportiva) e **Chiedi all'AI sul calcio** (si scrive una domanda e Gemini risponde usando le notizie
 di calcio raccolte in giornata; la risposta si può anche ascoltare).
 
-**Scheda VARIE**: quattro tasti che aprono **Meteo a Viterbo** (domani e settimana), **Stasera in TV**
-(prima serata e sport in 30 secondi), **Accadde oggi** e **Rassegna stampa della domenica** (a scelta le
-notizie della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive).
+**Scheda VARIE**: tasti che aprono **Meteo a Viterbo** (domani e settimana), **Stasera in TV** (prima
+serata e sport in 30 secondi), **Accadde oggi**, **Rassegna stampa della domenica** (a scelta le notizie
+della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive),
+**Altri sport** (tennis, Formula 1 e MotoGP: notizie, risultati e orari TV quando sono noti),
+**Partite di oggi** (orario e canale delle partite delle squadre italiane) e **Concerti, teatro e
+mostre** dei prossimi 30 giorni a Roma, Viterbo, nella Tuscia o a Orvieto, a scelta.
+
+**Scheda NOVITÀ**: **Eventi e sagre nella Tuscia** (quelli del fine settimana), **Raccolta
+differenziata** (che cosa mettere fuori stasera e calendario dei ritiri, per Viterbo zona per zona e per
+Vitorchiano), **Il detto del giorno** (un proverbio in dialetto viterbese o orvietano, con traduzione),
+**Podcast fai da te** (scrivi un argomento: Marco e Giulia ne discutono per circa 10 minuti e cercano una
+conclusione) e **Gran consiglio dell'IA** (racconti un problema: Leo il creativo, Sara la realista e Bruno
+il pragmatico ne parlano per circa 10 minuti e propongono una soluzione). Ogni sezione comincia con una
+riga che spiega a che cosa serve.
+
+Le sezioni informative (sport, partite, cultura, eventi, detto) sono scritte ogni mattina sul server a
+partire dalle notizie raccolte e lette dalla voce neurale: se una cosa non compare nelle notizie (per
+esempio il canale di una partita) non viene indicata. Podcast fai da te e Gran consiglio nascono sul
+momento sul telefono: usano la chiave Gemini dell'utente e le voci di Gemini (con la voce del telefono
+come riserva).
 
 ## Come funziona
 
@@ -86,7 +103,7 @@ nel sito): GitHub → repository → **Settings** → **Secrets and variables** 
 **New repository secret**, nome `GEMINI_API_KEY`. Oppure, dal terminale: `gh secret set GEMINI_API_KEY`.
 La chiave del segreto **non deve avere la restrizione "Siti web"** (le chiamate partono dai server di
 GitHub, non dal browser); la restrizione alla sola Generative Language API va bene.
-Il server fa 4 chiamate di testo al giorno (edizione e tre rassegne). La voce edge-tts è gratuita e non
+Il server fa 5 chiamate di testo al giorno (edizione, sezioni extra e tre rassegne). Conviene che la chiave del segreto sia diversa da quella usata sul telefono (un altro progetto Google), così le funzioni che nascono sul telefono non restano senza quota. La voce edge-tts è gratuita e non
 usa la quota di Gemini; è un servizio non ufficiale di Microsoft, quindi potrebbe cambiare: in quel caso
 l'app ripiega da sola sulla preparazione sul telefono.
 
@@ -162,6 +179,8 @@ quel QR**: contiene la chiave. Il QR e il cartoncino generici (senza chiave) son
 | **Scaletta del TG** | `index.html`, `CONFIG.sezioni`: categorie, quante notizie per sezione e frase d'annuncio (es. "Notizie dalla Tuscia."). Le categorie devono esistere in `config/fonti.json` (`generale`, `tuscia`, `sport`). |
 | **Schede CALCIO e VARIE** | `config/varie.json`: `squadre` = sezioni della scheda CALCIO (per aggiungerne una: nuovo `id`, feed con quella `categoria` in `fonti.json`, podcast con quel `gruppo` in `podcast.json`, eventuale stream della radio), `meteo` (località e coordinate), `tv` (pagine della guida e canali), `radio_preferite` (quelle proposte la prima volta) e `settimana` (quanti titoli al giorno conservare per la rassegna). |
 | **Avvio automatico e podcast a fine TG** | `index.html`, `CONFIG.avvioAutomatico` e `CONFIG.podcastAFineTG` (`true`/`false`). |
+| **Raccolta differenziata** | `config/differenziata.json`: i giorni di Viterbo per zona (da aggiornare a mano se Viterbo Ambiente cambia i calendari) e l'indirizzo da cui si scarica ogni mattina il calendario di Vitorchiano. |
+| **Il detto del giorno** | `config/detti.json`: se l'elenco `detti` è vuoto il proverbio lo sceglie Gemini; aggiungendo i proverbi di famiglia ne viene letto uno al giorno, a rotazione. |
 | **Podcast** | `config/podcast.json`: `nome` (parte del titolo su Apple Podcasts), `autore` (parte del nome dell'editore) e `calcio`. Se la ricerca non lo trova, aggiungi `"feedUrl": "https://…"`. Vengono presi solo episodi con audio pubblico usciti negli ultimi `giorni_massimi` giorni. |
 | **Voce** | `index.html`, oggetto `CONFIG` in cima allo script: `voce` (es. `Kore`, `Aoede`, `Leda`, `Callirrhoe`, `Zephyr`) . Alla voce viene inviato solo il testo da leggere, senza istruzioni di tono, perché i modelli vocali a volte le leggono ad alta voce. Dopo una modifica conviene alzare `VERSIONE_CACHE` (es. `'v4'`) per rigenerare gli audio salvati. |
 | **Modelli Gemini** | `CONFIG.modelliTesto` e `CONFIG.modelliVoce`: vengono provati in ordine finché uno funziona; se un modello è sovraccarico o non risponde entro `CONFIG.attesaTesto` si passa al successivo, e l'app ricorda quello che ha funzionato. (Novembre 2026: `gemini-2.5-flash` non è più disponibile per le chiavi nuove e `gemini-flash-latest` è spesso sovraccarico, per questo ci sono `gemini-3.5-flash` e `gemini-3-flash-preview` come riserve.) |

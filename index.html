@@ -77,6 +77,19 @@ h2{font-size:24px;margin:28px 0 12px;color:var(--blu)}
 .menu-sezioni{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
 .menu-sezioni .btn{width:100%;min-height:66px;font-size:21px;justify-content:flex-start;text-align:left}
 .menu-sezioni .btn.attiva{background:var(--blu);color:var(--carta)}
+.spiega{font-size:18px;color:var(--tenue);margin:0 0 14px}
+.scelte{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.scelte .btn{flex:1 1 40%;min-height:54px;font-size:18px;padding:6px 10px}
+.scelte .btn.attiva{background:var(--blu);color:var(--carta)}
+.elenco{list-style:none;padding:0;margin:14px 0 0;font-size:18px}
+.elenco li{padding:8px 0;border-top:1px solid var(--bordo)}
+.elenco li span{display:block;color:var(--tenue);font-size:17px}
+.evidenza{background:var(--blu-chiaro);border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:20px}
+.evidenza b{color:var(--blu)}
+.detto{font-size:25px;line-height:1.35;font-weight:800;font-style:italic;margin:0 0 12px}
+.turno{margin:12px 0 0}
+.turno b{color:var(--blu)}
+.turno.donna b{color:var(--rosso-scuro)}
 .schede button{flex:1;min-height:62px;border-radius:14px;border:2px solid var(--blu);background:var(--carta);color:var(--blu);font-weight:800;font-size:16px;padding:4px 2px;white-space:nowrap}
 .riga-radio{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
 .riga-radio .btn{flex:1;justify-content:flex-start;text-align:left;min-width:0}
@@ -177,6 +190,7 @@ dialog h2{margin-top:0}
       <button id="schedaRadio" type="button">📻 RADIO</button>
       <button id="schedaCalcio" type="button">⚽ CALCIO</button>
       <button id="schedaVarie" type="button">🧩 VARIE</button>
+      <button id="schedaNovita" type="button">✨ NOVITÀ</button>
     </div>
 
     <!-- Scheda TG: solo il notiziario -->
@@ -253,6 +267,9 @@ dialog h2{margin-top:0}
         <button class="btn" data-apri="tv" type="button">📺 Stasera in TV</button>
         <button class="btn" data-apri="accadde" type="button">📜 Accadde oggi</button>
         <button class="btn" data-apri="rassegna" type="button">🗞️ Rassegna stampa della domenica</button>
+        <button class="btn" data-apri="sport" type="button">🎾 Altri sport</button>
+        <button class="btn" data-apri="partite" type="button">⚽ Partite di oggi</button>
+        <button class="btn" data-apri="cultura" type="button">🎭 Concerti, teatro e mostre</button>
       </div>
       <div id="contenutoVarie"></div>
       <section data-sezione="rassegna" class="nascosto">
@@ -266,6 +283,54 @@ dialog h2{margin-top:0}
           </div>
           <p class="piccolo" id="rassegnaInfo" role="status" aria-live="polite"></p>
           <div id="rassegnaTesto"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Scheda NOVITÀ: eventi del fine settimana, differenziata, detto del giorno e i giochi con l'intelligenza artificiale -->
+    <div id="paginaNovita" class="nascosto">
+      <div class="menu-sezioni" id="menuNovita">
+        <button class="btn" data-apri="eventi" type="button">🎪 Eventi e sagre nella Tuscia</button>
+        <button class="btn" data-apri="differenziata" type="button">♻️ Raccolta differenziata</button>
+        <button class="btn" data-apri="detto" type="button">💬 Il detto del giorno</button>
+        <button class="btn" data-apri="podcastfai" type="button">🎙️ Podcast fai da te</button>
+        <button class="btn" data-apri="consiglio" type="button">🧠 Gran consiglio dell'IA</button>
+        <button class="btn" data-apri="dialetto" type="button">🗣️ TG in dialetto</button>
+      </div>
+      <div id="contenutoNovita"></div>
+      <section data-sezione="podcastfai" class="nascosto">
+        <h2>🎙️ Podcast fai da te</h2>
+        <div class="scheda">
+          <p class="spiega">Scrivi un argomento: due voci, Marco e Giulia, ne discutono per circa 10 minuti, ognuno con le sue ragioni, e alla fine provano ad arrivare a una conclusione comune.</p>
+          <label for="argomentoPodcast"><b>Di cosa vuoi sentir parlare?</b></label>
+          <textarea id="argomentoPodcast" class="campo" rows="3" placeholder="Es. Meglio vivere in città o in campagna?"></textarea>
+          <div class="riga-btn"><button class="btn pieno" id="creaPodcast" type="button">🎙️ Crea il podcast</button></div>
+          <p class="stato" id="statoPodcast" role="status" aria-live="polite"></p>
+          <div id="testoPodcast"></div>
+        </div>
+      </section>
+      <section data-sezione="consiglio" class="nascosto">
+        <h2>🧠 Gran consiglio dell'IA</h2>
+        <div class="scheda">
+          <p class="spiega">Racconta un problema o una decisione da prendere. Tre consiglieri ne parlano per circa 10 minuti: <b>Leo il creativo</b> propone idee, <b>Sara la realista</b> spiega i rischi e corregge il tiro, <b>Bruno il pragmatico</b> tira le somme e propone cosa fare.</p>
+          <label for="problemaConsiglio"><b>Qual è il problema?</b></label>
+          <textarea id="problemaConsiglio" class="campo" rows="4" placeholder="Es. Devo cambiare la macchina: meglio usata, nuova o a noleggio?"></textarea>
+          <div class="riga-btn"><button class="btn pieno" id="creaConsiglio" type="button">🧠 Riunisci il consiglio</button></div>
+          <p class="stato" id="statoConsiglio" role="status" aria-live="polite"></p>
+          <div id="testoConsiglio"></div>
+        </div>
+      </section>
+      <section data-sezione="dialetto" class="nascosto">
+        <h2>🗣️ TG in dialetto</h2>
+        <div class="scheda">
+          <p class="spiega">Le notizie di oggi raccontate in dialetto, in breve. Scegli quale:</p>
+          <div class="scelte">
+            <button class="btn" data-dialetto="viterbese" type="button">Viterbese</button>
+            <button class="btn" data-dialetto="romano" type="button">Romano</button>
+            <button class="btn" data-dialetto="orvietano" type="button">Orvietano</button>
+          </div>
+          <p class="stato" id="statoDialetto" role="status" aria-live="polite"></p>
+          <div id="testoDialetto"></div>
         </div>
       </section>
     </div>
@@ -310,7 +375,7 @@ dialog h2{margin-top:0}
 const CONFIG = {
   api: 'https://generativelanguage.googleapis.com/v1beta',
   // provati in ordine; se uno è lento/sovraccarico si passa al successivo
-  modelliTesto: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash'],
+  modelliTesto: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'],
   modelliVoce: ['gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'],
   voce: 'Kore',
   attesaTesto: 10000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
@@ -333,7 +398,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.0.0',
+  versione: '2.1.0',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -789,14 +854,18 @@ async function testoLibero(prompt, conRicerca = false) {
 }
 
 /* ---------- Voce: Gemini TTS ---------- */
-async function sintetizza(testo, onAttesa, comePCM = false) {
+/** opzioni.voce = voce diversa da quella del TG; opzioni.voci = [{nome, voce}] per un dialogo a due voci
+ *  (il testo ha una battuta per riga, "Nome: battuta"). */
+async function sintetizza(testo, onAttesa, comePCM = false, opzioni = {}) {
   return conModelli(CONFIG.modelliVoce, async (modello, giro) => {
     const j = await chiamaGemini(modello, {
       // Solo il testo da leggere, senza istruzioni: i modelli TTS a volte leggono ad alta voce anche quelle.
       contents: [{ role: 'user', parts: [{ text: testo }] }],
       generationConfig: {
         responseModalities: ['AUDIO'],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: CONFIG.voce } } },
+        speechConfig: opzioni.voci
+          ? { multiSpeakerVoiceConfig: { speakerVoiceConfigs: opzioni.voci.map((x) => ({ speaker: x.nome, voiceConfig: { prebuiltVoiceConfig: { voiceName: x.voce } } })) } }
+          : { voiceConfig: { prebuiltVoiceConfig: { voiceName: opzioni.voce || CONFIG.voce } } },
       },
     }, false, CONFIG.attesaVoce * giro);
     const parte = (j.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data);
@@ -833,16 +902,22 @@ function voceItaliana() {
   };
   return voci.slice().sort((x, y) => voto(y) - voto(x))[0];
 }
-function parla(testo) {
+/** Voce maschile italiana del dispositivo, se c'è (per distinguere chi parla nei dialoghi). */
+function voceMaschile() {
+  const voci = speechSynthesis.getVoices().filter((v) => /^it([-_]|$)/i.test(v.lang));
+  return voci.find((v) => /diego|giuseppe|luca|cosimo|rizzo|male|uomo/i.test(v.name)) || null;
+}
+/** opz.maschile: prova una voce maschile; opz.tono e opz.ritmo distinguono le voci quando il telefono ne ha una sola. */
+function parla(testo, opz = {}) {
   return new Promise((fine) => {
     if (!('speechSynthesis' in window)) return fine();
     speechSynthesis.cancel();
     const frasi = testo.match(/[^.!?…]+[.!?…]*\s*/g) || [testo];
-    const voce = voceItaliana();
+    const voce = (opz.maschile && voceMaschile()) || voceItaliana();
     let n = 0;
     frasi.forEach((f, i) => {
       const u = new SpeechSynthesisUtterance(f.trim());
-      u.lang = 'it-IT'; u.rate = 0.95; if (voce) u.voice = voce;
+      u.lang = 'it-IT'; u.rate = opz.ritmo || 0.95; u.pitch = opz.tono || 1; if (voce) u.voice = voce;
       u.onend = u.onerror = () => { if (++n === frasi.length) fine(); };
       speechSynthesis.speak(u);
     });
@@ -900,6 +975,7 @@ function usaEdizioneServer(e) {
   Ed.titoli = { testi: e.titoli.map((t) => t.testo), pezzi: e.titoli.map((t) => ({ url: u(t.audio), blob: null })), completo: true, finito: true };
   Ed.saluto = Promise.resolve(e.saluto?.audio ? { url: u(e.saluto.audio), testo: e.saluto.testo } : null);
   Ed.audioServer = Object.fromEntries(Object.entries(e.audio_varie || {}).map(([k, v]) => [k, v.map(u)]));
+  Ed.extra = e.extra || null;
   Ed.rassegneServer = Object.fromEntries(Object.entries(e.rassegne || {}).map(([k, v]) => [k, { ...v, audio: v.audio.map(u) }]));
   Ed.finito = true; Ed.produzioneFinita = true; Ed.avvisa();
   renderNotizie(); renderPodcast(); renderVarie();
@@ -913,7 +989,7 @@ function prepara(forza = false) {
   preparazione = (async () => {
     stato('Sto preparando il notiziario…');
     Object.assign(Ed, { grezzo: null, notizie: [], accadde: '', podcast: null, varie: null, finito: false, blocchi: [], produzioneFinita: false,
-      scaletta: [], titoli: { testi: [], pezzi: [], completo: false, finito: false }, audioServer: null, rassegneServer: null });
+      scaletta: [], titoli: { testi: [], pezzi: [], completo: false, finito: false }, audioServer: null, rassegneServer: null, extra: null });
     Ed.avvisa();
     renderNotizie(); renderPodcast(); renderVarie();
     let g = await caricaGrezzo();
@@ -1232,7 +1308,7 @@ function salvaEdizione() {
 }
 async function pulisciCacheVecchia(g) {
   for (const k of await db.keys()) {
-    if (/^(edizione|audio|varia|titoli|rassegna):/.test(k) && !(String(k).includes(g.generato) && String(k).includes(`:${VERSIONE_CACHE}:`))) db.del(k);
+    if (/^(edizione|audio|varia|titoli|rassegna|dialetto):/.test(k) && !(String(k).includes(g.generato) && String(k).includes(`:${VERSIONE_CACHE}:`))) db.del(k);
     if (/^saluto:/.test(k) && k !== `saluto:${VERSIONE_CACHE}:${CONFIG.voce}:${CONFIG.saluto}`) db.del(k);
   }
 }
@@ -1595,7 +1671,7 @@ async function suonaParteVaria(i) {
   } else {
     audio.pause(); audio.loop = false;
     P.parlando = true; $('miniSotto').textContent = 'In ascolto (voce del telefono)' + conta;
-    await parla(V.parti[i]);
+    await (V.parlaParte ? V.parlaParte(i) : parla(V.parti[i]));
     if (mio !== P.token) return;
     P.parlando = false;
     suonaParteVaria(i + 1);
@@ -1924,10 +2000,10 @@ function schedaPodcast(p, attributo) {
     </article>`;
 }
 /* Schede CALCIO e VARIE: in alto i tasti-intestazione, sotto si apre solo la sezione scelta. */
-const sezioneAperta = { calcio: null, varie: null };
+const sezioneAperta = { calcio: null, varie: null, novita: null };
 function apriSezione(scheda, id, scorri = true) {
   sezioneAperta[scheda] = id;
-  const pagina = $(scheda === 'calcio' ? 'paginaCalcio' : 'paginaVarie');
+  const pagina = $({ calcio: 'paginaCalcio', varie: 'paginaVarie', novita: 'paginaNovita' }[scheda]);
   let scelta = null;
   pagina.querySelectorAll('[data-sezione]').forEach((el) => {
     const questa = el.dataset.sezione === id;
@@ -1945,8 +2021,9 @@ function renderVarie() {
   if (!v || !g) {
     $('menuCalcio').innerHTML = tastoAI;
     $('contenutoCalcio').innerHTML = attesa('Le notizie di calcio compariranno qui appena pronte.');
-    $('contenutoVarie').innerHTML = ['meteo', 'tv', 'accadde'].map((id) => `<section data-sezione="${id}" class="nascosto">${attesa('Arriva tra poco, appena le notizie sono pronte.')}</section>`).join('');
-    apriSezione('calcio', sezioneAperta.calcio, false); apriSezione('varie', sezioneAperta.varie, false);
+    $('contenutoVarie').innerHTML = ['meteo', 'tv', 'accadde'].map((id) => `<section data-sezione="${id}" class="nascosto">${attesa('Arriva tra poco, appena le notizie sono pronte.')}</section>`).join('') + '<div id="extraVarie"></div>';
+    renderExtra();
+    apriSezione('calcio', sezioneAperta.calcio, false);
     return;
   }
   // ---- scheda CALCIO: un tasto e una sezione per squadra, più il calcio in generale e le domande all'AI
@@ -1975,13 +2052,239 @@ function renderVarie() {
   h += '</section><section data-sezione="accadde" class="nascosto"><h2>📜 Accadde oggi</h2>';
   h += Ed.accadde ? `<article class="scheda accadde"><p style="margin-top:0">${esc(Ed.accadde)}</p>
       <button class="btn rosso" data-ascolta="accadde" type="button">▶️ Ascolta</button></article>` : '<p class="scheda">Oggi la curiosità storica non è disponibile.</p>';
-  $('contenutoVarie').innerHTML = h + '</section>';
-  apriSezione('calcio', sezioneAperta.calcio, false); apriSezione('varie', sezioneAperta.varie, false);
+  $('contenutoVarie').innerHTML = h + '</section><div id="extraVarie"></div>';
+  renderExtra();
+  apriSezione('calcio', sezioneAperta.calcio, false);
+}
+
+/* ---------- Sezioni extra: Altri sport, Partite di oggi, Concerti/teatro/mostre (VARIE);
+              Eventi e sagre, Raccolta differenziata, Il detto del giorno (NOVITÀ).
+   I testi e la voce arrivano dall'edizione preparata sul server; la differenziata dai dati raccolti. ---------- */
+const registroAscolto = {}; // id -> { titolo, testo } dei testi che si possono ascoltare
+const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+const GIORNI_LUNGHI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+function renderExtra() {
+  const x = Ed.extra, g = Ed.grezzo;
+  const spiega = (t) => `<p class="spiega">${t}</p>`;
+  const nonPronto = '<p class="scheda">Questa sezione viene preparata ogni mattina insieme al notiziario: oggi non è ancora disponibile.</p>';
+  const ascolta = (id, titolo, testo, etichetta = '▶️ Ascolta') => {
+    registroAscolto[id] = { titolo, testo };
+    return `<button class="btn rosso" data-ascolta="${id}" type="button">${etichetta}</button>`;
+  };
+  const sezione = (id, titolo, corpo) => `<section data-sezione="${id}" class="nascosto"><h2>${titolo}</h2>${corpo}</section>`;
+  const elenco = (lista, riga) => (lista?.length ? `<ul class="elenco">${lista.map(riga).join('')}</ul>` : '');
+
+  // ---------------- VARIE
+  let h = '';
+  const sport = [['tennis', '🎾 Tennis'], ['formula1', '🏎️ Formula 1'], ['motogp', '🏍️ MotoGP']];
+  h += sezione('sport', '🎾 Altri sport', spiega('Tennis (Sinner e gli altri italiani), Formula 1 e MotoGP: le notizie principali, i risultati e, quando sono noti, gli orari in TV.')
+    + (x && sport.some(([c]) => x.altri_sport?.[c]) ? sport.filter(([c]) => x.altri_sport[c]).map(([c, nome]) => `<article class="scheda"><h3 style="margin-top:0">${nome}</h3><p>${esc(x.altri_sport[c])}</p>${ascolta('sport-' + c, nome.replace(/^\S+ /, ''), x.altri_sport[c])}</article>`).join('') : nonPronto));
+  const pa = x?.partite_oggi;
+  h += sezione('partite', '⚽ Partite di oggi', spiega('Orario e canale TV delle partite di oggi che riguardano le squadre italiane: Serie A, coppe e Nazionale. Gli orari vengono dalle notizie raccolte al mattino: se manca il canale, non era indicato.')
+    + (pa?.testo ? `<div class="scheda"><p>${esc(pa.testo)}</p>${ascolta('partite', 'Partite di oggi', pa.testo)}${elenco(pa.lista, (m) => `<li><b>${esc(m.ora || '—')}</b> · ${esc(m.partita)}<span>${esc([m.competizione, m.canale].filter(Boolean).join(' · '))}</span></li>`)}</div>` : nonPronto));
+  const citta = [['roma', 'Roma'], ['viterbo', 'Viterbo'], ['tuscia', 'Tuscia'], ['orvieto', 'Orvieto']];
+  const scelta = citta.some(([c]) => c === ls.get('tg_citta')) ? ls.get('tg_citta') : 'viterbo';
+  const cu = x?.cultura?.[scelta];
+  h += sezione('cultura', '🎭 Concerti, teatro e mostre', spiega('Che cosa c\'è da vedere e da ascoltare nei prossimi 30 giorni. Scegli la zona:')
+    + `<div class="scelte">${citta.map(([c, nome]) => `<button class="btn ${c === scelta ? 'attiva' : ''}" data-citta="${c}" type="button">${nome}</button>`).join('')}</div>`
+    + (cu?.testo ? `<div class="scheda"><p>${esc(cu.testo)}</p>${ascolta('cultura-' + scelta, 'Concerti, teatro e mostre', cu.testo)}${elenco(cu.lista, (ev) => `<li><b>${esc(ev.titolo)}</b><span>${esc([ev.tipo, ev.dove, ev.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
+      : (x ? '<p class="scheda">Per questa zona oggi non risultano appuntamenti nelle notizie raccolte.</p>' : nonPronto)));
+  if ($('extraVarie')) $('extraVarie').innerHTML = h;
+
+  // ---------------- NOVITÀ
+  h = '';
+  const ev = x?.eventi_weekend;
+  h += sezione('eventi', '🎪 Eventi e sagre nella Tuscia', spiega(`Sagre, feste e appuntamenti in provincia di Viterbo nel fine settimana${ev?.periodo ? ' ' + esc(ev.periodo) : ''}.`)
+    + (ev?.testo ? `<div class="scheda"><p>${esc(ev.testo)}</p>${ascolta('eventi', 'Eventi e sagre nella Tuscia', ev.testo)}${elenco(ev.lista, (e2) => `<li><b>${esc(e2.titolo)}</b><span>${esc([e2.dove, e2.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
+      : (x ? '<p class="scheda">Per questo fine settimana non risultano eventi nelle notizie raccolte.</p>' : nonPronto)));
+  h += sezione('differenziata', '♻️ Raccolta differenziata', spiega('Che cosa mettere fuori stasera e il calendario dei ritiri porta a porta, per Viterbo e per Vitorchiano.') + differenziataHtml(g?.differenziata));
+  const d = x?.detto;
+  h += sezione('detto', '💬 Il detto del giorno', spiega('Ogni giorno un proverbio in dialetto viterbese oppure orvietano, con la traduzione e la spiegazione.')
+    + (d?.proverbio ? `<article class="scheda accadde"><p class="piccolo" style="margin-top:0">In dialetto ${esc(d.dialetto.toLowerCase())}</p><p class="detto">“${esc(d.proverbio)}”</p>
+        <p><b>Vuol dire:</b> ${esc(d.traduzione)}</p><p>${esc(d.spiegazione)}</p>
+        ${ascolta('detto', 'Il detto del giorno', `${d.proverbio}. Vuol dire: ${d.traduzione}. ${d.spiegazione}`)}
+        ${d.scelto_da === 'ia' ? '<p class="piccolo">Scelto dall\'intelligenza artificiale: la grafia dialettale può non essere perfetta.</p>' : ''}</article>` : nonPronto));
+  $('contenutoNovita').innerHTML = h;
+  apriSezione('varie', sezioneAperta.varie, false); apriSezione('novita', sezioneAperta.novita, false);
+}
+function differenziataHtml(dati) {
+  if (!dati) return '<p class="scheda">Il calendario compare appena i dati del giorno sono stati scaricati.</p>';
+  const oggi = new Date(), domani = new Date(Date.now() + 86400000);
+  const iso = (x) => x.toLocaleDateString('sv-SE');
+  const riga = (quando, cosa) => `<p class="evidenza"><b>${quando}</b> ${cosa?.length ? esc(cosa.join(', ')) : 'niente'}</p>`;
+  let h = '';
+  const vt = dati.viterbo;
+  if (vt) {
+    const zona = vt.zone.find((z) => z.id === ls.get('tg_zona_viterbo')) || vt.zone[0];
+    h += `<h3>🏙️ Viterbo</h3><div class="scheda"><p style="margin-top:0"><b>Scegli la tua zona</b> (<a href="${esc(linkSicuro(vt.elenco_vie))}" target="_blank" rel="noopener">elenco delle vie</a>):</p>
+      <div class="scelte">${vt.zone.map((z) => `<button class="btn ${z.id === zona.id ? 'attiva' : ''}" data-zona="${z.id}" type="button">${esc(z.nome)}</button>`).join('')}</div>
+      ${riga('Stasera metti fuori:', zona.giorni[GIORNI_BREVI[domani.getDay()]])}${riga('Oggi ritirano:', zona.giorni[GIORNI_BREVI[oggi.getDay()]])}
+      <table class="meteo-giorni"><tbody>${[1, 2, 3, 4, 5, 6].map((n) => `<tr><td>${GIORNI_LUNGHI[n]}</td><td>${esc(zona.giorni[GIORNI_BREVI[n]].join(', ') || '—')}</td></tr>`).join('')}</tbody></table>
+      <p class="piccolo">${esc(vt.esposizione)} ${esc(vt.festivi)} ${esc(vt.gestore)}: ${esc(vt.telefono)}. <a href="${esc(linkSicuro(vt.fonte))}" target="_blank" rel="noopener">Calendari ufficiali</a>.</p></div>`;
+  }
+  const vi = dati.vitorchiano;
+  if (vi) {
+    const del = (giorno) => vi.calendario.find((c) => c.data === iso(giorno))?.materiali;
+    const prossimi = vi.calendario.filter((c) => c.data >= iso(oggi)).slice(0, 10);
+    h += `<h3>🏘️ Vitorchiano</h3><div class="scheda">`
+      + (vi.calendario.length ? `${riga('Stasera metti fuori:', del(domani))}${riga('Oggi ritirano:', del(oggi))}
+        <table class="meteo-giorni"><tbody>${prossimi.map((c) => `<tr><td>${esc(giornoNome(c.data))}</td><td>${esc(c.materiali.join(', '))}</td></tr>`).join('')}</tbody></table>`
+        : '<p style="margin-top:0">Oggi non sono riuscito a scaricare il calendario dal sito del Comune.</p>')
+      + `<p class="piccolo">${esc(vi.esposizione)} ${esc(vi.isola_ecologica)} ${esc(vi.telefono)}. <a href="${esc(linkSicuro(vi.fonte))}" target="_blank" rel="noopener">Calendario del Comune</a>.</p></div>`;
+  }
+  return h;
+}
+
+/* ---------- Podcast fai da te, Gran consiglio dell'IA, TG in dialetto (con la chiave Gemini dell'utente) ---------- */
+async function jsonLibero(prompt, schema) {
+  return conModelli(CONFIG.modelliTesto, async (modello, giro) => {
+    const chiedi = async (cfg) => {
+      const j = await chiamaGemini(modello, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: cfg }, false, 90000 * giro);
+      const t = (j.candidates?.[0]?.content?.parts || []).filter((q) => q.text && !q.thought).map((q) => q.text).join('').trim();
+      return JSON.parse(t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
+    };
+    const base = { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.8 };
+    try { return await chiedi({ ...base, thinkingConfig: { thinkingBudget: 0 } }); }
+    catch (e) { if (e.status === 400) return chiedi(base); throw e; }
+  }, 'tg_modello_testo');
+}
+const SCHEMA_COPIONE = {
+  type: 'OBJECT', required: ['titolo', 'turni'], propertyOrdering: ['titolo', 'turni'],
+  properties: { titolo: { type: 'STRING' }, turni: { type: 'ARRAY', items: { type: 'OBJECT', required: ['chi', 'testo'], propertyOrdering: ['chi', 'testo'], properties: { chi: { type: 'STRING' }, testo: { type: 'STRING' } } } } },
+};
+/** Voci dei personaggi: quella di Gemini e, come riserva, come farla sentire diversa con la voce del telefono. */
+const PERSONAGGI = {
+  Marco: { voce: 'Charon', maschile: true, tono: 0.8, ritmo: 0.95 },
+  Giulia: { voce: 'Kore', donna: true, tono: 1.1, ritmo: 0.97 },
+  Leo: { voce: 'Puck', maschile: true, tono: 1.0, ritmo: 1.04 },
+  Sara: { voce: 'Kore', donna: true, tono: 1.15, ritmo: 0.96 },
+  Bruno: { voce: 'Charon', maschile: true, tono: 0.7, ritmo: 0.9 },
+};
+/** Fa ascoltare un copione a più voci. A due voci: poche letture lunghe con due voci di Gemini; a tre voci: una lettura per battuta. */
+function ascoltaCopione(id, titolo, turni, mio) {
+  if (mio !== P.token) return;
+  const nomi = [...new Set(turni.map((t) => t.chi))];
+  const gruppi = [];
+  // Gemini legge al massimo due voci per volta: a due voci gruppi di 5 battute, a tre voci coppie di interventi
+  const passo = nomi.length <= 2 ? 5 : 2;
+  for (let i = 0; i < turni.length; i += passo) gruppi.push(turni.slice(i, i + passo));
+  const V = P.varia;
+  V.parti = gruppi.map((g) => g.map((t) => `${t.chi}: ${t.testo}`).join('\n'));
+  V.parlaParte = async (i) => { for (const t of gruppi[i]) { if (mio !== P.token) return; await parla(t.testo, PERSONAGGI[t.chi] || {}); } };
+  const base = `varia:${VERSIONE_CACHE}:${Ed.grezzo?.generato || 'oggi'}:${id}`;
+  (async () => {
+    for (let i = 0; i < gruppi.length; i++) {
+      if (mio !== P.token) return;
+      let blob = null;
+      const c = await db.get(`${base}:${i}`);
+      if (c && c.testo === V.parti[i]) blob = c.blob;
+      else if (!vocePerOggiKO) {
+        try {
+          const g = gruppi[i];
+          const chi = [...new Set(g.map((t) => t.chi))];
+          blob = chi.length > 1
+            ? await sintetizza(V.parti[i], undefined, false, { voci: chi.map((n) => ({ nome: n, voce: (PERSONAGGI[n] || {}).voce || CONFIG.voce })) })
+            : await sintetizza(g.map((t) => t.testo).join('\n\n'), undefined, false, { voce: (PERSONAGGI[chi[0]] || {}).voce });
+          db.set(`${base}:${i}`, { testo: V.parti[i], blob });
+        } catch (e) {
+          console.warn('TTS copione', e);
+          if (e.tipo === 'chiave') erroreChiave(e);
+          else if (e.tipo === 'quota' || e.tipo === 'modello') vocePerOggiKO = true;
+        }
+      }
+      V.pronti[i] = { blob };
+      Ed.avvisa();
+    }
+  })();
+  suonaParteVaria(0);
+}
+function mostraCopione(el, j) {
+  el.innerHTML = `<h3>${esc(j.titolo || '')}</h3>` + j.turni.map((t) => `<p class="turno ${PERSONAGGI[t.chi]?.donna ? 'donna' : ''}"><b>${esc(t.chi)}:</b> ${esc(t.testo)}</p>`).join('');
+}
+async function creaCopione({ campo, statoEl, testoEl, tasto, titolo, attesa, prompt, nomi, id }) {
+  const richiesta = $(campo).value.trim(), st = $(statoEl);
+  st.classList.remove('errore');
+  if (!richiesta) { st.textContent = 'Scrivi prima qualcosa nel riquadro.'; return; }
+  if (!chiave) { st.textContent = 'Per questa funzione serve la chiave Gemini: tocca ⚙️ in alto e incollala.'; return; }
+  const mio = preparaLettura(titolo, attesa); // dentro il tocco: sblocca l'audio, intanto suona il sottofondo
+  st.textContent = attesa + ' Ci vuole circa un minuto.'; $(testoEl).innerHTML = ''; $(tasto).disabled = true;
+  try {
+    const j = await jsonLibero(prompt(richiesta), SCHEMA_COPIONE);
+    j.turni = (j.turni || []).filter((t) => t.testo && nomi.includes(t.chi));
+    if (j.turni.length < 4) throw new Error('copione troppo corto');
+    mostraCopione($(testoEl), j);
+    st.textContent = `Pronto: ${j.turni.reduce((n, t) => n + t.testo.split(/\s+/).length, 0)} parole. Sotto trovi il testo.`;
+    ascoltaCopione(`${id}-${codice(richiesta + j.turni.length + j.turni[0].testo)}`, j.titolo || titolo, j.turni, mio);
+  } catch (e) {
+    console.warn(id, e);
+    if (mio === P.token) fermaTutto();
+    st.textContent = e.messaggioUtente || 'Non sono riuscito a prepararlo. Riprova tra poco.'; st.classList.add('errore');
+  }
+  $(tasto).disabled = false;
+}
+$('creaPodcast').onclick = () => creaCopione({
+  campo: 'argomentoPodcast', statoEl: 'statoPodcast', testoEl: 'testoPodcast', tasto: 'creaPodcast', id: 'podcast',
+  titolo: 'Podcast fai da te', attesa: 'Marco e Giulia si stanno preparando…', nomi: ['Marco', 'Giulia'],
+  prompt: (argomento) => `Scrivi il copione di un podcast in italiano in cui due conduttori, Marco (uomo) e Giulia (donna), discutono dell'argomento indicato sotto.
+Durata: circa 10 minuti di ascolto, cioè tra 1300 e 1450 parole in tutto: scrivi esattamente 28 battute alternate, ognuna di almeno 45 e al massimo 60 parole (conta le parole: un copione più corto non va bene).
+Marco e Giulia partono da posizioni diverse e le difendono con argomenti concreti, esempi e qualche dato noto; si ascoltano, si fanno domande, ogni tanto scherzano. Nell'ultima parte cercano un punto d'incontro e chiudono con una conclusione condivisa e un saluto.
+Tono naturale e colloquiale, frasi adatte a essere lette ad alta voce, niente elenchi, niente indicazioni di scena, niente emoji. Non inventare statistiche precise o citazioni.
+"titolo": un titolo breve per la puntata. "turni": le battute in ordine, con "chi" uguale a "Marco" oppure "Giulia".
+
+ARGOMENTO: ${argomento}`,
+});
+$('creaConsiglio').onclick = () => creaCopione({
+  campo: 'problemaConsiglio', statoEl: 'statoConsiglio', testoEl: 'testoConsiglio', tasto: 'creaConsiglio', id: 'consiglio',
+  titolo: 'Gran consiglio dell\'IA', attesa: 'Il consiglio si sta riunendo…', nomi: ['Leo', 'Sara', 'Bruno'],
+  prompt: (problema) => `Scrivi in italiano il verbale parlato di una riunione in cui tre consiglieri aiutano una persona a risolvere il problema indicato sotto.
+I consiglieri: Leo, il creativo (uomo), propone idee nuove e spunti originali; Sara, la realista (donna), spiega rischi, costi e punti deboli e propone correzioni; Bruno, il pragmatico (uomo), mette le cose nel contesto, confronta le alternative e propone decisioni concrete.
+Durata: circa 10 minuti di ascolto, cioè tra 1250 e 1400 parole in tutto, in 12-14 interventi di 80-110 parole ciascuno. Comincia Bruno riassumendo il problema; poi si alternano, rispondendosi a vicenda e migliorando le proposte; l'ultimo intervento è di Bruno, che indica la soluzione su cui i tre sono d'accordo e i primi tre passi da fare.
+Tono chiaro e cordiale, frasi adatte a essere lette ad alta voce, niente elenchi puntati, niente emoji. Se il problema riguarda salute, soldi o questioni legali ricordate di sentire anche un professionista.
+"titolo": un titolo breve. "turni": gli interventi in ordine, con "chi" uguale a "Leo", "Sara" oppure "Bruno".
+
+PROBLEMA: ${problema}`,
+});
+async function tgInDialetto(dialetto) {
+  const st = $('statoDialetto'), out = $('testoDialetto');
+  st.classList.remove('errore');
+  document.querySelectorAll('[data-dialetto]').forEach((b) => b.classList.toggle('attiva', b.dataset.dialetto === dialetto));
+  if (!Ed.notizie.length) { st.textContent = 'Aspetta che le notizie di oggi siano pronte, poi riprova.'; return; }
+  if (!chiave) { st.textContent = 'Per questa funzione serve la chiave Gemini: tocca ⚙️ in alto e incollala.'; return; }
+  const titolo = 'TG in dialetto ' + dialetto;
+  const mio = preparaLettura(titolo, 'Traduco il TG…');
+  st.textContent = 'Sto riscrivendo le notizie in dialetto: ci vuole mezzo minuto…'; out.innerHTML = '';
+  try {
+    const k = `dialetto:${VERSIONE_CACHE}:${Ed.grezzo?.generato}:${dialetto}`;
+    let testo = (await db.get(k))?.testo;
+    if (!testo) {
+      testo = await testoLibero(`Riscrivi il telegiornale qui sotto in dialetto ${dialetto}${dialetto === 'romano' ? ' (romanesco)' : dialetto === 'viterbese' ? ' (il dialetto di Viterbo e della Tuscia)' : ' (il dialetto di Orvieto)'}, come lo racconterebbe una persona del posto, simpatica ma rispettosa.
+Comincia con un saluto in dialetto, poi racconta ogni notizia in 2 o 3 frasi (un paragrafo per notizia, separati da una riga vuota) e chiudi con un saluto. In tutto tra 450 e 550 parole.
+Mantieni esatti i fatti, i nomi e i numeri: cambia solo il modo di dirli. Usa un dialetto comprensibile, con grafia semplice e leggibile ad alta voce; niente volgarità, niente prese in giro di persone o tragedie. Rispondi solo con il testo.
+
+NOTIZIE DI OGGI:
+${Ed.notizie.map((n, i) => `${i + 1}. ${n.titolo}. ${n.testo}`).join('\n')}`);
+      db.set(k, { testo });
+    }
+    out.innerHTML = testo.split(/\n\s*\n/).map((x) => `<p>${esc(x.trim())}</p>`).join('');
+    st.textContent = '';
+    ascoltaVaria(`dialetto-${dialetto}-${codice(testo)}`, titolo, testo, mio);
+  } catch (e) {
+    console.warn('dialetto', e);
+    if (mio === P.token) fermaTutto();
+    st.textContent = e.messaggioUtente || 'Non sono riuscito a prepararlo. Riprova tra poco.'; st.classList.add('errore');
+  }
 }
 function toccoSchede(e) {
   const v = Ed.varie;
   let b;
-  if ((b = e.target.closest('[data-apri]'))) return apriSezione(b.closest('#paginaCalcio') ? 'calcio' : 'varie', b.dataset.apri);
+  if ((b = e.target.closest('[data-apri]'))) return apriSezione(b.closest('#paginaCalcio') ? 'calcio' : (b.closest('#paginaNovita') ? 'novita' : 'varie'), b.dataset.apri);
+  if ((b = e.target.closest('[data-citta]'))) { ls.set('tg_citta', b.dataset.citta); return renderExtra(); }
+  if ((b = e.target.closest('[data-zona]'))) { ls.set('tg_zona_viterbo', b.dataset.zona); return renderExtra(); }
+  if ((b = e.target.closest('[data-dialetto]'))) return tgInDialetto(b.dataset.dialetto);
+  if ((b = e.target.closest('[data-ascolta]')) && registroAscolto[b.dataset.ascolta]) {
+    const r = registroAscolto[b.dataset.ascolta];
+    return ascoltaVaria(b.dataset.ascolta, r.titolo, r.testo);
+  }
   if ((b = e.target.closest('[data-rassegna]'))) return rassegna(b.dataset.rassegna);
   if ((b = e.target.closest('[data-preferita]'))) return suonaRadioScelta(radioPreferite()[+b.dataset.preferita]);
   if ((b = e.target.closest('[data-togli]'))) { const l = radioPreferite(); l.splice(+b.dataset.togli, 1); return salvaRadioPreferite(l); }
@@ -2013,18 +2316,19 @@ function toccoSchede(e) {
 $('paginaCalcio').addEventListener('click', toccoSchede);
 $('paginaVarie').addEventListener('click', toccoSchede);
 $('paginaRadio').addEventListener('click', toccoSchede);
+$('paginaNovita').addEventListener('click', toccoSchede);
 $('chiediCalcio').onclick = chiediCalcio;
 $('ascoltaRisposta').onclick = () => ascoltaVaria('ai-' + codice(ultimaRisposta), 'Risposta sul calcio', ultimaRisposta);
 $('cercaRadioBtn').onclick = cercaRadio;
 $('cercaRadio').addEventListener('keydown', (e) => { if (e.key === 'Enter') cercaRadio(); });
 function mostraScheda(quale, inCima = true) {
-  for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie']) {
+  for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita']) {
     $('pagina' + id).classList.toggle('nascosto', quale !== id.toLowerCase());
     $('scheda' + id).classList.toggle('attiva', quale === id.toLowerCase());
   }
   if (inCima) window.scrollTo({ top: 0 });
 }
-for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie']) $('scheda' + id).onclick = () => mostraScheda(id.toLowerCase());
+for (const id of ['TG', 'Podcast', 'Radio', 'Calcio', 'Varie', 'Novita']) $('scheda' + id).onclick = () => mostraScheda(id.toLowerCase());
 function renderPodcast() {
   const el = $('listaPodcast');
   if (!Ed.podcast) { el.innerHTML = '<p class="segnaposto scheda">I podcast compariranno qui dopo le notizie.</p>'; return; }

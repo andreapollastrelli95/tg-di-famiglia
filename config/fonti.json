@@ -1,5 +1,5 @@
 {
-  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (gli ultimi tre sono gli id delle sezioni della scheda CALCIO, definite in config/varie.json). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
+  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (sezioni della scheda CALCIO, vedi config/varie.json) | tennis | formula1 | motogp (Altri sport) | eventi | orvieto | roma (eventi del fine settimana, concerti, teatro e mostre). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
   "ore_massime": 30,
   "max_per_feed": 25,
   "feed": [
@@ -54,6 +54,26 @@
     {"fonte": "Tuttosport", "categoria": "calcio", "ore_massime": 48, "url": "https://www.tuttosport.com/rss/calcio/calciomercato"},
     {"fonte": "Corriere dello Sport", "categoria": "calcio", "url": "https://www.corrieredellosport.it/rss/calcio/serie-a"},
     {"fonte": "TuttoMercatoWeb", "categoria": "calcio", "url": "https://www.tuttomercatoweb.com/rss"},
-    {"fonte": "ANSA Calcio", "categoria": "calcio", "url": "https://www.ansa.it/sito/notizie/sport/calcio/calcio_rss.xml"}
+    {"fonte": "ANSA Calcio", "categoria": "calcio", "url": "https://www.ansa.it/sito/notizie/sport/calcio/calcio_rss.xml"},
+
+    {"fonte": "La Gazzetta dello Sport", "categoria": "tennis", "ore_massime": 60, "max": 12, "url": "https://www.gazzetta.it/dynamic-feed/rss/section/Tennis.xml"},
+    {"fonte": "Tuttosport", "categoria": "tennis", "ore_massime": 60, "max": 10, "url": "https://www.tuttosport.com/rss/tennis"},
+    {"fonte": "Corriere dello Sport", "categoria": "tennis", "ore_massime": 60, "max": 10, "url": "https://www.corrieredellosport.it/rss/tennis"},
+    {"fonte": "La Gazzetta dello Sport", "categoria": "formula1", "ore_massime": 96, "max": 12, "url": "https://www.gazzetta.it/dynamic-feed/rss/section/Formula-1.xml"},
+    {"fonte": "Tuttosport", "categoria": "formula1", "ore_massime": 96, "max": 10, "url": "https://www.tuttosport.com/rss/formula-1"},
+    {"fonte": "Corriere dello Sport", "categoria": "formula1", "ore_massime": 96, "max": 10, "url": "https://www.corrieredellosport.it/rss/formula-1"},
+    {"fonte": "La Gazzetta dello Sport", "categoria": "motogp", "ore_massime": 120, "max": 12, "url": "https://www.gazzetta.it/dynamic-feed/rss/section/Moto/moto-GP.xml"},
+    {"fonte": "Tuttosport", "categoria": "motogp", "ore_massime": 168, "max": 10, "url": "https://www.tuttosport.com/rss/moto"},
+    {"fonte": "Corriere dello Sport", "categoria": "motogp", "ore_massime": 168, "max": 10, "url": "https://www.corrieredellosport.it/rss/moto"},
+
+    {"fonte": "TusciaUp Eventi", "categoria": "eventi", "ore_massime": 336, "max": 20, "url": "https://www.tusciaup.com/category/eventi/feed"},
+    {"fonte": "Tusciaweb Cultura", "categoria": "eventi", "ore_massime": 240, "max": 25, "url": "https://www.tusciaweb.eu/category/cultura/feed/"},
+    {"fonte": "ViterboToday", "categoria": "eventi", "ore_massime": 120, "max": 25, "url": "https://www.viterbotoday.it/rss"},
+    {"fonte": "OrvietoSì Eventi", "categoria": "orvieto", "ore_massime": 336, "max": 20, "url": "https://www.orvietosi.it/category/eventi/feed/"},
+    {"fonte": "OrvietoSì Cultura", "categoria": "orvieto", "ore_massime": 336, "max": 15, "url": "https://www.orvietosi.it/category/cultura/feed/"},
+    {"fonte": "OrvietoLife", "categoria": "orvieto", "ore_massime": 168, "max": 15, "url": "https://www.orvietolife.it/feed/"},
+    {"fonte": "Il Messaggero Spettacoli", "categoria": "roma", "ore_massime": 168, "max": 20, "url": "https://www.ilmessaggero.it/rss/spettacoli.xml"},
+    {"fonte": "Funweek", "categoria": "roma", "ore_massime": 336, "max": 15, "url": "https://www.funweek.it/feed/"},
+    {"fonte": "RomaToday", "categoria": "roma", "ore_massime": 72, "max": 25, "url": "https://www.romatoday.it/rss"}
   ]
 }
