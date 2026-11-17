@@ -44,7 +44,7 @@ def scarica(url: str, timeout: int = 20, ua: str = UA) -> bytes:
     ultimo = None
     for _ in range(2):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "*/*"})
+            req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "*/*", "Accept-Language": "it-IT,it;q=0.9"})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read()
         except Exception as e:  # noqa: BLE001 - qualsiasi errore: riprovo e poi salto
@@ -100,6 +100,28 @@ def data_voce(e) -> datetime | None:
 
 
 # ---------------------------------------------------------------- notizie
+class _Pagina:
+    """Risultato di una pagina web letta come se fosse un feed."""
+
+    def __init__(self, entries):
+        self.entries = entries
+
+
+def pagina_civonline(url: str) -> _Pagina:
+    """Civonline (Civitavecchia, Tolfa, litorale) non ha un feed RSS: si leggono gli articoli dalla homepage.
+    Gli articoli in homepage sono quelli recenti, quindi prendono come data l'ora della raccolta."""
+    pagina = scarica(url, ua=UA_BROWSER).decode("utf-8", "replace")
+    voci, visti = [], set()
+    for m in re.finditer(r'<a[^>]+href="(https://www\.civonline\.it/news/([a-z\-]+)/(\d+)/[^"]+\.html)"[^>]*>(.*?)</a>', pagina, re.S):
+        link, sezione, numero, testo = m.groups()
+        titolo = pulisci(testo, 200)
+        if sezione in ("sport", "italia-e-mondo", "rubriche") or numero in visti or len(titolo) < 20:
+            continue
+        visti.add(numero)
+        voci.append({"title": titolo, "link": link, "summary": "", "published_parsed": ORA.utctimetuple()})
+    return _Pagina(voci)
+
+
 def raccogli_notizie() -> list[dict]:
     cfg = leggi_config("fonti.json")
     notizie, visti = [], set()
@@ -107,7 +129,10 @@ def raccogli_notizie() -> list[dict]:
         limite = ORA - timedelta(hours=f.get("ore_massime", cfg.get("ore_massime", 30)))
         per_feed = f.get("max", cfg.get("max_per_feed", 25))
         try:
-            feed = feedparser.parse(scarica(f["url"]))
+            if f.get("tipo") == "civonline":
+                feed = pagina_civonline(f["url"])
+            else:
+                feed = feedparser.parse(scarica(f["url"]))
         except Exception as e:  # noqa: BLE001
             log(f"  ! salto {f['fonte']} ({f['url']}): {e}")
             continue
@@ -330,6 +355,24 @@ def raccogli_differenziata() -> dict | None:
         except Exception as e:  # noqa: BLE001
             log(f"  ! differenziata Vitorchiano: {e}")
     vit.pop("calendario_url", None)
+    orv = cfg.get("orvieto") or {}
+    for z in orv.get("zone", []):
+        z["calendario"] = []
+        try:
+            oggi = ORA.astimezone(ROMA).date()
+            fine = oggi + timedelta(days=21)
+            pagina = scarica(f"{orv['junker']}/{z['id']}/calendario", ua=UA_BROWSER).decode("utf-8", "replace")
+            i = pagina.index("var events = ") + len("var events = ")
+            eventi, _ = json.JSONDecoder().raw_decode(pagina[i:])
+            per_giorno: dict[str, list[str]] = {}
+            for v in eventi:
+                if oggi.isoformat() <= v.get("date", "") <= fine.isoformat() and v.get("vbin_desc"):
+                    per_giorno.setdefault(v["date"], []).append(v["vbin_desc"])
+            z["calendario"] = [{"data": d, "materiali": sorted(set(m))} for d, m in sorted(per_giorno.items())]
+        except Exception as e:  # noqa: BLE001
+            log(f"  ! differenziata Orvieto {z['nome']}: {e}")
+    if orv.get("zone"):
+        log(f"  differenziata Orvieto: {[len(z['calendario']) for z in orv['zone']]} giorni di ritiro per zona")
     return cfg
 
 
@@ -363,7 +406,22 @@ def raccogli_tech() -> dict | None:
     video.sort(key=lambda v: v["data"], reverse=True)
     for i, v in enumerate(video, 1):
         v["vid"] = f"y{i}"
-    return {"youtube": video, "radio": cfg.get("radio", []), "libri": cfg.get("libri", []), "concetti": cfg.get("concetti", {})}
+    radio = []
+    for r in cfg.get("radio", []):
+        r = dict(r)
+        if r.get("feed"):  # niente diretta: si ascolta l'ultima puntata
+            try:
+                feed = feedparser.parse(scarica(r["feed"], ua=UA_BROWSER))
+                for e in feed.entries:
+                    audio = audio_di(e)
+                    if audio and audio.startswith("https://"):
+                        r["episodio"] = {"titolo": pulisci(e.get("title"), 160), "audio": audio, "link": e.get("link") or audio,
+                                         "data": (data_voce(e) or ORA).isoformat(timespec="minutes")}
+                        break
+            except Exception as e:  # noqa: BLE001
+                log(f"  ! radio {r['nome']}: {e}")
+        radio.append(r)
+    return {"youtube": video, "radio": radio, "libri": cfg.get("libri", []), "concetti": cfg.get("concetti", {})}
 
 
 # ---------------------------------------------------------------- archivio della settimana
@@ -420,6 +478,7 @@ def main():
         "differenziata": raccogli_differenziata(),
         "tech": raccogli_tech(),
         "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
+        "meteo_luoghi": [m for m in (dict(raccogli_meteo(l) or {}, id=l["id"]) for l in varie.get("meteo_luoghi", [])) if m.get("giorni")],
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }
     (uscita / "grezzo.json").write_text(json.dumps(dati, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -9,11 +9,136 @@
     "esposizione": "Metti il contenitore fuori dal portone la sera prima del giorno di ritiro. Lo svuotamento avviene nell'arco della giornata.",
     "festivi": "Se il giorno di ritiro è festivo il servizio non viene effettuato e slitta alla settimana successiva.",
     "zone": [
-      {"id": "zona1", "nome": "Zona 1", "giorni": {"lun": ["Organico"], "mar": ["Carta e cartone"], "mer": ["Vetro", "Organico"], "gio": ["Indifferenziato"], "ven": ["Organico"], "sab": ["Plastica e metalli"], "dom": []}},
-      {"id": "zona2", "nome": "Zona 2", "giorni": {"lun": ["Carta e cartone"], "mar": ["Organico"], "mer": ["Indifferenziato"], "gio": ["Vetro", "Organico"], "ven": ["Plastica e metalli"], "sab": ["Organico"], "dom": []}},
-      {"id": "zona3", "nome": "Zona 3", "giorni": {"lun": ["Organico"], "mar": ["Indifferenziato"], "mer": ["Vetro", "Organico"], "gio": ["Carta e cartone"], "ven": ["Organico"], "sab": ["Plastica e metalli"], "dom": []}},
-      {"id": "zona4", "nome": "Zona 4", "giorni": {"lun": ["Indifferenziato"], "mar": ["Organico"], "mer": ["Carta e cartone"], "gio": ["Organico"], "ven": ["Plastica e metalli"], "sab": ["Vetro", "Organico"], "dom": []}},
-      {"id": "centro", "nome": "Centro storico", "giorni": {"lun": ["Organico"], "mar": ["Carta e cartone"], "mer": ["Organico"], "gio": ["Plastica e metalli"], "ven": ["Vetro", "Organico"], "sab": ["Indifferenziato"], "dom": []}}
+      {
+        "id": "zona1",
+        "nome": "Zona 1",
+        "giorni": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Carta e cartone"
+          ],
+          "mer": [
+            "Vetro",
+            "Organico"
+          ],
+          "gio": [
+            "Indifferenziato"
+          ],
+          "ven": [
+            "Organico"
+          ],
+          "sab": [
+            "Plastica e metalli"
+          ],
+          "dom": []
+        }
+      },
+      {
+        "id": "zona2",
+        "nome": "Zona 2",
+        "giorni": {
+          "lun": [
+            "Carta e cartone"
+          ],
+          "mar": [
+            "Organico"
+          ],
+          "mer": [
+            "Indifferenziato"
+          ],
+          "gio": [
+            "Vetro",
+            "Organico"
+          ],
+          "ven": [
+            "Plastica e metalli"
+          ],
+          "sab": [
+            "Organico"
+          ],
+          "dom": []
+        }
+      },
+      {
+        "id": "zona3",
+        "nome": "Zona 3",
+        "giorni": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Indifferenziato"
+          ],
+          "mer": [
+            "Vetro",
+            "Organico"
+          ],
+          "gio": [
+            "Carta e cartone"
+          ],
+          "ven": [
+            "Organico"
+          ],
+          "sab": [
+            "Plastica e metalli"
+          ],
+          "dom": []
+        }
+      },
+      {
+        "id": "zona4",
+        "nome": "Zona 4",
+        "giorni": {
+          "lun": [
+            "Indifferenziato"
+          ],
+          "mar": [
+            "Organico"
+          ],
+          "mer": [
+            "Carta e cartone"
+          ],
+          "gio": [
+            "Organico"
+          ],
+          "ven": [
+            "Plastica e metalli"
+          ],
+          "sab": [
+            "Vetro",
+            "Organico"
+          ],
+          "dom": []
+        }
+      },
+      {
+        "id": "centro",
+        "nome": "Centro storico",
+        "giorni": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Carta e cartone"
+          ],
+          "mer": [
+            "Organico"
+          ],
+          "gio": [
+            "Plastica e metalli"
+          ],
+          "ven": [
+            "Vetro",
+            "Organico"
+          ],
+          "sab": [
+            "Indifferenziato"
+          ],
+          "dom": []
+        }
+      }
     ]
   },
   "vitorchiano": {
@@ -23,5 +148,193 @@
     "telefono": "Eco Sportello, via Santa Maria 2/A - 0761 373760",
     "esposizione": "Esponi il contenitore dalle 22 della sera prima alle 5 del giorno di ritiro.",
     "isola_ecologica": "Centro di raccolta comunale, via della Nunziatella 19. Orari indicati dal Comune: lunedì, mercoledì e giovedì 15-17 (14-16 in inverno); martedì, venerdì e sabato 10-13; prima domenica del mese 10-13."
+  },
+  "civitavecchia": {
+    "nome": "Civitavecchia",
+    "gestore": "Civitavecchia Servizi Pubblici (CSP)",
+    "telefono": "Informazioni: tutti i giorni 8:30-14, martedì e giovedì anche 15-17",
+    "fonte": "https://comune.civitavecchia.rm.it/it/news/porta-a-porta-nuovo-calendario-dal-30-giugno",
+    "elenco_vie": "https://comune.civitavecchia.rm.it/s3/2166/allegati/allegati/elenco-zone-e-vie.pdf",
+    "esposizione": "Esponi il contenitore dalle 21 della sera indicata e ritiralo vuoto entro le 12 del giorno dopo. Il vetro va nelle campane stradali.",
+    "festivi": "Calendari in vigore dal 29 giugno 2025 (ordinanza n. 282/2025).",
+    "zone": [
+      {
+        "id": "civ1",
+        "nome": "Zona 1 - Nord",
+        "sere": {
+          "lun": [
+            "Carta e cartone"
+          ],
+          "mar": [
+            "Organico"
+          ],
+          "mer": [
+            "Plastica e metalli"
+          ],
+          "gio": [
+            "Organico"
+          ],
+          "ven": [
+            "Indifferenziato"
+          ],
+          "sab": [],
+          "dom": [
+            "Organico"
+          ]
+        }
+      },
+      {
+        "id": "civ2",
+        "nome": "Zona 2 - Centro Mare",
+        "sere": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Carta e cartone"
+          ],
+          "mer": [
+            "Organico"
+          ],
+          "gio": [
+            "Plastica e metalli"
+          ],
+          "ven": [
+            "Organico"
+          ],
+          "sab": [],
+          "dom": [
+            "Indifferenziato"
+          ]
+        }
+      },
+      {
+        "id": "civ3",
+        "nome": "Zona 3 - sotto mediana",
+        "sere": {
+          "lun": [
+            "Indifferenziato"
+          ],
+          "mar": [
+            "Organico"
+          ],
+          "mer": [
+            "Carta e cartone"
+          ],
+          "gio": [
+            "Organico"
+          ],
+          "ven": [
+            "Plastica e metalli"
+          ],
+          "sab": [],
+          "dom": [
+            "Organico"
+          ]
+        }
+      },
+      {
+        "id": "civ4",
+        "nome": "Zona 4 - Buonarroti Uliveto Mortelle",
+        "sere": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Indifferenziato"
+          ],
+          "mer": [
+            "Organico"
+          ],
+          "gio": [
+            "Carta e cartone"
+          ],
+          "ven": [
+            "Organico"
+          ],
+          "sab": [],
+          "dom": [
+            "Plastica e metalli"
+          ]
+        }
+      },
+      {
+        "id": "civ5",
+        "nome": "Zona 5 - campo dell’Oro San Gordiano Boccelle",
+        "sere": {
+          "lun": [
+            "Plastica e metalli"
+          ],
+          "mar": [
+            "Organico"
+          ],
+          "mer": [
+            "Indifferenziato"
+          ],
+          "gio": [
+            "Organico"
+          ],
+          "ven": [
+            "Carta e cartone"
+          ],
+          "sab": [],
+          "dom": [
+            "Organico"
+          ]
+        }
+      },
+      {
+        "id": "civ6",
+        "nome": "Zona 6 - Cisterna san Liborio e zone rurali",
+        "sere": {
+          "lun": [
+            "Organico"
+          ],
+          "mar": [
+            "Plastica e metalli"
+          ],
+          "mer": [
+            "Organico"
+          ],
+          "gio": [
+            "Indifferenziato"
+          ],
+          "ven": [
+            "Organico"
+          ],
+          "sab": [],
+          "dom": [
+            "Carta e cartone"
+          ]
+        }
+      }
+    ]
+  },
+  "orvieto": {
+    "nome": "Orvieto",
+    "gestore": "COSP Tecno Service",
+    "telefono": "Numero verde 800 055 505 (da cellulare 0744 409244), lunedì-venerdì 9-13",
+    "fonte": "https://differenziata.junkerapp.it/orvieto",
+    "junker": "https://differenziata.junkerapp.it/orvieto",
+    "esposizione": "Area ad intensità (centro abitato): esponi dalle 20 della sera prima entro le 5. Area vasta: dalle 21 entro le 6.",
+    "nota_ciconia": "Ciconia rientra nell'area ad intensità: per sapere se la tua via è nella zona Nord o Sud cerca la via sul portale Junker.",
+    "zone": [
+      {
+        "id": "3030",
+        "nome": "Nord - area ad intensità"
+      },
+      {
+        "id": "3034",
+        "nome": "Sud - area ad intensità"
+      },
+      {
+        "id": "3032",
+        "nome": "Nord - area vasta"
+      },
+      {
+        "id": "3036",
+        "nome": "Sud - area vasta"
+      }
+    ]
   }
 }

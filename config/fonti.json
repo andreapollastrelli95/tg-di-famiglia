@@ -1,5 +1,5 @@
 {
-  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (sezioni della scheda CALCIO, vedi config/varie.json) | tennis | formula1 | motogp (Altri sport) | eventi | orvieto | roma (eventi del fine settimana, concerti, teatro e mostre) | tech | futuro (scheda TECH & AI). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
+  "_nota": "Feed RSS delle notizie. categoria: generale (nazionali) | tuscia | sport | juve | inter | calcio (sezioni della scheda CALCIO, vedi config/varie.json) | tennis | formula1 | motogp (Altri sport) | eventi | orvieto | roma (eventi del fine settimana, concerti, teatro e mostre) | tech | futuro (scheda TECH & AI) | civitavecchia (Civitavecchia, Tolfa e litorale; tipo 'civonline' = letto dalla pagina web). Se un feed non risponde viene saltato. 'ore_massime' si può indicare anche per un singolo feed.",
   "ore_massime": 30,
   "max_per_feed": 25,
   "feed": [
@@ -89,6 +89,12 @@
     {"fonte": "The Verge", "categoria": "tech", "ore_massime": 72, "max": 10, "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"},
     {"fonte": "TechCrunch", "categoria": "tech", "ore_massime": 72, "max": 12, "url": "https://techcrunch.com/category/artificial-intelligence/feed/"},
     {"fonte": "ANSA Scienza e Tecnica", "categoria": "futuro", "ore_massime": 120, "max": 25, "url": "https://www.ansa.it/canale_scienza_tecnica/notizie/scienzaetecnica_rss.xml"},
-    {"fonte": "Focus", "categoria": "futuro", "ore_massime": 120, "max": 20, "url": "https://www.focus.it/rss"}
+    {"fonte": "Focus", "categoria": "futuro", "ore_massime": 120, "max": 20, "url": "https://www.focus.it/rss"},
+
+    {"fonte": "Civonline", "categoria": "civitavecchia", "tipo": "civonline", "max": 60, "url": "https://www.civonline.it/"},
+    {"fonte": "Lextra News", "categoria": "civitavecchia", "ore_massime": 168, "max": 15, "url": "https://www.lextra.news/category/civitavecchia/feed/"},
+    {"fonte": "Lextra News Eventi", "categoria": "civitavecchia", "ore_massime": 168, "max": 15, "url": "https://www.lextra.news/category/eventi/feed/"},
+    {"fonte": "IlFaroOnline", "categoria": "civitavecchia", "ore_massime": 72, "max": 15, "url": "https://www.ilfaroonline.it/feed/"},
+    {"fonte": "TRC Giornale", "categoria": "civitavecchia", "ore_massime": 168, "max": 10, "url": "https://trcgiornale.it/feed/"}
   ]
 }

@@ -94,5 +94,37 @@
       "tuscia": 50,
       "sport": 45
     }
-  }
+  },
+  "meteo_luoghi": [
+    {
+      "id": "viterbo",
+      "localita": "Viterbo",
+      "lat": 42.4207,
+      "lon": 12.1077
+    },
+    {
+      "id": "vitorchiano",
+      "localita": "Vitorchiano",
+      "lat": 42.4656,
+      "lon": 12.1736
+    },
+    {
+      "id": "orvieto",
+      "localita": "Orvieto",
+      "lat": 42.7186,
+      "lon": 12.111
+    },
+    {
+      "id": "civitavecchia",
+      "localita": "Civitavecchia",
+      "lat": 42.0924,
+      "lon": 11.7954
+    },
+    {
+      "id": "tolfa",
+      "localita": "Tolfa",
+      "lat": 42.1497,
+      "lon": 11.9389
+    }
+  ]
 }

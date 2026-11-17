@@ -21,7 +21,7 @@ sullo schermo.
 
 **Scheda TG** (solo il notiziario)
 
-1. sigla, poi il saluto *"Buongiorno famiglia, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto."*;
+1. sigla, poi il saluto *"Un saluto a tutta la famiglia e bentrovati. Queste sono le notizie e i podcast del giorno consigliati. Buon ascolto e buona giornata."*;
 2. suono di 5 secondi, la voce dice *"Titoli del TG di Famiglia"* e legge **i titoli** delle 10 notizie, con un suono di 3 secondi tra un titolo e l'altro;
 3. **5 notizie nazionali**, separate da uno stacco di 3 secondi;
 4. stacco leggero di 5 secondi, *"Notizie dalla Tuscia"* e **3 notizie da Viterbo e provincia**;
@@ -46,26 +46,26 @@ Bianconera), **Inter** (3 notizie e podcast), **Serie A, Champions e calciomerca
 Radio Sportiva) e **Chiedi all'AI sul calcio** (si scrive una domanda e Gemini risponde usando le notizie
 di calcio raccolte in giornata; la risposta si può anche ascoltare).
 
-**Scheda VARIE**: tasti che aprono **Meteo a Viterbo** (domani e settimana), **Stasera in TV** (prima
+**Scheda VARIE**: tasti che aprono **Meteo** di Viterbo, Vitorchiano, Orvieto, Civitavecchia e Tolfa (domani e settimana), **Stasera in TV** (prima
 serata e sport in 30 secondi), **Accadde oggi**, **Rassegna stampa della domenica** (a scelta le notizie
 della settimana in 5 minuti, la settimana nella Tuscia in 5 minuti oppure le 5 notizie sportive),
 **Altri sport** (tennis, Formula 1 e MotoGP: notizie, risultati e orari TV quando sono noti),
 **Partite di oggi** (orario e canale delle partite delle squadre italiane) e **Concerti, teatro e
-mostre** dei prossimi 30 giorni a Roma, Viterbo, nella Tuscia o a Orvieto, a scelta.
+mostre** dei prossimi 30 giorni a Roma, Viterbo, nella Tuscia, a Orvieto, Civitavecchia o Tolfa, a scelta.
 
-**Scheda NOVITÀ**: **Eventi e sagre nella Tuscia** (quelli del fine settimana), **Raccolta
-differenziata** (che cosa mettere fuori stasera e calendario dei ritiri, per Viterbo zona per zona e per
-Vitorchiano), **Il detto del giorno** (un proverbio in dialetto viterbese o orvietano, con traduzione),
+**Scheda NOVITÀ**: **Eventi e sagre nella Tuscia** (quelli del fine settimana, e sotto quelli di Civitavecchia, Tolfa e Orvieto), **Raccolta
+differenziata** (che cosa mettere fuori stasera e calendario dei ritiri: Viterbo e Civitavecchia zona per zona,
+Vitorchiano, Orvieto e Ciconia), **Il detto del giorno** (un proverbio in dialetto viterbese o orvietano, con traduzione),
 **Podcast fai da te** (scrivi un argomento: Marco e Giulia ne discutono per circa 10 minuti e cercano una
 conclusione) e **Gran consiglio dell'IA** (racconti un problema: Leo il creativo, Sara la realista e Bruno
 il pragmatico ne parlano per circa 10 minuti e propongono una soluzione) e **6 cappelli per pensare** (fai una domanda: sei voci la guardano ognuna dal suo punto di vista secondo il metodo di Edward de Bono, cioè fatti, emozioni, rischi, vantaggi, idee nuove e metodo, e una settima voce tira le somme). In queste tre sezioni la lettura parte da sola dopo pochi secondi, mentre il testo viene ancora scritto. Ogni sezione comincia con una
 riga che spiega a che cosa serve.
 
 **Scheda TECH & AI**: **Notizie AI** (le dieci notizie del giorno su tecnologia e intelligenza
-artificiale e i trend del futuro), **Podcast AI** (podcast italiani di tecnologia), **Radio AI** (le radio
-di parola che parlano più spesso di tecnologia e scienza: radio solo sull'IA non esistono), **Idee AI**
+artificiale e i trend del futuro), **Podcast AI** (podcast italiani di tecnologia), **Radio AI** (dieci radio
+scelte, tra informazione, cultura digitale e intrattenimento), **Idee AI**
 (dieci idee nuove al giorno), **Futuro AI** (dieci pillole sulle scoperte più sorprendenti), **YouTube
-link** (dieci video recenti da canali di tecnologia), **La scintilla della serendipità** (due concetti
+link** (dieci video recenti dai canali italiani di tecnologia più seguiti), **La scintilla della serendipità** (due concetti
 lontani che diventano un'idea di business e un'intuizione creativa: una al giorno, altre a richiesta),
 **Consigli sul futuro** (dieci libri, cambiano ogni settimana) e **Dibattito tra AI sulla AI** (Ada e Alan
 discutono per circa 9 minuti, con due voci neurali). Fonti, canali YouTube, radio, libri e concetti sono in

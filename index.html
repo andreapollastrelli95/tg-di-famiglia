@@ -269,7 +269,7 @@ dialog h2{margin-top:0}
     <!-- Scheda VARIE: tasti che aprono meteo, stasera in TV, accadde oggi e rassegna della domenica -->
     <div id="paginaVarie" class="nascosto">
       <div class="menu-sezioni" id="menuVarie">
-        <button class="btn" data-apri="meteo" type="button">🌦️ Meteo a Viterbo</button>
+        <button class="btn" data-apri="meteo" type="button">🌦️ Meteo</button>
         <button class="btn" data-apri="tv" type="button">📺 Stasera in TV</button>
         <button class="btn" data-apri="accadde" type="button">📜 Accadde oggi</button>
         <button class="btn" data-apri="rassegna" type="button">🗞️ Rassegna stampa della domenica</button>
@@ -347,6 +347,8 @@ dialog h2{margin-top:0}
             <button class="btn" data-dialetto="viterbese" type="button">Viterbese</button>
             <button class="btn" data-dialetto="romano" type="button">Romano</button>
             <button class="btn" data-dialetto="orvietano" type="button">Orvietano</button>
+            <button class="btn" data-dialetto="civitavecchiese" type="button">Civitavecchiese</button>
+            <button class="btn" data-dialetto="tolfetano" type="button">Tolfetano</button>
           </div>
           <p class="stato" id="statoDialetto" role="status" aria-live="polite"></p>
           <div id="testoDialetto"></div>
@@ -440,7 +442,7 @@ const CONFIG = {
   voce: 'Kore',
   attesaTesto: 10000,   // ms massimi per la prima risposta del modello di testo, poi si prova il successivo
   attesaVoce: 60000,    // ms massimi per un blocco di voce
-  saluto: 'Buongiorno famiglia Pollastrelli, queste sono le notizie e i podcast del giorno consigliati. Buon ascolto.',
+  saluto: 'Un saluto a tutta la famiglia e bentrovati. Queste sono le notizie e i podcast del giorno consigliati. Buon ascolto e buona giornata.',
   chiusura: '…e ora i podcast consigliati di oggi. Buona giornata!',
   titoli: 'Titoli del TG di Famiglia',  // annunciati dopo il saluto, poi i titoli delle notizie uno per uno
   attesaMassimaTitoli: 12000,   // ms di musica d'attesa oltre i quali un titolo lo legge la voce del telefono
@@ -461,9 +463,9 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.4.0',
+  versione: '2.5.0',
 };
-const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
+const VERSIONE_CACHE = 'v8'; // cambiarla invalida la cache audio/testo
 
 const TOTALE_NOTIZIE = CONFIG.sezioni.reduce((t, x) => t + x.quante, 0);
 
@@ -956,6 +958,7 @@ async function testoLibero(prompt, conRicerca = false) {
 /** opzioni.voce = voce diversa da quella del TG; opzioni.voci = [{nome, voce}] per un dialogo a due voci
  *  (il testo ha una battuta per riga, "Nome: battuta"). */
 async function sintetizza(testo, onAttesa, comePCM = false, opzioni = {}) {
+  if (!chiave) throw new ErroreGemini('senzaChiave', 'Senza chiave la voce di Gemini non è disponibile: legge il telefono.');
   return conModelli(CONFIG.modelliVoce, async (modello, giro) => {
     const j = await chiamaGemini(modello, {
       // Solo il testo da leggere, senza istruzioni: i modelli TTS a volte leggono ad alta voce anche quelle.
@@ -2181,10 +2184,17 @@ function renderVarie() {
     return h + '</section>';
   }).join('');
   // ---- scheda VARIE: meteo, stasera in TV, accadde oggi (la rassegna è fissa nella pagina)
-  const giorni = meteoDaDomani(g.meteo).slice(0, 7);
-  let h = `<section data-sezione="meteo" class="nascosto"><h2>🌦️ Meteo a ${esc(g.meteo?.localita || 'Viterbo')}</h2>`;
-  h += v.meteo ? `<div class="scheda"><p>${esc(v.meteo)}</p>
-      <button class="btn rosso" data-ascolta="meteo" type="button">▶️ Ascolta il meteo</button>
+  // località a scelta (resta salvata): Viterbo, Vitorchiano, Orvieto, Civitavecchia, Tolfa
+  const luoghi = g.meteo_luoghi?.length ? g.meteo_luoghi : (g.meteo ? [{ ...g.meteo, id: 'viterbo' }] : []);
+  const mt = luoghi.find((l) => l.id === ls.get('tg_meteo')) || luoghi[0];
+  const testoM = mt ? (v.meteo_luoghi?.[mt.id] || (mt.id === 'viterbo' ? v.meteo : testoMeteo(mt))) : '';
+  const idM = !mt || mt.id === 'viterbo' ? 'meteo' : 'meteo-' + mt.id;
+  if (testoM) registroAscolto[idM] = { titolo: 'Meteo a ' + mt.localita, testo: testoM };
+  const giorni = mt ? meteoDaDomani(mt).slice(0, 7) : [];
+  let h = `<section data-sezione="meteo" class="nascosto"><h2>🌦️ Meteo${mt ? ' a ' + esc(mt.localita) : ''}</h2>`
+    + (luoghi.length > 1 ? `<div class="scelte">${luoghi.map((l) => `<button class="btn ${l.id === mt.id ? 'attiva' : ''}" data-luogo="${esc(l.id)}" type="button">${esc(l.localita)}</button>`).join('')}</div>` : '');
+  h += testoM ? `<div class="scheda"><p>${esc(testoM)}</p>
+      <button class="btn rosso" data-ascolta="${idM}" type="button">▶️ Ascolta il meteo</button>
       <table class="meteo-giorni"><tbody>${giorni.map((d) => `<tr><td>${esc(giornoNome(d.data))}</td><td>${meteoCodice(d.codice).emoji} ${esc(meteoCodice(d.codice).testo)}</td><td style="white-space:nowrap">${d.tmin}° / ${d.tmax}°</td><td style="white-space:nowrap">💧 ${d.pioggia_prob ?? '–'}%</td></tr>`).join('')}</tbody></table>
     </div>` : '<p class="scheda">Le previsioni non sono disponibili oggi.</p>';
   h += '</section><section data-sezione="tv" class="nascosto"><h2>📺 Stasera in TV</h2>';
@@ -2225,7 +2235,7 @@ function renderExtra() {
   const pa = x?.partite_oggi;
   h += sezione('partite', '⚽ Partite di oggi', spiega('Orario e canale TV delle partite di oggi che riguardano le squadre italiane: Serie A, coppe e Nazionale. Gli orari vengono dalle notizie raccolte al mattino: se manca il canale, non era indicato.')
     + (pa?.testo ? `<div class="scheda"><p>${esc(pa.testo)}</p>${ascolta('partite', 'Partite di oggi', pa.testo)}${elenco(pa.lista, (m) => `<li><b>${esc(m.ora || '—')}</b> · ${esc(m.partita)}<span>${esc([m.competizione, m.canale].filter(Boolean).join(' · '))}</span></li>`)}</div>` : nonPronto));
-  const citta = [['roma', 'Roma'], ['viterbo', 'Viterbo'], ['tuscia', 'Tuscia'], ['orvieto', 'Orvieto']];
+  const citta = [['roma', 'Roma'], ['viterbo', 'Viterbo'], ['tuscia', 'Tuscia'], ['orvieto', 'Orvieto'], ['civitavecchia', 'Civitavecchia'], ['tolfa', 'Tolfa']];
   const scelta = citta.some(([c]) => c === ls.get('tg_citta')) ? ls.get('tg_citta') : 'viterbo';
   const cu = x?.cultura?.[scelta];
   h += sezione('cultura', '🎭 Concerti, teatro e mostre', spiega('Che cosa c\'è da vedere e da ascoltare nei prossimi 30 giorni. Scegli la zona:')
@@ -2239,8 +2249,14 @@ function renderExtra() {
   const ev = x?.eventi_weekend;
   h += sezione('eventi', '🎪 Eventi e sagre nella Tuscia', spiega(`Sagre, feste e appuntamenti in provincia di Viterbo nel fine settimana${ev?.periodo ? ' ' + esc(ev.periodo) : ''}.`)
     + (ev?.testo ? `<div class="scheda"><p>${esc(ev.testo)}</p>${ascolta('eventi', 'Eventi e sagre nella Tuscia', ev.testo)}${elenco(ev.lista, (e2) => `<li><b>${esc(e2.titolo)}</b><span>${esc([e2.dove, e2.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
-      : (x ? '<p class="scheda">Per questo fine settimana non risultano eventi nelle notizie raccolte.</p>' : nonPronto)));
-  h += sezione('differenziata', '♻️ Raccolta differenziata', spiega('Che cosa mettere fuori stasera e il calendario dei ritiri porta a porta, per Viterbo e per Vitorchiano.') + differenziataHtml(g?.differenziata));
+      : (x ? '<p class="scheda">Per questo fine settimana non risultano eventi nelle notizie raccolte.</p>' : nonPronto))
+    + [['civitavecchia', 'Civitavecchia'], ['tolfa', 'Tolfa'], ['orvieto', 'Orvieto']].map(([c, nome]) => {
+      const ec = x?.eventi_citta?.[c];
+      if (!x) return '';
+      return `<h3>📍 ${nome}</h3>` + (ec?.testo ? `<div class="scheda"><p style="margin-top:0">${esc(ec.testo)}</p>${ascolta('eventi-' + c, 'Eventi e sagre a ' + nome, ec.testo)}${elenco(ec.lista, (e2) => `<li><b>${esc(e2.titolo)}</b><span>${esc([e2.dove, e2.quando].filter(Boolean).join(' · '))}</span></li>`)}</div>`
+        : `<p class="scheda">Per questo fine settimana a ${nome} non risultano eventi nelle notizie raccolte.</p>`);
+    }).join(''));
+  h += sezione('differenziata', '♻️ Raccolta differenziata', spiega('Che cosa mettere fuori stasera e il calendario dei ritiri porta a porta: Viterbo, Vitorchiano, Civitavecchia e Orvieto.') + differenziataHtml(g?.differenziata));
   const d = x?.detto;
   h += sezione('detto', '💬 Il detto del giorno', spiega('Ogni giorno un proverbio in dialetto viterbese oppure orvietano, con la traduzione e la spiegazione.')
     + (d?.proverbio ? `<article class="scheda accadde"><p class="piccolo" style="margin-top:0">In dialetto ${esc(d.dialetto.toLowerCase())}</p><p class="detto">“${esc(d.proverbio)}”</p>
@@ -2279,8 +2295,12 @@ function renderTech() {
   h += sezione('tpodcast', '🎧 Podcast AI', spiega('Una decina di podcast italiani su tecnologia e intelligenza artificiale, con l\'ultima puntata uscita e due righe che la spiegano. Tocca ▶️ per ascoltarla qui.')
     + (x?.podcast?.length ? x.podcast.map((p2, i) => schedaPodcast(p2, `data-podcast-tech="${i}"`)).join('') : nonPronto));
   // Radio AI
-  h += sezione('tradio', '📻 Radio AI', spiega('Radio che non esistono? Quasi: non ci sono radio dedicate solo all\'intelligenza artificiale, quindi qui trovi le dieci radio di parola che ne parlano più spesso, insieme a tecnologia, scienza e trend del futuro. Le ultime quattro sono in inglese, francese e tedesco.')
-    + (t?.radio?.length ? `<div class="scheda">${t.radio.map((r, i) => `<div style="margin-bottom:14px"><button class="btn rosso" data-radio-tech="${i}" type="button" style="width:100%;justify-content:flex-start">📻 ${esc(r.nome)}</button><p class="piccolo" style="margin:6px 0 0">${esc(r.perche)}</p></div>`).join('')}<p class="piccolo" id="statoRadioTech"></p></div>` : nonPronto));
+  h += sezione('tradio', '📻 Radio AI', spiega('Dieci radio da ascoltare per stare al passo con tecnologia, intelligenza artificiale e trend del futuro: informazione, cultura digitale e intrattenimento. Tocca una radio per ascoltarla in diretta.')
+    + (t?.radio?.length ? `<div class="scheda">${t.radio.map((r, i) => {
+      const ok = r.url || r.episodio;
+      const sotto = r.episodio ? `${r.perche} Ultima puntata: “${r.episodio.titolo}”.` : r.perche;
+      return `<div style="margin-bottom:14px"><button class="btn ${ok ? 'rosso' : ''}" data-radio-tech="${i}" type="button" style="width:100%;justify-content:flex-start" ${ok ? '' : 'disabled'}>📻 ${esc(r.nome)}</button><p class="piccolo" style="margin:6px 0 0">${esc(sotto)}</p></div>`;
+    }).join('')}<p class="piccolo" id="statoRadioTech"></p></div>` : nonPronto));
   // Idee AI
   h += sezione('tidee', '💡 Idee AI', spiega('Ogni giorno dieci idee nuove da realizzare con la tecnologia e l\'intelligenza artificiale: per la famiglia, il lavoro, una piccola impresa o il territorio. Con il primo passo da fare e quanto è difficile.')
     + (x?.idee?.length ? ascolta('tech-idee', 'Idee AI', x.idee.map((d) => `${d.titolo}. ${d.idea}`).join('\n\n'), '▶️ Ascolta le idee')
@@ -2386,6 +2406,29 @@ function differenziataHtml(dati) {
         <table class="meteo-giorni"><tbody>${prossimi.map((c) => `<tr><td>${esc(giornoNome(c.data))}</td><td>${esc(c.materiali.join(', '))}</td></tr>`).join('')}</tbody></table>`
         : '<p style="margin-top:0">Oggi non sono riuscito a scaricare il calendario dal sito del Comune.</p>')
       + `<p class="piccolo">${esc(vi.esposizione)} ${esc(vi.isola_ecologica)} ${esc(vi.telefono)}. <a href="${esc(linkSicuro(vi.fonte))}" target="_blank" rel="noopener">Calendario del Comune</a>.</p></div>`;
+  }
+  const cv = dati.civitavecchia;
+  if (cv?.zone?.length) {
+    // a Civitavecchia il calendario indica la SERA in cui esporre (dalle 21)
+    const zona = cv.zone.find((z) => z.id === ls.get('tg_zona_civ')) || cv.zone[0];
+    const ieri = new Date(Date.now() - 86400000);
+    h += `<h3>⚓ Civitavecchia</h3><div class="scheda"><p style="margin-top:0"><b>Scegli la tua zona</b> (<a href="${esc(linkSicuro(cv.elenco_vie))}" target="_blank" rel="noopener">elenco delle vie</a>):</p>
+      <div class="scelte">${cv.zone.map((z) => `<button class="btn ${z.id === zona.id ? 'attiva' : ''}" data-zona-civ="${z.id}" type="button">${esc(z.nome)}</button>`).join('')}</div>
+      ${riga('Stasera metti fuori:', zona.sere[GIORNI_BREVI[oggi.getDay()]])}${riga('Oggi ritirano:', zona.sere[GIORNI_BREVI[ieri.getDay()]])}
+      <table class="meteo-giorni"><tbody>${[1, 2, 3, 4, 5, 6, 0].map((n) => `<tr><td>${GIORNI_LUNGHI[n]} sera</td><td>${esc(zona.sere[GIORNI_BREVI[n]].join(', ') || '—')}</td></tr>`).join('')}</tbody></table>
+      <p class="piccolo">${esc(cv.esposizione)} ${esc(cv.festivi)} ${esc(cv.gestore)}: ${esc(cv.telefono)}. <a href="${esc(linkSicuro(cv.fonte))}" target="_blank" rel="noopener">Calendari ufficiali</a>.</p></div>`;
+  }
+  const ov = dati.orvieto;
+  if (ov?.zone?.length) {
+    const zona = ov.zone.find((z) => z.id === ls.get('tg_zona_orv')) || ov.zone[0];
+    const del = (giorno) => (zona.calendario || []).find((c) => c.data === iso(giorno))?.materiali;
+    const prossimi = (zona.calendario || []).filter((c) => c.data >= iso(oggi)).slice(0, 10);
+    h += `<h3>🏰 Orvieto e Ciconia</h3><div class="scheda"><p style="margin-top:0"><b>Scegli la tua zona</b> (<a href="${esc(linkSicuro(ov.junker))}" target="_blank" rel="noopener">cerca la tua via</a>):</p>
+      <div class="scelte">${ov.zone.map((z) => `<button class="btn ${z.id === zona.id ? 'attiva' : ''}" data-zona-orv="${z.id}" type="button">${esc(z.nome)}</button>`).join('')}</div>`
+      + (zona.calendario?.length ? `${riga('Stasera metti fuori:', del(new Date(Date.now() + 86400000)))}${riga('Oggi ritirano:', del(oggi))}
+        <table class="meteo-giorni"><tbody>${prossimi.map((c) => `<tr><td>${esc(giornoNome(c.data))}</td><td>${esc(c.materiali.join(', '))}</td></tr>`).join('')}</tbody></table>`
+        : '<p>Oggi non sono riuscito a scaricare il calendario di questa zona.</p>')
+      + `<p class="piccolo">${esc(ov.nota_ciconia)} ${esc(ov.esposizione)} ${esc(ov.gestore)}: ${esc(ov.telefono)}.</p></div>`;
   }
   return h;
 }
@@ -2583,7 +2626,17 @@ async function tgInDialetto(dialetto) {
     const k = `dialetto:${VERSIONE_CACHE}:${Ed.grezzo?.generato}:${dialetto}:2`;
     let testo = (await db.get(k))?.testo;
     if (!testo) {
-      testo = await testoLibero(`Riscrivi il telegiornale qui sotto in dialetto ${dialetto}${dialetto === 'romano' ? ' (romanesco)' : dialetto === 'viterbese' ? ' (il dialetto di Viterbo e della Tuscia)' : ' (il dialetto di Orvieto, in Umbria)'}, come lo racconterebbe una persona del posto, simpatica ma rispettosa.${dialetto === 'orvietano' ? `
+      const DESCRIZIONI = {
+        romano: ' (romanesco)', viterbese: ' (il dialetto di Viterbo e della Tuscia)', orvietano: ' (il dialetto di Orvieto, in Umbria)',
+        civitavecchiese: ' (il dialetto di Civitavecchia, città di porto sul litorale a nord di Roma)', tolfetano: ' (il dialetto di Tolfa, paese dei Monti della Tolfa vicino a Civitavecchia)',
+      };
+      const STILI = {
+        civitavecchiese: `
+Deve suonare civitavecchiese: una parlata laziale di mare, parente del romanesco ma più aspra e veloce, come quella di un pescatore o di un portuale che racconta le notizie al bar del porto. Usa forme come "mo'" per "adesso", "'nnamo" e "'namo", "'sto" e "'sta", "nun" per "non", raddoppi tipici ("da' a mmangià"), troncamenti degli infiniti ("magnà", "annà", "fà") e qualche paragone preso dal mare, dal porto, dalle navi e dalla pesca. Scrivi le parole come si pronunciano.`,
+        tolfetano: `
+Deve suonare tolfetano: la parlata dei Monti della Tolfa, laziale e campagnola, di butteri, allevatori e boscaioli, più lenta e terrosa del romanesco. Usa troncamenti degli infiniti ("magnà", "annà", "fà"), "nun" per "non", "mo'" per "adesso", "'sto" e "'sta", e qualche paragone preso dai cavalli, dalle vacche maremmane, dai boschi, dalle castagne e dalla vita di paese. Scrivi le parole come si pronunciano.`,
+      };
+      testo = await testoLibero(`Riscrivi il telegiornale qui sotto in dialetto ${dialetto}${DESCRIZIONI[dialetto] || ''}, come lo racconterebbe una persona del posto, simpatica ma rispettosa.${STILI[dialetto] || ''}${dialetto === 'orvietano' ? `
 Deve suonare proprio umbro e campagnolo, non romano né toscano: la parlata di un contadino della campagna orvietana che racconta le notizie al bar del paese. Usa le forme tipiche dell'Umbria: infiniti tronchi (magnà, fà, dì, gì per "andare": "so' gito", "gimo"), "nun" per "non", "mo'" per "adesso", "'l" e "lu" per l'articolo, "quillo" e "quisto", "ce sta", "'sto" e "'sta", "frego" e "freghi" per "ragazzo" e "ragazzi", "'n" per "un" e per "in", "tocca" per "bisogna", vocali finali smorzate e raddoppi dove servono. Infila qualche paragone preso dalla campagna (la vigna, l'orto, l'olio, le bestie, il tempo che fa) e qualche esclamazione da paese. Scrivi le parole come si pronunciano, in modo che letto ad alta voce si senta la cadenza umbra.` : ''}
 Comincia con un saluto in dialetto, poi racconta ogni notizia in 2 o 3 frasi (un paragrafo per notizia, separati da una riga vuota) e chiudi con un saluto. In tutto tra 450 e 550 parole.
 Mantieni esatti i fatti, i nomi e i numeri: cambia solo il modo di dirli. Usa un dialetto comprensibile, con grafia semplice e leggibile ad alta voce; niente volgarità, niente prese in giro di persone o tragedie. Rispondi solo con il testo.
@@ -2609,11 +2662,16 @@ function toccoSchede(e) {
   if ((b = e.target.closest('[data-radio-tech]'))) {
     const r = Ed.grezzo?.tech?.radio?.[+b.dataset.radioTech];
     if (!r) return;
+    if (r.episodio) return suonaPodcast({ nome: r.nome, episodio: r.episodio.titolo, audio: r.episodio.audio, link: r.episodio.link });
+    if (!r.url) return;
     if (!leggibile(r)) { $('statoRadioTech').textContent = `${r.nome} non si può ascoltare su questo dispositivo: prova dal telefono.`; return; }
     $('statoRadioTech').textContent = '';
     return suonaDiretta(r.nome, r.url, 'Radio in diretta');
   }
   if ((b = e.target.closest('[data-citta]'))) { ls.set('tg_citta', b.dataset.citta); return renderExtra(); }
+  if ((b = e.target.closest('[data-luogo]'))) { ls.set('tg_meteo', b.dataset.luogo); return renderVarie(); }
+  if ((b = e.target.closest('[data-zona-civ]'))) { ls.set('tg_zona_civ', b.dataset.zonaCiv); return renderExtra(); }
+  if ((b = e.target.closest('[data-zona-orv]'))) { ls.set('tg_zona_orv', b.dataset.zonaOrv); return renderExtra(); }
   if ((b = e.target.closest('[data-zona]'))) { ls.set('tg_zona_viterbo', b.dataset.zona); return renderExtra(); }
   if ((b = e.target.closest('[data-dialetto]'))) return tgInDialetto(b.dataset.dialetto);
   if ((b = e.target.closest('[data-ascolta]')) && registroAscolto[b.dataset.ascolta]) {

@@ -254,6 +254,21 @@ def scegli_podcast(grezzo: dict, scelti: list[dict], quanti: int) -> list[dict]:
     return lista
 
 
+def testo_meteo_luogo(meteo: dict, giorno: str) -> str:
+    """Previsioni riassunte per una località (testo semplice, senza Gemini)."""
+    d = meteo_da_domani({"meteo": meteo, "giorno": giorno})
+    if not d:
+        return ""
+    dom = d[0]
+    t = f"Domani a {meteo['localita']}: {meteo_testo(dom['codice'])}, minima {dom['tmin']} e massima {dom['tmax']} gradi"
+    if dom.get("pioggia_prob") is not None:
+        t += f", probabilità di pioggia {dom['pioggia_prob']} per cento"
+    t += "."
+    if len(d) > 1:
+        t += " Nei giorni successivi: " + ", ".join(f"{giorno_nome(x['data'], False)} {meteo_testo(x['codice'])}, massima {x['tmax']} gradi" for x in d[1:6]) + "."
+    return t
+
+
 def testo_meteo(grezzo: dict) -> str:
     d = meteo_da_domani(grezzo)
     if not d:
@@ -302,6 +317,9 @@ def componi(grezzo: dict, j: dict, cfg: dict) -> dict:
         squadre.append({**q, "notizie": [completa_notizia(grezzo, n, q["id"]) for n in scelte[:quante]],
                         "podcast": [{**p, "spiegazione": riassunto(p.get("descrizione"))} for p in suoi[: cfg["podcast_squadra"]]]})
     varie = {"squadre": squadre, "meteo": (j.get("meteo") or "").strip() or testo_meteo(grezzo), "tv": (j.get("tv") or "").strip() or testo_tv(grezzo)}
+    # le altre località (Vitorchiano, Orvieto, Civitavecchia, Tolfa): testo riassunto dai dati
+    varie["meteo_luoghi"] = {m["id"]: (varie["meteo"] if m["id"] == "viterbo" else testo_meteo_luogo(m, grezzo["giorno"]))
+                             for m in grezzo.get("meteo_luoghi") or [] if m.get("giorni")}
     # scaletta parlata: una traccia per notizia + la traccia finale
     blocchi = []
     for k, n in enumerate(notizie):
@@ -318,7 +336,10 @@ def componi(grezzo: dict, j: dict, cfg: dict) -> dict:
 
 # ================================================================ sezioni extra (VARIE e NOVITÀ)
 CITTA = [("roma", "Roma", ["roma"]), ("viterbo", "Viterbo città", ["eventi", "tuscia"]),
-         ("tuscia", "Tuscia (provincia di Viterbo, esclusa la città)", ["eventi", "tuscia"]), ("orvieto", "Orvieto", ["orvieto"])]
+         ("tuscia", "Tuscia (provincia di Viterbo, esclusa la città)", ["eventi", "tuscia"]), ("orvieto", "Orvieto", ["orvieto"]),
+         ("civitavecchia", "Civitavecchia", ["civitavecchia"]), ("tolfa", "Tolfa", ["civitavecchia"])]
+# eventi e sagre del fine settimana nelle città vicine (sotto quelli della Tuscia)
+CITTA_EVENTI = [("civitavecchia", "Civitavecchia"), ("tolfa", "Tolfa"), ("orvieto", "Orvieto")]
 SPORT = [("tennis", "Tennis (Sinner e gli altri italiani)"), ("formula1", "Formula 1"), ("motogp", "MotoGP")]
 
 
@@ -347,12 +368,13 @@ COMPITO 5 – "detto": il detto del giorno. Un proverbio popolare in dialetto {'
 Usa SOLO le informazioni presenti negli elenchi qui sotto: non inventare eventi, date, orari, luoghi, canali TV o risultati. Quando per una voce non c'è materiale, lascia "testo" vuoto ("") e "lista" vuota. I testi servono per essere letti ad alta voce: frasi brevi, niente elenchi puntati né emoji, orari e numeri scritti in modo leggibile. Scrivi in italiano corretto, con accenti e apostrofi normali.
 
 COMPITO 1 – "eventi_weekend": eventi e sagre nella Tuscia (provincia di Viterbo) previsti nel fine settimana da venerdì {ven.day} {MESI[ven.month - 1]} a domenica {dom.day} {MESI[dom.month - 1]}. "lista": fino a 10 voci con "titolo", "dove" (comune e luogo), "quando" (giorno e ora, se indicati). "testo": tra 80 e 110 parole che presentano gli appuntamenti principali.
+Poi "eventi_citta": gli eventi e le sagre dello stesso fine settimana a "civitavecchia", "tolfa" e "orvieto" (dagli elenchi CIVITAVECCHIA E TOLFA e ORVIETO; per Tolfa solo ciò che riguarda Tolfa). Per ogni città "lista" (fino a 6 voci, stessi campi) e "testo" (tra 40 e 70 parole).
 
 COMPITO 2 – "altri_sport": tre testi, "tennis" (Sinner e gli altri italiani), "formula1" e "motogp". Ciascuno tra 60 e 80 parole: notizie principali, risultati più recenti e, solo se indicati negli elenchi, prossimi appuntamenti con giorno, orario e canale TV.
 
 COMPITO 3 – "partite_oggi": le partite di calcio di oggi, {oggi}, che riguardano squadre italiane (Serie A, Coppa Italia, coppe europee, Nazionale). "lista": per ogni partita "partita", "competizione", "ora", "canale" (stringa vuota se orario o canale non risultano dagli elenchi). "testo": tra 40 e 80 parole. Se dagli elenchi non risultano partite in programma oggi scrivi nel testo: "Dalle notizie raccolte non risultano partite di squadre italiane in programma oggi." e lascia la lista vuota.
 
-COMPITO 4 – "cultura": concerti, spettacoli teatrali e mostre in programma da oggi ai prossimi 30 giorni, separati per zona: "roma", "viterbo" (la città), "tuscia" (il resto della provincia) e "orvieto". Per ogni zona "lista": fino a 8 voci con "titolo", "tipo" (concerto, teatro, mostra o altro), "dove", "quando"; "testo": tra 60 e 90 parole.
+COMPITO 4 – "cultura": concerti, spettacoli teatrali e mostre in programma da oggi ai prossimi 30 giorni, separati per zona: "roma", "viterbo" (la città), "tuscia" (il resto della provincia), "orvieto", "civitavecchia" e "tolfa" (per queste due usa l'elenco CIVITAVECCHIA E TOLFA, assegnando a Tolfa solo ciò che riguarda Tolfa). Per ogni zona "lista": fino a 8 voci con "titolo", "tipo" (concerto, teatro, mostra o altro), "dove", "quando"; "testo": tra 60 e 90 parole.
 {detto}
 
 Rispondi solo con il JSON richiesto.
@@ -362,6 +384,9 @@ EVENTI E NOTIZIE DALLA TUSCIA:
 
 ORVIETO:
 {elenco(['orvieto'], 45)}
+
+CIVITAVECCHIA E TOLFA:
+{elenco(['civitavecchia'], 70)}
 
 ROMA:
 {elenco(['roma'], 55)}
@@ -394,9 +419,10 @@ def schema_extra() -> dict:
     def blocco(campi_lista):
         return ogg([], {"lista": {"type": "ARRAY", "items": ogg(campi_lista)}, "testo": S})
 
-    ordine = ["eventi_weekend", "altri_sport", "partite_oggi", "cultura", "detto"]
+    ordine = ["eventi_weekend", "eventi_citta", "altri_sport", "partite_oggi", "cultura", "detto"]
     return {"type": "OBJECT", "required": ordine, "propertyOrdering": ordine, "properties": {
         "eventi_weekend": blocco(["titolo", "dove", "quando"]),
+        "eventi_citta": ogg([], {c: blocco(["titolo", "dove", "quando"]) for c, _ in CITTA_EVENTI}),
         "altri_sport": ogg([c for c, _ in SPORT]),
         "partite_oggi": blocco(["partita", "competizione", "ora", "canale"]),
         "cultura": ogg([], {c: blocco(["titolo", "tipo", "dove", "quando"]) for c, _, _ in CITTA}),
@@ -421,6 +447,7 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
     pulito = lambda b: {"testo": ((b or {}).get("testo") or "").strip(), "lista": [x for x in ((b or {}).get("lista") or []) if any(x.values())]}  # noqa: E731
     extra = {
         "eventi_weekend": {**pulito(j.get("eventi_weekend")), "periodo": f"da venerdì {ven.day} a domenica {dom.day} {MESI[dom.month - 1]}"},
+        "eventi_citta": {c: pulito((j.get("eventi_citta") or {}).get(c)) for c, _ in CITTA_EVENTI},
         "altri_sport": {c: ((j.get("altri_sport") or {}).get(c) or "").strip() for c, _ in SPORT},
         "partite_oggi": pulito(j.get("partite_oggi")),
         "cultura": {c: pulito((j.get("cultura") or {}).get(c)) for c, _, _ in CITTA},
@@ -432,6 +459,9 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
     voce = {}
     if extra["eventi_weekend"]["testo"]:
         voce["eventi"] = "Eventi e sagre nella Tuscia.\n\n" + extra["eventi_weekend"]["testo"]
+    for c, nome in CITTA_EVENTI:
+        if extra["eventi_citta"][c]["testo"]:
+            voce[f"eventi-{c}"] = f"Eventi e sagre a {nome}.\n\n" + extra["eventi_citta"][c]["testo"]
     for c, nome in SPORT:
         if extra["altri_sport"][c]:
             voce[f"sport-{c}"] = f"{nome.split(' (')[0]}.\n\n" + extra["altri_sport"][c]
@@ -444,7 +474,8 @@ def scrivi_extra(chiave: str, cfg: dict, grezzo: dict) -> tuple[dict, dict]:
         d = extra["detto"]
         voce["detto"] = f"Il detto del giorno, in dialetto {d['dialetto']}.\n\n{d['proverbio']}.\n\nVuol dire: {d['traduzione']}.\n\n{d['spiegazione']}"
     log(f"  extra: {len(extra['eventi_weekend']['lista'])} eventi, {len(extra['partite_oggi']['lista'])} partite, "
-        f"cultura {[len(extra['cultura'][c]['lista']) for c, _, _ in CITTA]}, detto {'sì' if extra.get('detto') else 'no'}")
+        f"città {[len(extra['eventi_citta'][c]['lista']) for c, _ in CITTA_EVENTI]}, cultura {[len(extra['cultura'][c]['lista']) for c, _, _ in CITTA]}, "
+        f"detto {'sì' if extra.get('detto') else 'no'}")
     return extra, voce
 
 
@@ -719,6 +750,9 @@ async def genera_audio(ed: dict, rassegne: dict, cfg: dict, cartella: Path, voce
             varie[f"squadra-{q['id']}"] = f"Le notizie: {q['nome']}.\n\n" + "\n\n".join(f"{n['titolo']}.\n\n{n['testo']}" for n in q["notizie"])
     if ed["varie"]["meteo"]:
         varie["meteo"] = ed["varie"]["meteo"]
+    for luogo, testo in (ed["varie"].get("meteo_luoghi") or {}).items():
+        if testo and luogo != "viterbo":
+            varie[f"meteo-{luogo}"] = testo
     if ed["varie"]["tv"]:
         varie["tv"] = "Stasera in TV.\n\n" + ed["varie"]["tv"]
     if ed["accadde"]:
