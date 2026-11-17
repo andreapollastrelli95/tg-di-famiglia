@@ -262,25 +262,41 @@ def raccogli_podcast() -> list[dict]:
 
 
 # ---------------------------------------------------------------- meteo
+def _giorni_meteo(d: dict) -> list[dict]:
+    return [{
+        "data": d["time"][i], "codice": d["weather_code"][i],
+        "tmax": round(d["temperature_2m_max"][i]), "tmin": round(d["temperature_2m_min"][i]),
+        "pioggia_prob": d["precipitation_probability_max"][i], "pioggia_mm": d["precipitation_sum"][i],
+        "vento": round(d["wind_speed_10m_max"][i]),
+    } for i in range(len(d["time"]))]
+
+
+def raccogli_meteo_luoghi(luoghi: list[dict]) -> list[dict]:
+    """Previsioni giornaliere da Open-Meteo (gratuito, senza chiave) per tutte le località in UNA richiesta,
+    con più tentativi: a volte il servizio risponde lentamente ai server di GitHub."""
+    if not luoghi:
+        return []
+    q = urllib.parse.urlencode({
+        "latitude": ",".join(str(l["lat"]) for l in luoghi), "longitude": ",".join(str(l["lon"]) for l in luoghi),
+        "timezone": "Europe/Rome", "forecast_days": 8,
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
+    })
+    for tentativo in range(4):
+        try:
+            dati = json.loads(scarica(f"https://api.open-meteo.com/v1/forecast?{q}", timeout=45))
+            dati = dati if isinstance(dati, list) else [dati]
+            out = [{"id": l.get("id"), "localita": l["localita"], "giorni": _giorni_meteo(d["daily"])} for l, d in zip(luoghi, dati)]
+            log(f"  meteo: {', '.join(m['localita'] for m in out)} ({len(out[0]['giorni'])} giorni)")
+            return out
+        except Exception as e:  # noqa: BLE001
+            log(f"  ! meteo, tentativo {tentativo + 1}: {e}")
+            time.sleep(10 * (tentativo + 1))
+    return []
+
+
 def raccogli_meteo(cfg: dict) -> dict | None:
-    """Previsioni giornaliere da Open-Meteo (gratuito, senza chiave)."""
-    try:
-        q = urllib.parse.urlencode({
-            "latitude": cfg["lat"], "longitude": cfg["lon"], "timezone": "Europe/Rome", "forecast_days": 8,
-            "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
-        })
-        d = json.loads(scarica(f"https://api.open-meteo.com/v1/forecast?{q}"))["daily"]
-        giorni = [{
-            "data": d["time"][i], "codice": d["weather_code"][i],
-            "tmax": round(d["temperature_2m_max"][i]), "tmin": round(d["temperature_2m_min"][i]),
-            "pioggia_prob": d["precipitation_probability_max"][i], "pioggia_mm": d["precipitation_sum"][i],
-            "vento": round(d["wind_speed_10m_max"][i]),
-        } for i in range(len(d["time"]))]
-        log(f"  meteo {cfg['localita']}: {len(giorni)} giorni")
-        return {"localita": cfg["localita"], "giorni": giorni}
-    except Exception as e:  # noqa: BLE001
-        log(f"  ! meteo: {e}")
-        return None
+    m = raccogli_meteo_luoghi([cfg])
+    return m[0] if m else None
 
 
 # ---------------------------------------------------------------- stasera in TV
@@ -477,10 +493,10 @@ def main():
         "radio_preferite": varie.get("radio_preferite", []),
         "differenziata": raccogli_differenziata(),
         "tech": raccogli_tech(),
-        "meteo": raccogli_meteo(varie["meteo"]) if varie.get("meteo") else None,
-        "meteo_luoghi": [m for m in (dict(raccogli_meteo(l) or {}, id=l["id"]) for l in varie.get("meteo_luoghi", [])) if m.get("giorni")],
+        "meteo_luoghi": raccogli_meteo_luoghi(varie.get("meteo_luoghi") or ([dict(varie["meteo"], id="viterbo")] if varie.get("meteo") else [])),
         "tv": raccogli_tv(varie["tv"]) if varie.get("tv") else None,
     }
+    dati["meteo"] = next((m for m in dati["meteo_luoghi"] if m.get("id") == "viterbo"), dati["meteo_luoghi"][0] if dati["meteo_luoghi"] else None)
     (uscita / "grezzo.json").write_text(json.dumps(dati, ensure_ascii=False, indent=1), encoding="utf-8")
     if varie.get("settimana"):
         aggiorna_settimana(varie["settimana"], notizie, dati["giorno"], uscita)
