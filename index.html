@@ -295,6 +295,7 @@ dialog h2{margin-top:0}
         <button class="btn" data-apri="detto" type="button">💬 Il detto del giorno</button>
         <button class="btn" data-apri="podcastfai" type="button">🎙️ Podcast fai da te</button>
         <button class="btn" data-apri="consiglio" type="button">🧠 Gran consiglio dell'IA</button>
+        <button class="btn" data-apri="cappelli" type="button">🎩 6 cappelli per pensare</button>
         <button class="btn" data-apri="dialetto" type="button">🗣️ TG in dialetto</button>
       </div>
       <div id="contenutoNovita"></div>
@@ -318,6 +319,18 @@ dialog h2{margin-top:0}
           <div class="riga-btn"><button class="btn pieno" id="creaConsiglio" type="button">🧠 Riunisci il consiglio</button></div>
           <p class="stato" id="statoConsiglio" role="status" aria-live="polite"></p>
           <div id="testoConsiglio"></div>
+        </div>
+      </section>
+      <section data-sezione="cappelli" class="nascosto">
+        <h2>🎩 6 cappelli per pensare</h2>
+        <div class="scheda">
+          <p class="spiega">Fai una domanda o racconta un problema. Sei voci lo guardano ognuna dal suo punto di vista, secondo il metodo dei "Sei cappelli per pensare" di Edward de Bono, e dicono come lo risolverebbero. Alla fine una settima voce riassume e propone una conclusione sensata.</p>
+          <p class="piccolo">⚪ Bianco: fatti e dati · 🔴 Rosso: emozioni e intuito · ⚫ Nero: rischi e prudenza · 🟡 Giallo: vantaggi e ottimismo · 🟢 Verde: idee nuove · 🔵 Blu: metodo e organizzazione</p>
+          <label for="domandaCappelli"><b>Qual è la domanda?</b></label>
+          <textarea id="domandaCappelli" class="campo" rows="4" placeholder="Es. Conviene vendere la casa dei nonni o ristrutturarla per affittarla?"></textarea>
+          <div class="riga-btn"><button class="btn pieno" id="creaCappelli" type="button">🎩 Indossa i sei cappelli</button></div>
+          <p class="stato" id="statoCappelli" role="status" aria-live="polite"></p>
+          <div id="testoCappelli"></div>
         </div>
       </section>
       <section data-sezione="dialetto" class="nascosto">
@@ -398,7 +411,7 @@ const CONFIG = {
   podcast: 10,
   notizieSquadra: 3,   // scheda VARIE: notizie per ogni squadra
   podcastSquadra: 2,   // scheda VARIE: podcast per ogni squadra
-  versione: '2.1.0',
+  versione: '2.2.0',
 };
 const VERSIONE_CACHE = 'v7'; // cambiarla invalida la cache audio/testo
 
@@ -1659,15 +1672,24 @@ async function ascoltaVaria(id, titolo, testo, mio, mp3) {
 async function suonaParteVaria(i) {
   const V = P.varia, mio = V.mio;
   if (mio !== P.token) return;
-  if (i >= V.parti.length) { fermaTutto(); return; }
+  const finito = () => V.completo !== false && i >= V.parti.length; // V.completo === false: il testo sta ancora arrivando
+  if (finito()) { fermaTutto(); return; }
   V.i = i;
   if (!V.pronti[i] && !P.inAttesa) { P.inAttesa = true; impostaSorgente(URL_TAPPETO, true); $('miniSotto').textContent = 'Preparo la voce…'; }
-  while (!V.pronti[i]) { await Promise.race([Ed.attendiCambio(), sleep(1500)]); if (mio !== P.token) return; }
+  const inizio = Date.now();
+  while (!V.pronti[i]) {
+    if (finito()) { fermaTutto(); return; }
+    // il testo c'è ma la voce tarda troppo: meglio la voce del telefono che altra musica d'attesa
+    if (V.parti[i] && V.attesaMassima && Date.now() - inizio > V.attesaMassima) break;
+    await Promise.race([Ed.attendiCambio(), sleep(1000)]);
+    if (mio !== P.token) return;
+  }
   P.inAttesa = false;
-  const conta = V.parti.length > 1 ? ` · parte ${i + 1} di ${V.parti.length}` : '';
-  if (V.pronti[i].url || V.pronti[i].blob) {
+  const pronto = V.pronti[i] || { blob: null };
+  const conta = V.parti.length > 1 || V.completo === false ? ` · parte ${i + 1}${V.completo === false ? '' : ' di ' + V.parti.length}` : '';
+  if (pronto.url || pronto.blob) {
     $('miniSotto').textContent = 'In ascolto' + conta;
-    impostaSorgente(V.pronti[i].url || URL.createObjectURL(V.pronti[i].blob));
+    impostaSorgente(pronto.url || URL.createObjectURL(pronto.blob));
   } else {
     audio.pause(); audio.loop = false;
     P.parlando = true; $('miniSotto').textContent = 'In ascolto (voce del telefono)' + conta;
@@ -2152,35 +2174,70 @@ const SCHEMA_COPIONE = {
   type: 'OBJECT', required: ['titolo', 'turni'], propertyOrdering: ['titolo', 'turni'],
   properties: { titolo: { type: 'STRING' }, turni: { type: 'ARRAY', items: { type: 'OBJECT', required: ['chi', 'testo'], propertyOrdering: ['chi', 'testo'], properties: { chi: { type: 'STRING' }, testo: { type: 'STRING' } } } } },
 };
-/** Voci dei personaggi: quella di Gemini e, come riserva, come farla sentire diversa con la voce del telefono. */
+/** Chiede a Gemini un copione e consegna ogni battuta appena è scritta (onTurno), senza aspettare la fine. */
+async function copioneInDiretta(prompt, onTurno) {
+  return conModelli(CONFIG.modelliTesto, async (modello, giro) => {
+    const prova = async (cfg) => {
+      const res = await chiamaGemini(modello, { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: cfg }, true, 20000 * giro);
+      let visti = 0;
+      const testo = await leggiSSE(res, (buf) => {
+        const lista = notizieComplete(buf, 'turni');
+        for (; visti < lista.length; visti++) onTurno(lista[visti], visti);
+      });
+      const j = JSON.parse(testo.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
+      (j.turni || []).forEach((t, i) => { if (i >= visti) onTurno(t, i); });
+      return j;
+    };
+    const base = { responseMimeType: 'application/json', responseSchema: SCHEMA_COPIONE, temperature: 0.8 };
+    try { return await prova({ ...base, thinkingConfig: { thinkingBudget: 0 } }); }
+    catch (e) { if (e.status === 400) return prova(base); throw e; }
+  }, 'tg_modello_testo');
+}
+/** Personaggi: voce di Gemini e, come riserva, come distinguerli con la voce del telefono (voce maschile se c'è, tono, ritmo). */
 const PERSONAGGI = {
   Marco: { voce: 'Charon', maschile: true, tono: 0.8, ritmo: 0.95 },
   Giulia: { voce: 'Kore', donna: true, tono: 1.1, ritmo: 0.97 },
   Leo: { voce: 'Puck', maschile: true, tono: 1.0, ritmo: 1.04 },
   Sara: { voce: 'Kore', donna: true, tono: 1.15, ritmo: 0.96 },
   Bruno: { voce: 'Charon', maschile: true, tono: 0.7, ritmo: 0.9 },
+  // I sei cappelli di de Bono e la voce che tira le somme
+  Bianco: { nome: '⚪ Cappello bianco', voce: 'Charon', maschile: true, tono: 0.85, ritmo: 0.93 },
+  Rosso: { nome: '🔴 Cappello rosso', voce: 'Aoede', donna: true, tono: 1.25, ritmo: 1.02 },
+  Nero: { nome: '⚫ Cappello nero', voce: 'Orus', maschile: true, tono: 0.6, ritmo: 0.88 },
+  Giallo: { nome: '🟡 Cappello giallo', voce: 'Puck', maschile: true, tono: 1.15, ritmo: 1.06 },
+  Verde: { nome: '🟢 Cappello verde', voce: 'Zephyr', donna: true, tono: 1.4, ritmo: 1.08 },
+  Blu: { nome: '🔵 Cappello blu', voce: 'Kore', donna: true, tono: 1.0, ritmo: 0.94 },
+  Sintesi: { nome: '🎓 La sintesi', voce: 'Leda', donna: true, tono: 1.1, ritmo: 0.9 },
 };
-/** Fa ascoltare un copione a più voci. A due voci: poche letture lunghe con due voci di Gemini; a tre voci: una lettura per battuta. */
-function ascoltaCopione(id, titolo, turni, mio) {
-  if (mio !== P.token) return;
-  const nomi = [...new Set(turni.map((t) => t.chi))];
-  const gruppi = [];
-  // Gemini legge al massimo due voci per volta: a due voci gruppi di 5 battute, a tre voci coppie di interventi
-  const passo = nomi.length <= 2 ? 5 : 2;
-  for (let i = 0; i < turni.length; i += passo) gruppi.push(turni.slice(i, i + passo));
-  const V = P.varia;
-  V.parti = gruppi.map((g) => g.map((t) => `${t.chi}: ${t.testo}`).join('\n'));
+/** Lettore di un copione che cresce: comincia a parlare appena c'è la prima battuta.
+ *  Gemini legge al massimo due voci per chiamata: a due voci gruppi di 5 battute, con più voci coppie di battute.
+ *  Il primo gruppo è corto (una o due battute) così la voce parte subito. Restituisce { aggiungi, fine }. */
+function lettoreCopione(id, nomi, mio) {
+  const V = P.varia, turni = [], gruppi = [];
+  let scritto = false;
+  const dueVoci = nomi.length <= 2;
+  const primo = dueVoci ? 2 : 1, passo = dueVoci ? 5 : 2;
+  const da = (i) => (i === 0 ? 0 : primo + (i - 1) * passo), quante = (i) => (i === 0 ? primo : passo);
+  V.completo = false; V.attesaMassima = 15000; V.parti = []; V.pronti = [];
   V.parlaParte = async (i) => { for (const t of gruppi[i]) { if (mio !== P.token) return; await parla(t.testo, PERSONAGGI[t.chi] || {}); } };
   const base = `varia:${VERSIONE_CACHE}:${Ed.grezzo?.generato || 'oggi'}:${id}`;
   (async () => {
-    for (let i = 0; i < gruppi.length; i++) {
-      if (mio !== P.token) return;
+    for (let i = 0; ; i++) {
+      for (;;) { // aspetta che ci siano le battute del gruppo i
+        if (mio !== P.token) return;
+        if (turni.length >= da(i) + quante(i) || (scritto && turni.length > da(i))) break;
+        if (scritto) { V.completo = true; Ed.avvisa(); return; }
+        await Promise.race([Ed.attendiCambio(), sleep(700)]);
+      }
+      const g = turni.slice(da(i), da(i) + quante(i));
+      gruppi[i] = g;
+      V.parti[i] = g.map((t) => `${t.chi}: ${t.testo}`).join('\n');
+      Ed.avvisa();
       let blob = null;
       const c = await db.get(`${base}:${i}`);
       if (c && c.testo === V.parti[i]) blob = c.blob;
       else if (!vocePerOggiKO) {
         try {
-          const g = gruppi[i];
           const chi = [...new Set(g.map((t) => t.chi))];
           blob = chi.length > 1
             ? await sintetizza(V.parti[i], undefined, false, { voci: chi.map((n) => ({ nome: n, voce: (PERSONAGGI[n] || {}).voce || CONFIG.voce })) })
@@ -2192,34 +2249,50 @@ function ascoltaCopione(id, titolo, turni, mio) {
           else if (e.tipo === 'quota' || e.tipo === 'modello') vocePerOggiKO = true;
         }
       }
+      if (mio !== P.token) return;
       V.pronti[i] = { blob };
       Ed.avvisa();
     }
   })();
-  suonaParteVaria(0);
+  suonaParteVaria(0); // parte appena è pronta la prima voce; intanto suona il sottofondo
+  return {
+    aggiungi(t) { turni.push(t); Ed.avvisa(); },
+    fine() { scritto = true; Ed.avvisa(); },
+  };
 }
-function mostraCopione(el, j) {
-  el.innerHTML = `<h3>${esc(j.titolo || '')}</h3>` + j.turni.map((t) => `<p class="turno ${PERSONAGGI[t.chi]?.donna ? 'donna' : ''}"><b>${esc(t.chi)}:</b> ${esc(t.testo)}</p>`).join('');
+function battutaHtml(t) {
+  const p = PERSONAGGI[t.chi] || {};
+  return `<p class="turno ${p.donna ? 'donna' : ''}"><b>${esc(p.nome || t.chi)}:</b> ${esc(t.testo)}</p>`;
 }
+/** Crea un copione a più voci e lo fa ascoltare subito: il testo compare e viene letto battuta dopo battuta, mentre Gemini lo scrive. */
 async function creaCopione({ campo, statoEl, testoEl, tasto, titolo, attesa, prompt, nomi, id }) {
-  const richiesta = $(campo).value.trim(), st = $(statoEl);
+  const richiesta = $(campo).value.trim(), st = $(statoEl), out = $(testoEl);
   st.classList.remove('errore');
   if (!richiesta) { st.textContent = 'Scrivi prima qualcosa nel riquadro.'; return; }
   if (!chiave) { st.textContent = 'Per questa funzione serve la chiave Gemini: tocca ⚙️ in alto e incollala.'; return; }
   const mio = preparaLettura(titolo, attesa); // dentro il tocco: sblocca l'audio, intanto suona il sottofondo
-  st.textContent = attesa + ' Ci vuole circa un minuto.'; $(testoEl).innerHTML = ''; $(tasto).disabled = true;
+  st.textContent = attesa + ' Tra pochi secondi comincia a parlare.'; out.innerHTML = ''; $(tasto).disabled = true;
+  const lettore = lettoreCopione(`${id}-${codice(richiesta)}-${Date.now().toString(36)}`, nomi, mio);
+  let accettati = 0, parole = 0;
   try {
-    const j = await jsonLibero(prompt(richiesta), SCHEMA_COPIONE);
-    j.turni = (j.turni || []).filter((t) => t.testo && nomi.includes(t.chi));
-    if (j.turni.length < 4) throw new Error('copione troppo corto');
-    mostraCopione($(testoEl), j);
-    st.textContent = `Pronto: ${j.turni.reduce((n, t) => n + t.testo.split(/\s+/).length, 0)} parole. Sotto trovi il testo.`;
-    ascoltaCopione(`${id}-${codice(richiesta + j.turni.length + j.turni[0].testo)}`, j.titolo || titolo, j.turni, mio);
+    const j = await copioneInDiretta(prompt(richiesta), (t, i) => {
+      if (i !== accettati || !t?.testo || !nomi.includes(t.chi)) return; // solo in ordine, solo i personaggi previsti
+      accettati++; parole += t.testo.split(/\s+/).length;
+      if (mio === P.token) lettore.aggiungi(t);
+      out.insertAdjacentHTML('beforeend', battutaHtml(t));
+      st.textContent = `Sto scrivendo… ${accettati} ${accettati === 1 ? 'intervento' : 'interventi'}.`;
+    });
+    if (accettati < 3) throw new Error('copione troppo corto');
+    if (j.titolo) out.insertAdjacentHTML('afterbegin', `<h3>${esc(j.titolo)}</h3>`);
+    st.textContent = `Pronto: ${accettati} interventi, circa ${Math.max(1, Math.round(parole / 140))} minuti. Sotto trovi il testo.`;
   } catch (e) {
     console.warn(id, e);
-    if (mio === P.token) fermaTutto();
-    st.textContent = e.messaggioUtente || 'Non sono riuscito a prepararlo. Riprova tra poco.'; st.classList.add('errore');
+    if (accettati < 3) {
+      if (mio === P.token) fermaTutto();
+      st.textContent = e.messaggioUtente || 'Non sono riuscito a prepararlo. Riprova tra poco.'; st.classList.add('errore');
+    } else st.textContent = 'Il collegamento si è interrotto: ascolti la parte già scritta.';
   }
+  lettore.fine();
   $(tasto).disabled = false;
 }
 $('creaPodcast').onclick = () => creaCopione({
@@ -2243,6 +2316,23 @@ Tono chiaro e cordiale, frasi adatte a essere lette ad alta voce, niente elenchi
 "titolo": un titolo breve. "turni": gli interventi in ordine, con "chi" uguale a "Leo", "Sara" oppure "Bruno".
 
 PROBLEMA: ${problema}`,
+});
+$('creaCappelli').onclick = () => creaCopione({
+  campo: 'domandaCappelli', statoEl: 'statoCappelli', testoEl: 'testoCappelli', tasto: 'creaCappelli', id: 'cappelli',
+  titolo: '6 cappelli per pensare', attesa: 'I sei cappelli stanno riflettendo…', nomi: ['Bianco', 'Rosso', 'Nero', 'Giallo', 'Verde', 'Blu', 'Sintesi'],
+  prompt: (domanda) => `Applica il metodo dei "Sei cappelli per pensare" di Edward de Bono alla domanda indicata sotto. Scrivi in italiano sette interventi, in quest'ordine, uno per ciascuna voce:
+1. "Bianco" – il cappello bianco: fatti, dati e informazioni. Dice che cosa si sa con certezza, che cosa manca e che cosa andrebbe verificato.
+2. "Rosso" – il cappello rosso: emozioni, sensazioni e intuito, senza bisogno di giustificarsi.
+3. "Nero" – il cappello nero: prudenza e giudizio critico. Rischi, punti deboli, che cosa potrebbe andare storto.
+4. "Giallo" – il cappello giallo: ottimismo ragionato. Vantaggi, opportunità, perché potrebbe funzionare.
+5. "Verde" – il cappello verde: creatività. Idee nuove, alternative, modi diversi di vedere la questione.
+6. "Blu" – il cappello blu: regia e metodo. Mette ordine, indica come organizzare la decisione e i passi successivi.
+7. "Sintesi" – una settima voce, che non porta nessun cappello: riassume in breve che cosa hanno detto gli altri e propone una conclusione sensata ed equilibrata.
+Ognuno dei sei cappelli comincia presentandosi in una frase ("Sono il cappello bianco e guardo ai fatti…"), poi espone il suo punto di vista sulla domanda e dice come la risolverebbe secondo la propria visione: tra 100 e 130 parole ciascuno. La Sintesi parla per 80-110 parole e chiude con un consiglio pratico.
+Tono chiaro e naturale, frasi adatte a essere lette ad alta voce, niente elenchi puntati, niente emoji. Non inventare dati precisi. Se la domanda riguarda salute, soldi o questioni legali la Sintesi ricorda di sentire anche un professionista.
+"titolo": un titolo breve. "turni": i sette interventi in ordine, con "chi" uguale a "Bianco", "Rosso", "Nero", "Giallo", "Verde", "Blu" e "Sintesi".
+
+DOMANDA: ${domanda}`,
 });
 async function tgInDialetto(dialetto) {
   const st = $('statoDialetto'), out = $('testoDialetto');

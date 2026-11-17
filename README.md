@@ -52,12 +52,12 @@ differenziata** (che cosa mettere fuori stasera e calendario dei ritiri, per Vit
 Vitorchiano), **Il detto del giorno** (un proverbio in dialetto viterbese o orvietano, con traduzione),
 **Podcast fai da te** (scrivi un argomento: Marco e Giulia ne discutono per circa 10 minuti e cercano una
 conclusione) e **Gran consiglio dell'IA** (racconti un problema: Leo il creativo, Sara la realista e Bruno
-il pragmatico ne parlano per circa 10 minuti e propongono una soluzione). Ogni sezione comincia con una
+il pragmatico ne parlano per circa 10 minuti e propongono una soluzione) e **6 cappelli per pensare** (fai una domanda: sei voci la guardano ognuna dal suo punto di vista secondo il metodo di Edward de Bono, cioè fatti, emozioni, rischi, vantaggi, idee nuove e metodo, e una settima voce tira le somme). In queste tre sezioni la lettura parte da sola dopo pochi secondi, mentre il testo viene ancora scritto. Ogni sezione comincia con una
 riga che spiega a che cosa serve.
 
 Le sezioni informative (sport, partite, cultura, eventi, detto) sono scritte ogni mattina sul server a
 partire dalle notizie raccolte e lette dalla voce neurale: se una cosa non compare nelle notizie (per
-esempio il canale di una partita) non viene indicata. Podcast fai da te e Gran consiglio nascono sul
+esempio il canale di una partita) non viene indicata. Podcast fai da te, Gran consiglio e 6 cappelli nascono sul
 momento sul telefono: usano la chiave Gemini dell'utente e le voci di Gemini (con la voce del telefono
 come riserva).
 
