@@ -3125,12 +3125,14 @@ else {
   caricaGrezzo().then((g) => g && caricaEdizioneServer(g)).then((e) => { if (e && !chiave) avviaApp(); });
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
-document.addEventListener('visibilitychange', () => {
-  // Riaperta il giorno dopo senza ricaricare: controlla se ci sono dati nuovi
-  if (document.visibilityState === 'visible' && chiave && !audioAttivo() && Ed.finito) {
-    caricaGrezzo().then((g) => { if (g && Ed.grezzo && g.generato !== Ed.grezzo.generato) { $('avvisi').innerHTML = ''; prepara(true); } });
-  }
-});
+function rinnovaSeNuovo() {
+  // Riaperta a distanza di ore (o lasciata aperta fino al mattino): se il server ha pubblicato
+  // un'edizione più recente e non c'è audio in riproduzione, la carica da sola senza chiave
+  if (document.visibilityState !== 'visible' || audioAttivo() || !Ed.finito) return;
+  caricaGrezzo().then((g) => { if (g && Ed.grezzo && g.generato !== Ed.grezzo.generato) { $('avvisi').innerHTML = ''; prepara(true); } });
+}
+document.addEventListener('visibilitychange', () => { rinnovaSeNuovo(); });
+setInterval(rinnovaSeNuovo, 10 * 60 * 1000);
 </script>
 </body>
 </html>

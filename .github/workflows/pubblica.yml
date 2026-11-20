@@ -3,6 +3,9 @@ name: Raccolta notizie e pubblicazione
 on:
   schedule:
     - cron: "30 4 * * *"   # ogni giorno alle 04:30 UTC (05:30 ora solare, 06:30 ora legale)
+    - cron: "0 8 * * *"    # riserva 1: durante i picchi di carico GitHub può ritardare (o saltare) i cron
+    - cron: "0 11 * * *"   # riserva 2: comunque entro mezzogiorno l'edizione del giorno è online
+    - cron: "0 14 * * *"   # riserva 3: ultima spiaggia per ritardi eccezionali
   workflow_dispatch:        # avvio manuale da GitHub > Actions
   push:
     branches: [main]
@@ -11,6 +14,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read           # serve al controllo "un'altra esecuzione è in corso?"
 
 concurrency:
   group: pages
@@ -22,25 +26,57 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
+      # Le finestre di riserva non devono rifare il lavoro: proseguono solo se l'edizione di oggi
+      # non è ancora pubblicata e nessun'altra esecuzione è già al lavoro.
+      - name: L'edizione di oggi è già pubblicata?
+        id: guardia
+        env:
+          TZ: Europe/Rome
+          GH_TOKEN: ${{ github.token }}
+        if: github.event_name == 'schedule'
+        run: |
+          altre=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow pubblica.yml --status in_progress \
+            --json databaseId --jq "[.[] | select(.databaseId != ${{ github.run_id }})] | length" || echo 0)
+          if [ "${altre:-0}" -gt 0 ]; then
+            echo "Un'altra esecuzione è già al lavoro: salto."
+            echo "salta=sì" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          oggi=$(date +%F)
+          if curl -fsS --max-time 30 "https://andreapollastrelli95.github.io/tg-di-famiglia/data/grezzo.json" \
+            | python3 -c "
+          import json, sys
+          try: sys.exit(0 if json.load(sys.stdin)['giorno'] == sys.argv[1] else 1)
+          except Exception: sys.exit(1)" "$oggi"; then
+            echo "L'edizione di oggi ($oggi) è già pubblicata: salto."
+            echo "salta=sì" >> "$GITHUB_OUTPUT"
+          else
+            echo "L'edizione di oggi manca (o il sito non risponde): raccolgo ora."
+          fi
+          exit 0
       - uses: actions/setup-python@v7
+        if: steps.guardia.outputs.salta != 'sì'
         with:
           python-version: "3.12"
           cache: pip
       - name: Dipendenze
+        if: steps.guardia.outputs.salta != 'sì'
         run: |
           pip install -r requirements.txt
           command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -y -q ffmpeg)
           ffmpeg -version | head -1
       - name: Prepara il sito
+        if: steps.guardia.outputs.salta != 'sì'
         run: |
           mkdir -p _site/data
           cp -r index.html manifest.json sw.js icons assets _site/
           touch _site/.nojekyll
       - name: Raccogli notizie e podcast
+        if: steps.guardia.outputs.salta != 'sì'
         env:
           TZ: Europe/Rome
         run: python scripts/raccogli.py _site/data
       - name: Edizione del giorno con voce neurale (Gemini + edge-tts)
+        if: steps.guardia.outputs.salta != 'sì'
         env:
           TZ: Europe/Rome
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
