@@ -2142,11 +2142,10 @@ function erroreChiave(e) {
   avviso(e.messaggioUtente + ' Tocca ⚙️ in alto per cambiarla.');
 }
 function mostraAvvisoData(g) {
+  // Niente avvisi a schermo: se l'edizione del giorno tarda, l'app suona in silenzio
+  // la più recente (quella nuova arriva da sola, alla riapertura o dopo 10 minuti)
   const oggi = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
-  if (g.giorno && g.giorno < oggi) {
-    const quando = new Date(g.generato).toLocaleString('it-IT', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    avviso(`Le notizie di oggi non sono ancora pronte (arrivano verso le 6 del mattino). Per ora ascolti quelle raccolte ${quando}.`);
-  }
+  if (g.giorno && g.giorno < oggi) console.info('Edizione precedente in riproduzione; attendo quella del giorno.');
 }
 function renderNotizie() {
   const el = $('listaNotizie');
