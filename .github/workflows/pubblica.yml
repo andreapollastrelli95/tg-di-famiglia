@@ -64,8 +64,9 @@ jobs:
           pip install -r requirements.txt
           command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -y -q ffmpeg)
           ffmpeg -version | head -1
+      # Il guscio del sito va preparato SEMPRE (anche quando la guardia salta la raccolta):
+      # upload-pages-artifact e il deploy ne hanno bisogno per concludere con successo
       - name: Prepara il sito
-        if: steps.guardia.outputs.salta != 'sì'
         run: |
           mkdir -p _site/data
           cp -r index.html manifest.json sw.js icons assets _site/
