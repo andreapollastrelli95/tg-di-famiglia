@@ -642,16 +642,36 @@ const URL_SIGLA = suono('sigla.mp3'), URL_STACCO = suono('stacco.mp3'), URL_STAC
 const URL_TAPPETO = suono('tappeto.wav'); // sottofondo musicale mentre la voce si prepara
 /** Scarica in sottofondo i suoni di oggi: il service worker li conserva e il TG non aspetta la rete. */
 function preparaSuoni() { [URL_SIGLA, URL_STACCO, URL_STACCO_LUNGO, URL_TAPPETO].forEach((u) => fetch(u).catch(() => {})); }
-/** Scarica in anticipo le prossime letture del TG, così tra un pezzo e l'altro non ci sono pause di caricamento. */
+/** Scarica in anticipo le letture del TG e le tiene in memoria come blob: il passaggio da un pezzo
+ *  all'altro non tocca più la rete. È ciò che tiene viva l'audio in background e a schermo spento
+ *  su iPhone (iOS sospende le richieste di rete delle pagine in secondo piano; i passaggi tra
+ *  traccia e traccia poi usano solo memoria). Con tutto=false precarica i 2 pezzi successivi,
+ *  con tutto=true l'edizione intera (sigla, stacchi, titoli, notizie): il TG diventa di fatto
+ *  un unico pezzo continuo già scaricato, esattamente come richiesto per auto e schermo spento. */
 const giaCaricati = new Set();
-function preCaricaProssimi(da) {
+const inMemoria = new Map(); // url di origine -> objectURL del blob scaricato
+async function scaricaInMemoria(url) {
+  if (!url || giaCaricati.has(url)) return;
+  giaCaricati.add(url);
+  try {
+    const r = await fetch(url);
+    const b = r.ok ? await r.blob() : null;
+    if (b && !inMemoria.has(url)) inMemoria.set(url, URL.createObjectURL(b));
+    else giaCaricati.delete(url);
+  } catch { giaCaricati.delete(url); }
+}
+function preCaricaProssimi(da, tutto = false) {
   const s = scaletta();
-  let i = s.findIndex((x) => stessoPasso(x, da)), presi = 0;
-  while (presi < 2 && ++i < s.length && i > 0) {
+  let i = Math.max(s.findIndex((x) => stessoPasso(x, da)), 0), presi = 0;
+  while (++i < s.length) {
     const p = s[i];
-    const url = p.t === 'titolo' ? Ed.titoli.pezzi[p.k]?.url : (p.t === 'voce' ? Ed.blocchi[p.k]?.url : null);
-    if (p.t === 'titolo' || p.t === 'voce') presi++;
-    if (url && !giaCaricati.has(url)) { giaCaricati.add(url); fetch(url).catch(() => giaCaricati.delete(url)); }
+    let url = null;
+    if (p.t === 'sigla') url = URL_SIGLA;
+    else if (p.t === 'suono') url = p.lungo ? URL_STACCO_LUNGO : URL_STACCO;
+    else if (p.t === 'titolo') url = Ed.titoli.pezzi[p.k]?.url;
+    else if (p.t === 'voce') url = Ed.blocchi[p.k]?.url;
+    if (p.t === 'titolo' || p.t === 'voce') { presi++; if (!tutto && presi > 2) break; }
+    if (url) scaricaInMemoria(url);
   }
 }
 const URL_SILENZIO = URL.createObjectURL(pcmAWav(new Uint8Array(24000 * 2), 24000)); // 1 s di silenzio
@@ -1127,6 +1147,9 @@ function usaEdizioneServer(e) {
   Ed.rassegneServer = Object.fromEntries(Object.entries(e.rassegne || {}).map(([k, v]) => [k, { ...v, audio: v.audio.map(u) }]));
   Ed.finito = true; Ed.produzioneFinita = true; Ed.avvisa();
   renderNotizie(); renderPodcast(); renderVarie();
+  // scarica tutta l'edizione in memoria (sigla, stacchi, titoli, notizie: ~20 MB):
+  // una volta finito, il TG suona dall'inizio alla fine senza mai richiamare la rete
+  preCaricaProssimi(null, true);
   if (!audioAttivo()) stato('Il notiziario di oggi è pronto. Tocca ▶️ per ascoltarlo.');
 }
 
@@ -1477,12 +1500,15 @@ const audio = $('audio');
 const P = { radioErrori: 0, modo: null, traccia: -1, token: 0, inAttesa: false, parlando: false, urlCorrente: null, titolo: '', sotto: '' };
 const audioAttivo = () => P.modo && (!audio.paused || P.parlando || P.inAttesa);
 
-/** Imposta la sorgente e parte. Restituisce true se la riproduzione è partita (false: il browser l'ha bloccata). */
+/** Imposta la sorgente e parte. Se la traccia è già scaricata in memoria usa subito il blob:
+ *  nessuna attesa di rete al passaggio (fondamentale per il background su iPhone).
+ *  Restituisce true se la riproduzione è partita (false: il browser l'ha bloccata). */
 function impostaSorgente(url, loop = false) {
-  if (P.urlCorrente && P.urlCorrente.startsWith('blob:') && P.urlCorrente !== URL_SILENZIO) URL.revokeObjectURL(P.urlCorrente);
-  P.urlCorrente = url;
+  if (P.urlCorrente && P.urlCorrente.startsWith('blob:') && P.urlCorrente !== URL_SILENZIO && !inMemoria.has(P.urlOrigine) && !inMemoria.has(url)) URL.revokeObjectURL(P.urlCorrente);
+  P.urlOrigine = url;
+  P.urlCorrente = inMemoria.get(url) || url;
   audio.loop = loop;
-  audio.src = url;
+  audio.src = P.urlCorrente;
   return audio.play().then(() => true, (e) => {
     console.warn('play', e);
     if (e.name === 'NotAllowedError') stato('Tocca ▶️ per continuare l\'ascolto.');
@@ -1680,7 +1706,7 @@ audio.addEventListener('error', () => {
   else if (P.modo === 'tg') {
     // un audio dell'edizione non c'è più (il sito è stato ripubblicato): ricarica l'edizione nuova e riprendi dallo stesso punto
     const passo = P.passo, mio = P.token;
-    if (P.urlCorrente?.includes('data/audio/') && !P.ricaricato) {
+    if (P.urlOrigine?.includes('data/audio/') && !P.ricaricato) {
       P.ricaricato = true;
       controllaEdizione().then((nuova) => { if (mio === P.token) vaiA(nuova ? passo : prossimoPasso()); });
     } else vaiA(prossimoPasso());
@@ -1855,6 +1881,7 @@ async function suonaParteVaria(i) {
   const conta = V.parti.length > 1 || V.completo === false ? ` · parte ${i + 1}${V.completo === false ? '' : ' di ' + V.parti.length}` : '';
   if (pronto.url || pronto.blob) {
     $('miniSotto').textContent = 'In ascolto' + conta;
+    if (pronto.url) scaricaInMemoria(V.pronti[i + 1]?.url); // la prossima parte entra in memoria: niente rete in background
     impostaSorgente(pronto.url || URL.createObjectURL(pronto.blob));
   } else {
     audio.pause(); audio.loop = false;
